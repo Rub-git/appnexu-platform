@@ -1,0 +1,476 @@
+{
+  "common": {
+    "appName": "Appnexu",
+    "tagline": "From website to app. Instantly.",
+    "loading": "Loading...",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "confirm": "Confirm",
+    "back": "Back",
+    "next": "Next",
+    "submit": "Submit",
+    "close": "Close",
+    "yes": "Yes",
+    "no": "No",
+    "or": "or",
+    "and": "and"
+  },
+  "nav": {
+    "home": "Home",
+    "dashboard": "Dashboard",
+    "myApps": "My Apps",
+    "createApp": "Create New App",
+    "settings": "Settings",
+    "signIn": "Sign in",
+    "signUp": "Sign up",
+    "signOut": "Sign out",
+    "login": "Log in"
+  },
+  "auth": {
+    "signIn": {
+      "title": "Welcome back",
+      "subtitle": "Sign in to your Appnexu account to continue",
+      "button": "Sign in",
+      "noAccount": "Don't have an account?",
+      "createAccount": "Create one now",
+      "forgotPassword": "Forgot password?"
+    },
+    "signUp": {
+      "title": "Create your account",
+      "subtitle": "Start turning websites into apps today",
+      "button": "Create account",
+      "hasAccount": "Already have an account?",
+      "signInLink": "Sign in",
+      "terms": "By signing up, you agree to our Terms of Service and Privacy Policy"
+    },
+    "fields": {
+      "email": "Email address",
+      "password": "Password",
+      "confirmPassword": "Confirm password",
+      "name": "Full name"
+    },
+    "errors": {
+      "invalidCredentials": "Invalid email or password",
+      "emailExists": "An account with this email already exists",
+      "passwordMismatch": "Passwords do not match",
+      "weakPassword": "Password must be at least 8 characters",
+      "invalidEmail": "Please enter a valid email address",
+      "required": "This field is required",
+      "generic": "Something went wrong. Please try again."
+    }
+  },
+  "dashboard": {
+    "title": "My Apps",
+    "subtitle": "Manage your apps",
+    "createButton": "Create New App",
+    "emptyState": {
+      "title": "No apps yet",
+      "description": "You haven't created any apps yet. Get started by converting your first website into an installable app.",
+      "button": "Create your first app"
+    },
+    "appCard": {
+      "createdOn": "Created on",
+      "status": {
+        "draft": "Draft",
+        "generating": "Generating...",
+        "staged": "Staged",
+        "published": "Published",
+        "queued": "Queued",
+        "failed": "Failed"
+      },
+      "actions": {
+        "preview": "Preview",
+        "edit": "Edit",
+        "delete": "Delete"
+      }
+    },
+    "deleteDialog": {
+      "title": "Delete App",
+      "message": "Are you sure you want to delete \"{appName}\"? This action cannot be undone.",
+      "confirm": "Delete App",
+      "cancel": "Cancel"
+    }
+  },
+  "editApp": {
+    "title": "Edit App",
+    "form": {
+      "appName": "App Name",
+      "shortName": "Short Name",
+      "themeColor": "Theme Color",
+      "backgroundColor": "Background Color",
+      "saveButton": "Save Changes",
+      "saving": "Saving..."
+    }
+  },
+  "preview": {
+    "backToApps": "Back to Apps",
+    "source": "Source",
+    "configure": "Configure",
+    "install": "Install App",
+    "config": {
+      "title": "App Configuration",
+      "subtitle": "Details automatically extracted from your website.",
+      "appName": "App Name",
+      "shortName": "Short Name",
+      "themeColor": "Theme Color",
+      "backgroundColor": "Background Color",
+      "appIcons": "App Icons",
+      "noIcons": "No icons found. Defaults will be used."
+    },
+    "readiness": {
+      "title": "PWA Readiness",
+      "https": "Valid HTTPS connection",
+      "manifest": "Web App Manifest generated",
+      "serviceWorker": "Service Worker registered",
+      "icons": "Maskable icons validated"
+    },
+    "mobilePreview": "Mobile Preview"
+  },
+  "publish": {
+    "title": "Publishing",
+    "subtitle": "Make your app accessible to the public via a unique link.",
+    "button": "Publish App",
+    "publishing": "Publishing...",
+    "generating": "Generating PWA assets...",
+    "confirmMessage": "Are you sure you want to publish \"{appName}\"? This will make it publicly accessible.",
+    "confirmButton": "Yes, Publish",
+    "viewLive": "View Live",
+    "unpublish": "Unpublish",
+    "publicUrl": "Public URL",
+    "queued": "Queued for generation...",
+    "failed": "Generation Failed",
+    "retryButton": "Retry",
+    "retrying": "Retrying...",
+    "backToDraft": "Back to Draft"
+  },
+  "customDomain": {
+    "title": "Custom Domain",
+    "saved": "Custom domain saved successfully!",
+    "removed": "Custom domain removed.",
+    "dnsTitle": "DNS Configuration",
+    "dnsInstructions": "Point your domain to our servers by adding a CNAME record in your DNS provider."
+  },
+  "install": {
+    "button": "Install App",
+    "settingUp": "Setting up...",
+    "installed": "Installed",
+    "iosInstructions": "To install on iOS:\n1. Tap the Share button\n2. Select 'Add to Home Screen'\n3. Tap 'Add'",
+    "androidInstructions": "Tap the Install button above to add this app to your home screen.",
+    "notSupported": "App installation is not supported in this browser. Please use Chrome, Edge, or Safari on iOS."
+  },
+  "settings": {
+    "title": "Account Settings",
+    "subtitle": "Manage your account and subscription",
+    "account": {
+      "title": "Account Information",
+      "email": "Email",
+      "memberSince": "Member since"
+    },
+    "plan": {
+      "title": "Your Plan",
+      "current": "Current Plan",
+      "free": "Starter",
+      "pro": "Pro",
+      "agency": "Agency",
+      "usage": "App Usage",
+      "usageFormat": "{used} of {limit} apps used",
+      "unlimited": "Unlimited",
+      "upgradeButton": "Upgrade Plan",
+      "upgradeCta": "Upgrade to create more apps and unlock premium features.",
+      "upgradeTo": "Upgrade to",
+      "comparison": "Plan Comparison"
+    }
+  },
+  "plans": {
+    "limitReached": {
+      "title": "Plan Limit Reached",
+      "message": "You've reached the maximum number of apps for your {plan} plan ({limit} app).",
+      "messagePlural": "You've reached the maximum number of apps for your {plan} plan ({limit} apps).",
+      "upgrade": "Upgrade your plan to create more apps.",
+      "upgradeButton": "Upgrade Now"
+    },
+    "limits": {
+      "free": "1 app",
+      "pro": "10 apps",
+      "agency": "Unlimited apps"
+    }
+  },
+  "analytics": {
+    "title": "Analytics",
+    "totalVisits": "Total Visits",
+    "uniqueVisitors": "Unique Visitors",
+    "installClicks": "Install Clicks",
+    "publishCount": "Publish Count",
+    "lastVisited": "Last Visited",
+    "lastPublished": "Last Published",
+    "recentActivity": "Recent Activity",
+    "noData": "No analytics data yet",
+    "noDataDescription": "Analytics will appear once your app is published and receives traffic.",
+    "viewAnalytics": "View Analytics",
+    "period": {
+      "7d": "7 Days",
+      "30d": "30 Days",
+      "all": "All Time"
+    },
+    "chart": {
+      "pageViews": "Page Views",
+      "uniqueVisitors": "Unique Visitors",
+      "installClicks": "Install Clicks"
+    },
+    "events": {
+      "PAGE_VIEW": "Page View",
+      "INSTALL_CLICK": "Install Click",
+      "PUBLISHED": "Published",
+      "UNIQUE_VISIT": "Unique Visit"
+    },
+    "summary": "Summary",
+    "trends": "Trends",
+    "never": "Never"
+  },
+  "errors": {
+    "notFound": {
+      "title": "Page not found",
+      "message": "The page you're looking for doesn't exist or has been moved.",
+      "button": "Go back home"
+    },
+    "serverError": {
+      "title": "Something went wrong",
+      "message": "We're having trouble loading this page. Please try again later.",
+      "button": "Try again"
+    },
+    "unauthorized": {
+      "title": "Unauthorized",
+      "message": "You don't have permission to access this resource.",
+      "button": "Sign in"
+    },
+    "appNotFound": "App not found",
+    "failedToAnalyze": "Failed to analyze URL",
+    "failedToGenerate": "Failed to generate app",
+    "failedToSave": "Failed to save changes",
+    "failedToDelete": "Failed to delete app"
+  },
+  "offline": {
+    "title": "You're Offline",
+    "message": "Please check your internet connection and try again.",
+    "tips": {
+      "title": "Troubleshooting tips:",
+      "wifi": "Check your Wi-Fi or mobile data connection",
+      "airplane": "Make sure Airplane Mode is turned off",
+      "router": "Try restarting your router or modem"
+    },
+    "tryAgain": "Try Again",
+    "checking": "Checking connection..."
+  },
+  "landing": {
+    "hero": {
+      "title": "Turn your website into an app in minutes",
+      "subtitle": "Appnexu transforms your website into an installable mobile app with smart analysis, industry templates, and fast publishing.",
+      "cta": "Create your app",
+      "demo": "See how it works"
+    },
+    "features": {
+      "title": "Why Choose Appnexu?",
+      "fast": {
+        "title": "Lightning Fast",
+        "description": "Generate your app in seconds, not hours"
+      },
+      "easy": {
+        "title": "No Code Required",
+        "description": "Just paste a URL and we handle the rest"
+      },
+      "install": {
+        "title": "Installable",
+        "description": "Users can install your app directly to their device"
+      }
+    }
+  },
+  "footer": {
+    "copyright": "© 2026 Appnexu. All rights reserved.",
+    "tagline": "From website to app. Instantly.",
+    "links": {
+      "privacy": "Privacy Policy",
+      "terms": "Terms of Service",
+      "support": "Support"
+    }
+  },
+  "admin": {
+    "title": "Admin Panel",
+    "loadError": "Failed to load data. Please try again.",
+    "noData": "No data available",
+    "nav": {
+      "overview": "Overview",
+      "users": "Users",
+      "apps": "Apps",
+      "billing": "Billing",
+      "health": "System Health",
+      "backToDashboard": "Back to Dashboard"
+    },
+    "overview": {
+      "title": "Dashboard Overview",
+      "totalUsers": "Total Users",
+      "totalApps": "Total Apps",
+      "publishedApps": "Published Apps",
+      "proUsers": "Pro Users",
+      "agencyUsers": "Agency Users",
+      "recentSignups": "Recent Signups",
+      "recentPublished": "Recent Published",
+      "failedJobs": "Failed Jobs",
+      "queuedJobs": "In Queue",
+      "recentSignupsTitle": "Recent Signups",
+      "recentPublishedTitle": "Recently Published Apps",
+      "recentFailedTitle": "Recent Failures",
+      "noFailures": "No failed jobs",
+      "templatesTitle": "Templates",
+      "totalTemplates": "Total Templates",
+      "premiumTemplates": "Premium Templates",
+      "mostUsedTemplates": "Most Used Templates",
+      "uses": "uses",
+      "apkBuildsTitle": "APK Builds",
+      "totalExports": "Total Exports",
+      "failedBuilds": "Failed Builds",
+      "buildQueue": "Build Queue",
+      "aiAnalysisTitle": "AI Analysis",
+      "analysisRequests": "Analysis Requests",
+      "completionRate": "Completion Rate",
+      "completedAnalyses": "Completed",
+      "failedAnalyses": "Failed"
+    },
+    "users": {
+      "title": "Users Management",
+      "searchPlaceholder": "Search by email or name...",
+      "name": "Name",
+      "email": "Email",
+      "plan": "Plan",
+      "role": "Role",
+      "apps": "Apps",
+      "stripe": "Stripe",
+      "joined": "Joined"
+    },
+    "apps": {
+      "title": "Apps Management",
+      "searchPlaceholder": "Search by name, slug, or URL...",
+      "name": "App Name",
+      "slug": "Slug",
+      "owner": "Owner",
+      "status": "Status",
+      "domain": "Domain",
+      "analytics": "Analytics",
+      "created": "Created",
+      "publishedDate": "Published"
+    },
+    "billing": {
+      "title": "Billing & Subscriptions",
+      "stripeLinked": "Stripe Linked",
+      "stripeStatus": "Stripe Status",
+      "customerId": "Customer ID",
+      "linked": "Linked",
+      "notLinked": "Not Linked",
+      "allStripe": "All Stripe Status"
+    },
+    "health": {
+      "title": "Queue & System Health",
+      "refresh": "Refresh",
+      "database": "Database",
+      "stripe": "Stripe",
+      "qstash": "QStash",
+      "eventsToday": "Events Today",
+      "statusBreakdown": "App Status Breakdown",
+      "recentSuccessful": "Recent successful",
+      "recentFailed": "Recent failed",
+      "queuedJobs": "Queued Jobs",
+      "generatingJobs": "Generating Jobs",
+      "failedJobs": "Failed Jobs",
+      "queueEmpty": "Queue is empty",
+      "noActiveJobs": "No active jobs",
+      "reason": "Reason",
+      "retries": "Retries",
+      "action": "Action",
+      "retry": "Retry"
+    },
+    "filters": {
+      "allPlans": "All Plans",
+      "allRoles": "All Roles",
+      "allStatuses": "All Statuses"
+    },
+    "pagination": {
+      "showing": "Showing {from}–{to} of {total}"
+    }
+  },
+  "templates": {
+    "badge": "App Templates",
+    "title": "Start with a Template",
+    "subtitle": "Choose from our collection of professionally designed templates to jumpstart your app creation.",
+    "preview": "Preview",
+    "useTemplate": "Use Template",
+    "noTemplates": "No templates found for this category.",
+    "categories": {
+      "ALL": "All",
+      "BUSINESS": "Business",
+      "CHURCH": "Church",
+      "FOOD": "Food",
+      "HEALTH": "Health",
+      "EDUCATION": "Education",
+      "SERVICES": "Services"
+    },
+    "modal": {
+      "navigation": "Navigation Structure",
+      "quickActions": "Quick Actions",
+      "colorScheme": "Color Scheme",
+      "primary": "Primary",
+      "secondary": "Secondary"
+    },
+    "premiumBadge": "Pro",
+    "premiumOnly": "This template is available for Pro and Agency plans."
+  },
+  "aiAnalyzer": {
+    "title": "AI Website Analyzer",
+    "description": "Let our AI analyze your website and suggest the best app configuration.",
+    "analyzeButton": "Analyze with AI",
+    "analyzing": "Analyzing...",
+    "analyzingDesc": "Our AI is scanning your website to generate intelligent suggestions. This may take a few seconds.",
+    "suggestionsReady": "AI Suggestions Ready",
+    "suggestedName": "Suggested App Name",
+    "suggestedColors": "Suggested Colors",
+    "suggestedNav": "Suggested Navigation",
+    "suggestedActions": "Suggested Quick Actions",
+    "acceptAll": "Accept All",
+    "reAnalyze": "Re-analyze",
+    "editManually": "Edit Manually",
+    "useDefaults": "Use Defaults"
+  },
+  "apkExport": {
+    "title": "Export Android App",
+    "description": "Generate an Android APK wrapper for your published app. Users can install it directly on their Android devices.",
+    "exportButton": "Export Android APK",
+    "building": "Building APK...",
+    "buildingDesc": "Creating your Android app package. This may take a minute.",
+    "ready": "APK Ready for Download",
+    "download": "Download APK",
+    "rebuild": "Rebuild",
+    "failed": "APK Build Failed",
+    "retry": "Retry Build"
+  },
+  "createApp": {
+    "title": "Create New App",
+    "subtitle": "Enter the URL of the website you want to convert into an installable mobile app.",
+    "usingTemplate": "Using template",
+    "templateApplied": "Template colors and navigation will be applied to your app.",
+    "browseTemplates": "Start with a template",
+    "browseTemplatesDesc": "Choose from pre-built templates for restaurants, churches, clinics, and more.",
+    "form": {
+      "urlLabel": "Website URL",
+      "urlPlaceholder": "https://example.com",
+      "urlHelp": "Make sure the URL starts with https://",
+      "submitButton": "Generate App",
+      "analyzing": "Analyzing website metadata..."
+    },
+    "steps": {
+      "title": "What happens next?",
+      "scan": "We'll scan the URL for metadata like titles, colors, and icons.",
+      "generate": "Our engine automatically generates the required PWA manifest and service workers.",
+      "preview": "You'll get a preview of your app and a custom link to install it on your device."
+    }
+  }
+}

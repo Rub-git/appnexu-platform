@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#178BFF">
+    <title>You're Offline</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 24px;
+            padding: 48px;
+            max-width: 480px;
+            width: 100%;
+            text-align: center;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        }
+
+        .icon {
+            width: 120px;
+            height: 120px;
+            margin: 0 auto 32px;
+            background: #f3f4f6;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .icon svg {
+            width: 60px;
+            height: 60px;
+            color: #6b7280;
+        }
+
+        h1 {
+            font-size: 28px;
+            font-weight: 700;
+            color: #111827;
+            margin-bottom: 16px;
+        }
+
+        p {
+            font-size: 16px;
+            color: #6b7280;
+            line-height: 1.6;
+            margin-bottom: 32px;
+        }
+
+        .retry-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            background: #178BFF;
+            color: white;
+            font-size: 16px;
+            font-weight: 600;
+            padding: 14px 28px;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .retry-btn:hover {
+            background: #4338ca;
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px -5px rgba(79, 70, 229, 0.4);
+        }
+
+        .retry-btn:active {
+            transform: translateY(0);
+        }
+
+        .retry-btn svg {
+            width: 20px;
+            height: 20px;
+        }
+
+        .status {
+            margin-top: 24px;
+            padding: 12px 16px;
+            background: #fef3c7;
+            border-radius: 8px;
+            font-size: 14px;
+            color: #92400e;
+            display: none;
+        }
+
+        .status.online {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .tips {
+            margin-top: 32px;
+            padding-top: 24px;
+            border-top: 1px solid #e5e7eb;
+            text-align: left;
+        }
+
+        .tips h3 {
+            font-size: 14px;
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 12px;
+        }
+
+        .tips ul {
+            list-style: none;
+            font-size: 14px;
+            color: #6b7280;
+        }
+
+        .tips li {
+            padding: 8px 0;
+            padding-left: 24px;
+            position: relative;
+        }
+
+        .tips li::before {
+            content: "•";
+            position: absolute;
+            left: 8px;
+            color: #178BFF;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            body {
+                background: linear-gradient(135deg, #1e1b4b 0%, #312e81 100%);
+            }
+
+            .container {
+                background: #1f2937;
+            }
+
+            .icon {
+                background: #374151;
+            }
+
+            .icon svg {
+                color: #9ca3af;
+            }
+
+            h1 {
+                color: #f9fafb;
+            }
+
+            p {
+                color: #9ca3af;
+            }
+
+            .tips {
+                border-top-color: #374151;
+            }
+
+            .tips h3 {
+                color: #e5e7eb;
+            }
+
+            .tips ul {
+                color: #9ca3af;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="icon">
+            <svg xmlns="https://static.vecteezy.com/system/resources/previews/067/855/688/non_2x/six-abstract-geometric-brain-icons-network-connectivity-and-intelligence-concepts-vector.jpg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M18.364 5.636a9 9 0 010 12.728m0 0l-2.829-2.829m2.829 2.829L21 21M15.536 8.464a5 5 0 010 7.072m0 0l-2.829-2.829m-4.243 2.829a4.978 4.978 0 01-1.414-2.83m-1.414 5.658a9 9 0 01-2.167-9.238m7.824 2.167a1 1 0 111.414 1.414m-1.414-1.414L3 3m8.293 8.293l1.414 1.414" />
+            </svg>
+        </div>
+        
+        <h1>You're Offline</h1>
+        <p>It looks like you've lost your internet connection. Please check your connection and try again.</p>
+        
+        <button class="retry-btn" onclick="retry()">
+            <svg xmlns="https://static.vecteezy.com/system/resources/previews/068/687/336/non_2x/a-blue-circular-arrow-icon-representing-refresh-and-recycle-vector.jpg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+            Try Again
+        </button>
+
+        <div id="status" class="status"></div>
+
+        <div class="tips">
+            <h3>Troubleshooting Tips</h3>
+            <ul>
+                <li>Check if airplane mode is turned off</li>
+                <li>Ensure WiFi or mobile data is enabled</li>
+                <li>Try moving to an area with better signal</li>
+                <li>Restart your device if the problem persists</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        // Check online status
+        function updateOnlineStatus() {
+            const statusEl = document.getElementById('status');
+            if (navigator.onLine) {
+                statusEl.textContent = '✓ Connection restored! Reloading...';
+                statusEl.classList.add('online');
+                statusEl.style.display = 'block';
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1500);
+            }
+        }
+
+        // Retry button handler
+        function retry() {
+            const statusEl = document.getElementById('status');
+            statusEl.textContent = 'Checking connection...';
+            statusEl.classList.remove('online');
+            statusEl.style.display = 'block';
+            
+            // Try to fetch the root
+            fetch('/', { method: 'HEAD', cache: 'no-store' })
+                .then(response => {
+                    if (response.ok) {
+                        statusEl.textContent = '✓ Connection restored! Reloading...';
+                        statusEl.classList.add('online');
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 1000);
+                    } else {
+                        statusEl.textContent = 'Still offline. Please check your connection.';
+                    }
+                })
+                .catch(() => {
+                    statusEl.textContent = 'Still offline. Please check your connection.';
+                });
+        }
+
+        // Listen for online events
+        window.addEventListener('online', updateOnlineStatus);
+        window.addEventListener('offline', () => {
+            const statusEl = document.getElementById('status');
+            statusEl.textContent = 'You are offline';
+            statusEl.classList.remove('online');
+            statusEl.style.display = 'block';
+        });
+
+        // Check status on load
+        if (navigator.onLine) {
+            updateOnlineStatus();
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,260 @@
+// Prisma schema for Antigravity AnyApp
+// Using PostgreSQL (Neon) for production
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// User plan enumeration
+enum Plan {
+  FREE
+  PRO
+  AGENCY
+}
+
+// User role enumeration
+enum Role {
+  USER
+  ADMIN
+}
+
+// App status enumeration — full lifecycle
+enum AppStatus {
+  DRAFT
+  QUEUED
+  GENERATING
+  STAGED
+  PUBLISHED
+  FAILED
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  password      String?   // Optional for OAuth users
+  image         String?
+  plan          Plan      @default(FREE)
+  role          Role      @default(USER)
+
+  // Stripe fields
+  stripeCustomerId String? @unique @map("stripe_customer_id")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  // Relations
+  apps     AppProject[]
+  accounts Account[]
+  sessions Session[]
+
+  @@index([email])
+  @@index([stripeCustomerId])
+  @@index([role])
+  @@index([plan])
+  @@index([createdAt])
+}
+
+// NextAuth Account model for OAuth providers
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+}
+
+// NextAuth Session model
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+// NextAuth Verification Token for email verification
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// AI analysis status enumeration
+enum AiAnalysisStatus {
+  NOT_ANALYZED
+  ANALYZING
+  COMPLETED
+  FAILED
+}
+
+// APK build status enumeration
+enum ApkBuildStatus {
+  NOT_BUILT
+  BUILDING
+  READY
+  FAILED
+}
+
+// Template category enumeration
+enum TemplateCategory {
+  BUSINESS
+  CHURCH
+  HEALTH
+  FOOD
+  EDUCATION
+  SERVICES
+}
+
+// App Template model for marketplace
+model AppTemplate {
+  id           String           @id @default(cuid())
+  name         String
+  slug         String           @unique
+  description  String
+  category     TemplateCategory
+  previewImage String?          @map("preview_image")
+  configJson   Json             @map("config_json")
+  isPremium    Boolean          @default(false) @map("is_premium")
+  usageCount   Int              @default(0) @map("usage_count")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  @@index([category])
+  @@index([isPremium])
+  @@index([slug])
+}
+
+// Analytics event type enumeration
+enum AnalyticsEventType {
+  PAGE_VIEW
+  INSTALL_CLICK
+  PUBLISHED
+  UNIQUE_VISIT
+}
+
+model AppProject {
+  id              String    @id @default(cuid())
+  slug            String    @unique @default(cuid()) // Unique slug for public URLs
+  targetUrl       String
+  appName         String
+  shortName       String?
+  themeColor      String?
+  backgroundColor String?   @default("#ffffff")
+  iconUrls        String    // Kept as comma-separated string as required
+  status          AppStatus @default(DRAFT)
+
+  // Custom domain support
+  customDomain String? @unique @map("custom_domain")
+
+  // Generation queue fields
+  failureReason    String?   @map("failure_reason")    // Human-readable failure message
+  lastJobId        String?   @map("last_job_id")       // QStash message ID or inline job ID
+  lastGeneratedAt  DateTime? @map("last_generated_at") // Last successful generation timestamp
+  retryCount       Int       @default(0) @map("retry_count") // Number of retries attempted
+
+  // AI analysis fields
+  aiSuggestedName       String?          @map("ai_suggested_name")
+  aiSuggestedNavigation Json?            @map("ai_suggested_navigation")
+  aiSuggestedColors     Json?            @map("ai_suggested_colors")
+  aiSuggestedActions    Json?            @map("ai_suggested_actions")
+  aiAnalysisStatus      AiAnalysisStatus @default(NOT_ANALYZED) @map("ai_analysis_status")
+
+  // APK export fields
+  apkBuildStatus  ApkBuildStatus @default(NOT_BUILT) @map("apk_build_status")
+  apkBuildUrl     String?        @map("apk_build_url")
+  apkLastBuiltAt  DateTime?      @map("apk_last_built_at")
+
+  // Template reference
+  templateId String? @map("template_id")
+
+  // Analytics counters (denormalized for fast reads)
+  totalVisits      Int       @default(0) @map("total_visits")
+  uniqueVisitors   Int       @default(0) @map("unique_visitors")
+  totalInstalls    Int       @default(0) @map("total_installs")
+  lastVisitedAt    DateTime? @map("last_visited_at")
+  lastPublishedAt  DateTime? @map("last_published_at")
+
+  // Relations
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Analytics relations
+  analyticsEvents    AppAnalyticsEvent[]
+  analyticsSummaries AppAnalyticsSummary[]
+
+  // Timestamps
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) @updatedAt
+
+  @@index([userId])
+  @@index([slug])
+  @@index([customDomain])
+  @@index([status])
+  @@index([createdAt])
+  @@index([aiAnalysisStatus])
+  @@index([apkBuildStatus])
+  @@index([templateId])
+}
+
+// Individual analytics events (raw event log)
+model AppAnalyticsEvent {
+  id        String             @id @default(cuid())
+  appId     String             @map("app_id")
+  eventType AnalyticsEventType @map("event_type")
+  timestamp DateTime           @default(now())
+  metadata  Json?              // referrer, device type, browser, IP hash
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // Relations
+  app AppProject @relation(fields: [appId], references: [id], onDelete: Cascade)
+
+  @@index([appId])
+  @@index([appId, timestamp])
+  @@index([eventType])
+}
+
+// Aggregated daily analytics summary
+model AppAnalyticsSummary {
+  id             String   @id @default(cuid())
+  appId          String   @map("app_id")
+  date           DateTime // Date (day granularity, stored as start of day UTC)
+  pageViews      Int      @default(0) @map("page_views")
+  uniqueVisitors Int      @default(0) @map("unique_visitors")
+  installClicks  Int      @default(0) @map("install_clicks")
+  publishCount   Int      @default(0) @map("publish_count")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
+
+  // Relations
+  app AppProject @relation(fields: [appId], references: [id], onDelete: Cascade)
+
+  @@unique([appId, date])
+  @@index([appId])
+  @@index([appId, date])
+}

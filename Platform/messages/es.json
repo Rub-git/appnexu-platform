@@ -1,0 +1,476 @@
+{
+  "common": {
+    "appName": "Appnexu",
+    "tagline": "De sitio web a app, al instante.",
+    "loading": "Cargando...",
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "delete": "Eliminar",
+    "edit": "Editar",
+    "confirm": "Confirmar",
+    "back": "Volver",
+    "next": "Siguiente",
+    "submit": "Enviar",
+    "close": "Cerrar",
+    "yes": "Sí",
+    "no": "No",
+    "or": "o",
+    "and": "y"
+  },
+  "nav": {
+    "home": "Inicio",
+    "dashboard": "Panel",
+    "myApps": "Mis Apps",
+    "createApp": "Crear Nueva App",
+    "settings": "Configuración",
+    "signIn": "Iniciar sesión",
+    "signUp": "Registrarse",
+    "signOut": "Cerrar sesión",
+    "login": "Ingresar"
+  },
+  "auth": {
+    "signIn": {
+      "title": "Bienvenido de vuelta",
+      "subtitle": "Inicia sesión en tu cuenta de Appnexu para continuar",
+      "button": "Iniciar sesión",
+      "noAccount": "¿No tienes una cuenta?",
+      "createAccount": "Crea una ahora",
+      "forgotPassword": "¿Olvidaste tu contraseña?"
+    },
+    "signUp": {
+      "title": "Crea tu cuenta",
+      "subtitle": "Comienza a convertir sitios web en apps hoy",
+      "button": "Crear cuenta",
+      "hasAccount": "¿Ya tienes una cuenta?",
+      "signInLink": "Inicia sesión",
+      "terms": "Al registrarte, aceptas nuestros Términos de Servicio y Política de Privacidad"
+    },
+    "fields": {
+      "email": "Correo electrónico",
+      "password": "Contraseña",
+      "confirmPassword": "Confirmar contraseña",
+      "name": "Nombre completo"
+    },
+    "errors": {
+      "invalidCredentials": "Correo electrónico o contraseña inválidos",
+      "emailExists": "Ya existe una cuenta con este correo electrónico",
+      "passwordMismatch": "Las contraseñas no coinciden",
+      "weakPassword": "La contraseña debe tener al menos 8 caracteres",
+      "invalidEmail": "Por favor ingresa un correo electrónico válido",
+      "required": "Este campo es obligatorio",
+      "generic": "Algo salió mal. Por favor intenta de nuevo."
+    }
+  },
+  "dashboard": {
+    "title": "Mis Apps",
+    "subtitle": "Administra tus aplicaciones",
+    "createButton": "Crear Nueva App",
+    "emptyState": {
+      "title": "Sin apps todavía",
+      "description": "Aún no has creado ninguna app. Comienza convirtiendo tu primer sitio web en una aplicación instalable.",
+      "button": "Crea tu primera app"
+    },
+    "appCard": {
+      "createdOn": "Creado el",
+      "status": {
+        "draft": "Borrador",
+        "generating": "Generando...",
+        "staged": "En preparación",
+        "published": "Publicado",
+        "queued": "En cola",
+        "failed": "Fallido"
+      },
+      "actions": {
+        "preview": "Vista previa",
+        "edit": "Editar",
+        "delete": "Eliminar"
+      }
+    },
+    "deleteDialog": {
+      "title": "Eliminar App",
+      "message": "¿Estás seguro de que quieres eliminar \"{appName}\"? Esta acción no se puede deshacer.",
+      "confirm": "Eliminar App",
+      "cancel": "Cancelar"
+    }
+  },
+  "editApp": {
+    "title": "Editar App",
+    "form": {
+      "appName": "Nombre de la App",
+      "shortName": "Nombre Corto",
+      "themeColor": "Color del Tema",
+      "backgroundColor": "Color de Fondo",
+      "saveButton": "Guardar Cambios",
+      "saving": "Guardando..."
+    }
+  },
+  "preview": {
+    "backToApps": "Volver a Apps",
+    "source": "Fuente",
+    "configure": "Configurar",
+    "install": "Instalar App",
+    "config": {
+      "title": "Configuración de la App",
+      "subtitle": "Detalles extraídos automáticamente de tu sitio web.",
+      "appName": "Nombre de la App",
+      "shortName": "Nombre Corto",
+      "themeColor": "Color del Tema",
+      "backgroundColor": "Color de Fondo",
+      "appIcons": "Iconos de la App",
+      "noIcons": "No se encontraron iconos. Se usarán los predeterminados."
+    },
+    "readiness": {
+      "title": "Preparación PWA",
+      "https": "Conexión HTTPS válida",
+      "manifest": "Manifiesto Web App generado",
+      "serviceWorker": "Service Worker registrado",
+      "icons": "Iconos enmascarables validados"
+    },
+    "mobilePreview": "Vista Previa Móvil"
+  },
+  "publish": {
+    "title": "Publicación",
+    "subtitle": "Haz que tu app sea accesible al público a través de un enlace único.",
+    "button": "Publicar App",
+    "publishing": "Publicando...",
+    "generating": "Generando assets PWA...",
+    "confirmMessage": "¿Estás seguro de que quieres publicar \"{appName}\"? Esto la hará públicamente accesible.",
+    "confirmButton": "Sí, Publicar",
+    "viewLive": "Ver en Vivo",
+    "unpublish": "Despublicar",
+    "publicUrl": "URL Pública",
+    "queued": "En cola para generación...",
+    "failed": "Generación fallida",
+    "retryButton": "Reintentar",
+    "retrying": "Reintentando...",
+    "backToDraft": "Volver a borrador"
+  },
+  "customDomain": {
+    "title": "Dominio Personalizado",
+    "saved": "¡Dominio personalizado guardado exitosamente!",
+    "removed": "Dominio personalizado eliminado.",
+    "dnsTitle": "Configuración DNS",
+    "dnsInstructions": "Apunta tu dominio a nuestros servidores agregando un registro CNAME en tu proveedor DNS."
+  },
+  "install": {
+    "button": "Instalar App",
+    "settingUp": "Configurando...",
+    "installed": "Instalada",
+    "iosInstructions": "Para instalar en iOS:\n1. Toca el botón Compartir\n2. Selecciona 'Agregar a pantalla de inicio'\n3. Toca 'Agregar'",
+    "androidInstructions": "Toca el botón Instalar arriba para agregar esta app a tu pantalla de inicio.",
+    "notSupported": "La instalación de apps no es compatible con este navegador. Por favor usa Chrome, Edge o Safari en iOS."
+  },
+  "settings": {
+    "title": "Configuración de Cuenta",
+    "subtitle": "Administra tu cuenta y suscripción",
+    "account": {
+      "title": "Información de la Cuenta",
+      "email": "Correo electrónico",
+      "memberSince": "Miembro desde"
+    },
+    "plan": {
+      "title": "Tu Plan",
+      "current": "Plan Actual",
+      "free": "Starter",
+      "pro": "Pro",
+      "agency": "Agency",
+      "usage": "Uso de Apps",
+      "usageFormat": "{used} de {limit} apps usadas",
+      "unlimited": "Ilimitado",
+      "upgradeButton": "Mejorar Plan",
+      "upgradeCta": "Mejora tu plan para crear más apps y desbloquear funciones premium.",
+      "upgradeTo": "Mejorar a",
+      "comparison": "Comparación de Planes"
+    }
+  },
+  "plans": {
+    "limitReached": {
+      "title": "Límite del Plan Alcanzado",
+      "message": "Has alcanzado el número máximo de apps para tu plan {plan} ({limit} app).",
+      "messagePlural": "Has alcanzado el número máximo de apps para tu plan {plan} ({limit} apps).",
+      "upgrade": "Mejora tu plan para crear más apps.",
+      "upgradeButton": "Mejorar Ahora"
+    },
+    "limits": {
+      "free": "1 app",
+      "pro": "10 apps",
+      "agency": "Apps ilimitadas"
+    }
+  },
+  "analytics": {
+    "title": "Analíticas",
+    "totalVisits": "Visitas Totales",
+    "uniqueVisitors": "Visitantes Únicos",
+    "installClicks": "Clics de Instalación",
+    "publishCount": "Publicaciones",
+    "lastVisited": "Última Visita",
+    "lastPublished": "Última Publicación",
+    "recentActivity": "Actividad Reciente",
+    "noData": "Sin datos analíticos todavía",
+    "noDataDescription": "Las analíticas aparecerán una vez que tu app esté publicada y reciba tráfico.",
+    "viewAnalytics": "Ver Analíticas",
+    "period": {
+      "7d": "7 Días",
+      "30d": "30 Días",
+      "all": "Todo el Tiempo"
+    },
+    "chart": {
+      "pageViews": "Vistas de Página",
+      "uniqueVisitors": "Visitantes Únicos",
+      "installClicks": "Clics de Instalación"
+    },
+    "events": {
+      "PAGE_VIEW": "Vista de Página",
+      "INSTALL_CLICK": "Clic de Instalación",
+      "PUBLISHED": "Publicado",
+      "UNIQUE_VISIT": "Visita Única"
+    },
+    "summary": "Resumen",
+    "trends": "Tendencias",
+    "never": "Nunca"
+  },
+  "errors": {
+    "notFound": {
+      "title": "Página no encontrada",
+      "message": "La página que buscas no existe o ha sido movida.",
+      "button": "Volver al inicio"
+    },
+    "serverError": {
+      "title": "Algo salió mal",
+      "message": "Estamos teniendo problemas para cargar esta página. Por favor intenta más tarde.",
+      "button": "Intentar de nuevo"
+    },
+    "unauthorized": {
+      "title": "No autorizado",
+      "message": "No tienes permiso para acceder a este recurso.",
+      "button": "Iniciar sesión"
+    },
+    "appNotFound": "App no encontrada",
+    "failedToAnalyze": "Error al analizar la URL",
+    "failedToGenerate": "Error al generar la app",
+    "failedToSave": "Error al guardar los cambios",
+    "failedToDelete": "Error al eliminar la app"
+  },
+  "offline": {
+    "title": "Estás Sin Conexión",
+    "message": "Por favor revisa tu conexión a internet e intenta de nuevo.",
+    "tips": {
+      "title": "Consejos para solucionar:",
+      "wifi": "Revisa tu conexión Wi-Fi o datos móviles",
+      "airplane": "Asegúrate de que el Modo Avión esté desactivado",
+      "router": "Intenta reiniciar tu router o módem"
+    },
+    "tryAgain": "Intentar de Nuevo",
+    "checking": "Verificando conexión..."
+  },
+  "landing": {
+    "hero": {
+      "title": "Convierte tu sitio web en una app en minutos",
+      "subtitle": "Appnexu transforma tu website en una app instalable con análisis inteligente, plantillas por industria y publicación rápida.",
+      "cta": "Crear mi app",
+      "demo": "Ver cómo funciona"
+    },
+    "features": {
+      "title": "¿Por Qué Elegir Appnexu?",
+      "fast": {
+        "title": "Súper Rápido",
+        "description": "Genera tu app en segundos, no en horas"
+      },
+      "easy": {
+        "title": "Sin Código Requerido",
+        "description": "Solo pega una URL y nosotros hacemos el resto"
+      },
+      "install": {
+        "title": "Instalable",
+        "description": "Los usuarios pueden instalar tu app directamente en su dispositivo"
+      }
+    }
+  },
+  "footer": {
+    "copyright": "© 2026 Appnexu. Todos los derechos reservados.",
+    "tagline": "De sitio web a app, al instante.",
+    "links": {
+      "privacy": "Política de Privacidad",
+      "terms": "Términos de Servicio",
+      "support": "Soporte"
+    }
+  },
+  "admin": {
+    "title": "Panel de Admin",
+    "loadError": "Error al cargar datos. Intente de nuevo.",
+    "noData": "Sin datos disponibles",
+    "nav": {
+      "overview": "Resumen",
+      "users": "Usuarios",
+      "apps": "Apps",
+      "billing": "Facturación",
+      "health": "Salud del Sistema",
+      "backToDashboard": "Volver al Panel"
+    },
+    "overview": {
+      "title": "Resumen del Panel",
+      "totalUsers": "Total Usuarios",
+      "totalApps": "Total Apps",
+      "publishedApps": "Apps Publicadas",
+      "proUsers": "Usuarios Pro",
+      "agencyUsers": "Usuarios Agency",
+      "recentSignups": "Registros Recientes",
+      "recentPublished": "Publicados Recientes",
+      "failedJobs": "Trabajos Fallidos",
+      "queuedJobs": "En Cola",
+      "recentSignupsTitle": "Registros Recientes",
+      "recentPublishedTitle": "Apps Publicadas Recientemente",
+      "recentFailedTitle": "Fallos Recientes",
+      "noFailures": "Sin trabajos fallidos",
+      "templatesTitle": "Plantillas",
+      "totalTemplates": "Total Plantillas",
+      "premiumTemplates": "Plantillas Premium",
+      "mostUsedTemplates": "Plantillas Más Usadas",
+      "uses": "usos",
+      "apkBuildsTitle": "Builds APK",
+      "totalExports": "Total Exportaciones",
+      "failedBuilds": "Builds Fallidos",
+      "buildQueue": "Cola de Builds",
+      "aiAnalysisTitle": "Análisis IA",
+      "analysisRequests": "Solicitudes de Análisis",
+      "completionRate": "Tasa de Completitud",
+      "completedAnalyses": "Completados",
+      "failedAnalyses": "Fallidos"
+    },
+    "users": {
+      "title": "Gestión de Usuarios",
+      "searchPlaceholder": "Buscar por email o nombre...",
+      "name": "Nombre",
+      "email": "Email",
+      "plan": "Plan",
+      "role": "Rol",
+      "apps": "Apps",
+      "stripe": "Stripe",
+      "joined": "Registro"
+    },
+    "apps": {
+      "title": "Gestión de Apps",
+      "searchPlaceholder": "Buscar por nombre, slug o URL...",
+      "name": "Nombre",
+      "slug": "Slug",
+      "owner": "Propietario",
+      "status": "Estado",
+      "domain": "Dominio",
+      "analytics": "Analíticas",
+      "created": "Creado",
+      "publishedDate": "Publicado"
+    },
+    "billing": {
+      "title": "Facturación y Suscripciones",
+      "stripeLinked": "Vinculados con Stripe",
+      "stripeStatus": "Estado de Stripe",
+      "customerId": "ID de Cliente",
+      "linked": "Vinculado",
+      "notLinked": "No Vinculado",
+      "allStripe": "Todos los estados de Stripe"
+    },
+    "health": {
+      "title": "Cola y Salud del Sistema",
+      "refresh": "Actualizar",
+      "database": "Base de Datos",
+      "stripe": "Stripe",
+      "qstash": "QStash",
+      "eventsToday": "Eventos Hoy",
+      "statusBreakdown": "Desglose de Estado de Apps",
+      "recentSuccessful": "Exitosos recientes",
+      "recentFailed": "Fallidos recientes",
+      "queuedJobs": "Trabajos en Cola",
+      "generatingJobs": "Trabajos Generando",
+      "failedJobs": "Trabajos Fallidos",
+      "queueEmpty": "La cola está vacía",
+      "noActiveJobs": "Sin trabajos activos",
+      "reason": "Razón",
+      "retries": "Reintentos",
+      "action": "Acción",
+      "retry": "Reintentar"
+    },
+    "filters": {
+      "allPlans": "Todos los Planes",
+      "allRoles": "Todos los Roles",
+      "allStatuses": "Todos los Estados"
+    },
+    "pagination": {
+      "showing": "Mostrando {from}–{to} de {total}"
+    }
+  },
+  "templates": {
+    "badge": "Plantillas de Apps",
+    "title": "Comienza con una Plantilla",
+    "subtitle": "Elige de nuestra colección de plantillas diseñadas profesionalmente para iniciar tu creación de app.",
+    "preview": "Vista Previa",
+    "useTemplate": "Usar Plantilla",
+    "noTemplates": "No se encontraron plantillas para esta categoría.",
+    "categories": {
+      "ALL": "Todas",
+      "BUSINESS": "Negocios",
+      "CHURCH": "Iglesia",
+      "FOOD": "Comida",
+      "HEALTH": "Salud",
+      "EDUCATION": "Educación",
+      "SERVICES": "Servicios"
+    },
+    "modal": {
+      "navigation": "Estructura de Navegación",
+      "quickActions": "Acciones Rápidas",
+      "colorScheme": "Esquema de Colores",
+      "primary": "Primario",
+      "secondary": "Secundario"
+    },
+    "premiumBadge": "Pro",
+    "premiumOnly": "Esta plantilla está disponible para planes Pro y Agency."
+  },
+  "aiAnalyzer": {
+    "title": "Analizador de IA",
+    "description": "Deja que nuestra IA analice tu sitio web y sugiera la mejor configuración para tu app.",
+    "analyzeButton": "Analizar con IA",
+    "analyzing": "Analizando...",
+    "analyzingDesc": "Nuestra IA está escaneando tu sitio web para generar sugerencias inteligentes. Esto puede tomar unos segundos.",
+    "suggestionsReady": "Sugerencias de IA Listas",
+    "suggestedName": "Nombre Sugerido",
+    "suggestedColors": "Colores Sugeridos",
+    "suggestedNav": "Navegación Sugerida",
+    "suggestedActions": "Acciones Rápidas Sugeridas",
+    "acceptAll": "Aceptar Todo",
+    "reAnalyze": "Re-analizar",
+    "editManually": "Editar Manualmente",
+    "useDefaults": "Usar Predeterminados"
+  },
+  "apkExport": {
+    "title": "Exportar App Android",
+    "description": "Genera un APK de Android para tu app publicada. Los usuarios pueden instalarlo directamente en sus dispositivos Android.",
+    "exportButton": "Exportar APK Android",
+    "building": "Construyendo APK...",
+    "buildingDesc": "Creando tu paquete de app Android. Esto puede tomar un minuto.",
+    "ready": "APK Listo para Descargar",
+    "download": "Descargar APK",
+    "rebuild": "Reconstruir",
+    "failed": "Build de APK Fallido",
+    "retry": "Reintentar Build"
+  },
+  "createApp": {
+    "title": "Crear Nueva App",
+    "subtitle": "Ingresa la URL del sitio web que quieres convertir en una aplicación móvil instalable.",
+    "usingTemplate": "Usando plantilla",
+    "templateApplied": "Los colores y navegación de la plantilla se aplicarán a tu app.",
+    "browseTemplates": "Comenzar con una plantilla",
+    "browseTemplatesDesc": "Elige entre plantillas prediseñadas para restaurantes, iglesias, clínicas y más.",
+    "form": {
+      "urlLabel": "URL del sitio web",
+      "urlPlaceholder": "https://ejemplo.com",
+      "urlHelp": "Asegúrate de que la URL comience con https://",
+      "submitButton": "Generar App",
+      "analyzing": "Analizando metadatos del sitio web..."
+    },
+    "steps": {
+      "title": "¿Qué sucede después?",
+      "scan": "Escanearemos la URL en busca de metadatos como títulos, colores e iconos.",
+      "generate": "Nuestro motor genera automáticamente el manifiesto PWA y los service workers necesarios.",
+      "preview": "Obtendrás una vista previa de tu app y un enlace personalizado para instalarla en tu dispositivo."
+    }
+  }
+}
