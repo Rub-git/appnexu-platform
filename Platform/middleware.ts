@@ -4,7 +4,6 @@ import type { NextRequest } from 'next/server'
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
-  // Si alguien entra a la raíz "/"
   if (pathname === '/') {
     return NextResponse.redirect(new URL('/es', request.url))
   }
