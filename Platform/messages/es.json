@@ -26,7 +26,8 @@
     "signIn": "Iniciar sesión",
     "signUp": "Registrarse",
     "signOut": "Cerrar sesión",
-    "login": "Ingresar"
+    "login": "Ingresar",
+    "pricing": "Precios"
   },
   "auth": {
     "signIn": {
@@ -471,6 +472,55 @@
       "scan": "Escanearemos la URL en busca de metadatos como títulos, colores e iconos.",
       "generate": "Nuestro motor genera automáticamente el manifiesto PWA y los service workers necesarios.",
       "preview": "Obtendrás una vista previa de tu app y un enlace personalizado para instalarla en tu dispositivo."
+    }
+  },
+  "pricing": {
+    "title": "Precios Simples y Transparentes",
+    "subtitle": "Elige el plan que se adapte a tus necesidades. Comienza gratis y mejora a medida que crezcas.",
+    "monthly": "por mes",
+    "currentPlan": "Plan Actual",
+    "getStarted": "Comenzar",
+    "upgrade": "Mejorar Ahora",
+    "contactSales": "Contactar Ventas",
+    "free": {
+      "name": "Gratis",
+      "price": "$0",
+      "description": "Perfecto para probar",
+      "features": {
+        "apps": "1 app",
+        "basic": "Funciones PWA básicas",
+        "publishing": "Publicación estándar",
+        "support": "Soporte comunitario"
+      }
+    },
+    "pro": {
+      "name": "Pro",
+      "price": "$19",
+      "description": "Para profesionales y equipos pequeños",
+      "popular": "Más Popular",
+      "features": {
+        "apps": "5 apps",
+        "templates": "Plantillas premium",
+        "ai": "Análisis IA de sitios web",
+        "apk": "Exportación APK",
+        "analytics": "Analíticas avanzadas",
+        "support": "Soporte prioritario por email"
+      }
+    },
+    "agency": {
+      "name": "Agency",
+      "price": "$49",
+      "description": "Para agencias y equipos grandes",
+      "features": {
+        "apps": "Apps ilimitadas",
+        "templates": "Todas las plantillas premium",
+        "ai": "Análisis IA ilimitado",
+        "apk": "Exportaciones APK ilimitadas",
+        "whiteLabel": "Marca blanca",
+        "support": "Soporte prioritario",
+        "customDomain": "Dominios personalizados",
+        "analytics": "Suite completa de analíticas"
+      }
     }
   }
 }

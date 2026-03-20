@@ -26,7 +26,8 @@
     "signIn": "Sign in",
     "signUp": "Sign up",
     "signOut": "Sign out",
-    "login": "Log in"
+    "login": "Log in",
+    "pricing": "Pricing"
   },
   "auth": {
     "signIn": {
@@ -471,6 +472,55 @@
       "scan": "We'll scan the URL for metadata like titles, colors, and icons.",
       "generate": "Our engine automatically generates the required PWA manifest and service workers.",
       "preview": "You'll get a preview of your app and a custom link to install it on your device."
+    }
+  },
+  "pricing": {
+    "title": "Simple, Transparent Pricing",
+    "subtitle": "Choose the plan that fits your needs. Start free and upgrade as you grow.",
+    "monthly": "per month",
+    "currentPlan": "Current Plan",
+    "getStarted": "Get Started",
+    "upgrade": "Upgrade Now",
+    "contactSales": "Contact Sales",
+    "free": {
+      "name": "Free",
+      "price": "$0",
+      "description": "Perfect for trying things out",
+      "features": {
+        "apps": "1 app",
+        "basic": "Basic PWA features",
+        "publishing": "Standard publishing",
+        "support": "Community support"
+      }
+    },
+    "pro": {
+      "name": "Pro",
+      "price": "$19",
+      "description": "For professionals and small teams",
+      "popular": "Most Popular",
+      "features": {
+        "apps": "5 apps",
+        "templates": "Premium templates",
+        "ai": "AI website analysis",
+        "apk": "APK export",
+        "analytics": "Advanced analytics",
+        "support": "Priority email support"
+      }
+    },
+    "agency": {
+      "name": "Agency",
+      "price": "$49",
+      "description": "For agencies and large teams",
+      "features": {
+        "apps": "Unlimited apps",
+        "templates": "All premium templates",
+        "ai": "Unlimited AI analysis",
+        "apk": "Unlimited APK exports",
+        "whiteLabel": "White-label branding",
+        "support": "Priority support",
+        "customDomain": "Custom domains",
+        "analytics": "Full analytics suite"
+      }
     }
   }
 }
