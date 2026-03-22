@@ -1,4 +1,26 @@
+'use client';
+
 export default function PricingPage() {
+    const handleCheckout = async (priceId: string) => {
+        try {
+            const res = await fetch('/api/stripe/checkout', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ priceId }),
+            });
+
+            const data = await res.json();
+
+            if (data.url) {
+                window.location.href = data.url;
+            } else {
+                console.error('No checkout URL returned');
+            }
+        } catch (error) {
+            console.error('Checkout error:', error);
+        }
+    };
+
     return (
         <div className="px-6 py-20 max-w-6xl mx-auto text-center">
 
@@ -39,7 +61,12 @@ export default function PricingPage() {
                         <li>Exportación APK</li>
                         <li>Analíticas avanzadas</li>
                     </ul>
-                    <button className="mt-6 w-full bg-blue-600 text-white py-2 rounded-lg">
+                    <button
+                        onClick={() =>
+                            handleCheckout(process.env.NEXT_PUBLIC_STRIPE_PRO_PRICE_ID!)
+                        }
+                        className="mt-6 w-full bg-blue-600 text-white py-2 rounded-lg"
+                    >
                         Mejorar
                     </button>
                 </div>
@@ -54,7 +81,12 @@ export default function PricingPage() {
                         <li>Dominios personalizados</li>
                         <li>Soporte prioritario</li>
                     </ul>
-                    <button className="mt-6 w-full bg-purple-600 text-white py-2 rounded-lg">
+                    <button
+                        onClick={() =>
+                            handleCheckout(process.env.NEXT_PUBLIC_STRIPE_AGENCY_PRICE_ID!)
+                        }
+                        className="mt-6 w-full bg-purple-600 text-white py-2 rounded-lg"
+                    >
                         Mejorar
                     </button>
                 </div>
