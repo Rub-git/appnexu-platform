@@ -1,10 +1,13 @@
-// Root layout - minimal wrapper for the app
-// The actual layout with i18n is in [locale]/layout.tsx
+import './globals.css'
 
 export default function RootLayout({
   children,
 }: {
-  children: React.ReactNode;
+  children: React.ReactNode
 }) {
-  return children;
+  return (
+    <html lang="en">
+      <body>{children}</body>
+    </html>
+  )
 }
