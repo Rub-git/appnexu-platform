@@ -1,10 +1,11 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import bcrypt from 'bcryptjs';
+import bcrypt from 'bcryptjs'; // se queda, pero simplificamos uso
 import { registerSchema, formatZodErrors } from '@/lib/validations';
 import { apiError, apiSuccess } from '@/lib/api-utils';
 import { logger } from '@/lib/logger';
 import { checkRateLimit, getClientIp } from '@/lib/rate-limit';
+import { Prisma } from '@prisma/client';
 
 export async function POST(request: Request) {
   try {
@@ -39,13 +40,12 @@ export async function POST(request: Request) {
       return apiError('An account with this email already exists', 400, 'EMAIL_EXISTS');
     }
 
-    // Hash password
-    const hashedPassword = await bcrypt.hash(password, 12);
+    const hashedPassword = await bcrypt.hash(password, 10);
 
     // Create user
     const user = await prisma.user.create({
       data: {
-        name: name || null,
+        name: name,
         email: email.toLowerCase(),
         password: hashedPassword,
       },
@@ -60,8 +60,16 @@ export async function POST(request: Request) {
         name: user.name,
       },
     }, 201);
-  } catch (error) {
-    logger.error('auth.register', 'Registration failed', { error: error instanceof Error ? error.message : 'Unknown' });
-    return apiError('Failed to create account', 500, 'INTERNAL_ERROR');
-  }
+ catch (error) {
+  console.error("REGISTER ERROR FULL:", error);
+
+  logger.error('auth.register', 'Registration failed', { 
+    error: error instanceof Error ? error.message : 'Unknown' 
+  });
+
+  return apiError(
+    error instanceof Error ? error.message : 'Failed to create account',
+    500,
+    'INTERNAL_ERROR'
+  );
 }
