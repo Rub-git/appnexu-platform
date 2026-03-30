@@ -19,7 +19,8 @@ async function main() {
           theme: { color: "#4f46e5" },
           pages: ["home", "about", "contact"]
         },
-        isPremium: false
+        isPremium: false,
+        isActive: true
       },
       {
         name: "Negocio Local",
@@ -30,7 +31,8 @@ async function main() {
           theme: { color: "#16a34a" },
           pages: ["home", "services", "contact"]
         },
-        isPremium: false
+        isPremium: false,
+        isActive: true
       }
     ]
   });

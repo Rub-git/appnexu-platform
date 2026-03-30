@@ -14,7 +14,7 @@ export async function GET(request: Request) {
     const category = searchParams.get('category');
     const premiumOnly = searchParams.get('premium');
 
-    const where: Record<string, unknown> = {};
+    const where: Record<string, unknown> = { isActive: true };
     if (category && Object.values(TemplateCategory).includes(category as TemplateCategory)) {
       where.category = category;
     }
@@ -36,9 +36,12 @@ export async function GET(request: Request) {
         previewImage: true,
         configJson: true,
         isPremium: true,
+        isActive: true,
         usageCount: true,
       },
     });
+
+    console.log(`Fetched ${templates.length} templates where isActive = true:`, templates);
 
     return apiSuccess(templates);
   } catch (error) {

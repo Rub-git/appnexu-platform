@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@/lib/prisma'
 import bcrypt from 'bcryptjs'; // se queda, pero simplificamos uso
 import { registerSchema, formatZodErrors } from '@/lib/validations';
 import { apiError, apiSuccess } from '@/lib/api-utils';

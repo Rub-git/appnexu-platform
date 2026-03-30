@@ -138,6 +138,7 @@ model AppTemplate {
   previewImage String?          @map("preview_image")
   configJson   Json             @map("config_json")
   isPremium    Boolean          @default(false) @map("is_premium")
+  isActive     Boolean          @default(true) @map("is_active")
   usageCount   Int              @default(0) @map("usage_count")
 
   createdAt DateTime @default(now())
