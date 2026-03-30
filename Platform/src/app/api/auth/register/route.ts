@@ -53,24 +53,24 @@ export async function POST(request: Request) {
 
     logger.info('auth.register', 'User registered', { userId: user.id, email: user.email });
 
-    return apiSuccess({
+       return apiSuccess({
       user: {
         id: user.id,
         email: user.email,
         name: user.name,
       },
     }, 201);
- catch (error) {
-  console.error("REGISTER ERROR FULL:", error);
+  } catch (error) {
+    console.error("REGISTER ERROR FULL:", error);
 
-  logger.error('auth.register', 'Registration failed', { 
-    error: error instanceof Error ? error.message : 'Unknown' 
-  });
+    logger.error('auth.register', 'Registration failed', { 
+      error: error instanceof Error ? error.message : 'Unknown' 
+    });
 
-  return apiError(
-    error instanceof Error ? error.message : 'Failed to create account',
-    500,
-    'INTERNAL_ERROR'
-  );
-}
+    return apiError(
+      error instanceof Error ? error.message : 'Failed to create account',
+      500,
+      'INTERNAL_ERROR'
+    );
+  }
 }
