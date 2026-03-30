@@ -62,6 +62,11 @@ self.addEventListener('fetch', (event) => {
         return;
     }
 
+    // Skip non-HTTP requests (e.g., chrome-extension://) to avoid console errors
+    if (!request.url.startsWith('http')) {
+        return;
+    }
+
     // Handle navigation requests
     if (request.mode === 'navigate') {
         event.respondWith(

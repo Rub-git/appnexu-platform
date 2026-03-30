@@ -7,6 +7,7 @@ import { notFound } from 'next/navigation';
 import "../globals.css";
 import ServiceWorkerRegistration from "@/components/ServiceWorkerRegistration";
 import { brand } from "@/config/brand";
+import { SessionProvider } from "@/components/SessionProvider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -105,8 +106,10 @@ export default async function LocaleLayout({
       </head>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <NextIntlClientProvider messages={messages}>
-          <ServiceWorkerRegistration />
-          {children}
+          <SessionProvider>
+            <ServiceWorkerRegistration />
+            {children}
+          </SessionProvider>
         </NextIntlClientProvider>
       </body>
     </html>

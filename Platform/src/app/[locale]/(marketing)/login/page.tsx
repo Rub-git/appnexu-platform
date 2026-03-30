@@ -1,9 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useTranslations, useLocale } from 'next-intl';
 import { Link } from '@/i18n/routing';
-import { signIn } from 'next-auth/react';
+import { signIn, useSession } from 'next-auth/react';
 import { Loader2, Mail, Lock } from 'lucide-react';
 import Logo from '@/components/Logo';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
@@ -11,6 +11,14 @@ import LanguageSwitcher from '@/components/LanguageSwitcher';
 export default function LoginPage() {
   const t = useTranslations();
   const locale = useLocale();
+  const { data: session } = useSession();
+  
+  console.log("Session:", session);
+
+  useEffect(() => {
+    alert("Session: " + JSON.stringify(session));
+  }, [session]);
+  
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -28,14 +36,15 @@ export default function LoginPage() {
         redirect: false,
       });
 
-      if (result?.error) {
+      alert("Login result: " + JSON.stringify(result));
+      console.log("Login result:", result);
+
+      if (result?.ok) {
+        window.location.href = `/${locale}/dashboard`;
+      } else {
         setError(t('auth.errors.invalidCredentials'));
         setIsLoading(false);
-        return;
       }
-
-      // Force a hard navigation to ensure session is picked up
-      window.location.replace(`/${locale}/dashboard`);
     } catch {
       setError(t('auth.errors.generic'));
       setIsLoading(false);
