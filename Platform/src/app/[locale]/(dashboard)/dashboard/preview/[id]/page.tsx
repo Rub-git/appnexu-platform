@@ -46,10 +46,28 @@ export default async function AppPreviewPage({
     return notFound();
   }
 
-  const icons = app.iconUrls ? app.iconUrls.split(',').map(s => s.trim()).filter(Boolean) : [];
+  console.log("APP DATA:", app);
 
-  return (
-    <div className="mx-auto max-w-5xl space-y-8">
+  const appData = app as any;
+  if (!appData || !appData.config) {
+    return notFound();
+  }
+
+  let parsedConfig: any = null;
+  try {
+    parsedConfig = typeof appData.config === "string"
+      ? JSON.parse(appData.config)
+      : appData.config;
+  } catch (e) {
+    console.error("Invalid config JSON:", e);
+    return notFound();
+  }
+
+  try {
+    const icons = appData.iconUrls ? appData.iconUrls.split(',').map((s: string) => s.trim()).filter(Boolean) : [];
+
+    return (
+      <div className="mx-auto max-w-5xl space-y-8">
       {/* Header */}
       <div className="flex flex-col flex-wrap items-start justify-between gap-4 sm:flex-row sm:items-center">
         <div>
@@ -141,9 +159,9 @@ export default async function AppPreviewPage({
                   <dd className="mt-1 flex items-center text-sm text-gray-900 dark:text-white">
                     <span 
                       className="mr-2 h-4 w-4 rounded-full border border-gray-200 dark:border-gray-700" 
-                      style={{ backgroundColor: app.themeColor || '#ffffff' }}
+                      style={{ backgroundColor: parsedConfig?.theme?.color || app.themeColor || '#ffffff' }}
                     />
-                    {app.themeColor || '#ffffff'}
+                    {parsedConfig?.theme?.color || app.themeColor || '#ffffff'}
                   </dd>
                 </div>
                 <div className="sm:col-span-1">
@@ -153,9 +171,9 @@ export default async function AppPreviewPage({
                   <dd className="mt-1 flex items-center text-sm text-gray-900 dark:text-white">
                     <span 
                       className="mr-2 h-4 w-4 rounded-full border border-gray-200 dark:border-gray-700" 
-                      style={{ backgroundColor: app.backgroundColor || '#ffffff' }}
+                      style={{ backgroundColor: parsedConfig?.theme?.backgroundColor || app.backgroundColor || '#ffffff' }}
                     />
-                    {app.backgroundColor || '#ffffff'}
+                    {parsedConfig?.theme?.backgroundColor || app.backgroundColor || '#ffffff'}
                   </dd>
                 </div>
                 <div className="sm:col-span-2">
@@ -164,7 +182,7 @@ export default async function AppPreviewPage({
                   </dt>
                   <dd className="mt-2 flex flex-wrap gap-4">
                     {icons.length > 0 ? (
-                      icons.map((icon, i) => (
+                      icons.map((icon: string, i: number) => (
                         <div key={i} className="flex flex-col items-center gap-1">
                           {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img 
@@ -295,6 +313,10 @@ export default async function AppPreviewPage({
         </div>
         </div>
       </div>
-    </div>
-  );
+      </div>
+    );
+  } catch (error) {
+    console.error("Render preview error:", error);
+    return notFound();
+  }
 }
