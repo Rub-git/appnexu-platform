@@ -26,27 +26,19 @@ export default function LoginPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
     setIsLoading(true);
+    setError('');
 
     try {
-      const result = await signIn('credentials', {
+      await signIn("credentials", {
         email,
         password,
-        redirect: false,
+        redirect: true,
+        callbackUrl: `/${locale}/dashboard`,
       });
-
-      alert("Login result: " + JSON.stringify(result));
-      console.log("Login result:", result);
-
-      if (result?.ok) {
-        window.location.href = `/${locale}/dashboard`;
-      } else {
-        setError(t('auth.errors.invalidCredentials'));
-        setIsLoading(false);
-      }
-    } catch {
-      setError(t('auth.errors.generic'));
+    } catch (error) {
+      console.error("Login catch:", error);
+      setError(t('auth.errors.invalidCredentials'));
       setIsLoading(false);
     }
   };
