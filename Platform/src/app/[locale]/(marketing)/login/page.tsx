@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useTranslations, useLocale } from 'next-intl';
 import { Link } from '@/i18n/routing';
-import { signIn, useSession } from 'next-auth/react';
+import { signIn } from 'next-auth/react';
 import { Loader2, Mail, Lock } from 'lucide-react';
 import Logo from '@/components/Logo';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
@@ -11,14 +11,6 @@ import LanguageSwitcher from '@/components/LanguageSwitcher';
 export default function LoginPage() {
   const t = useTranslations();
   const locale = useLocale();
-  const { data: session } = useSession();
-  
-  console.log("Session:", session);
-
-  useEffect(() => {
-    alert("Session: " + JSON.stringify(session));
-  }, [session]);
-  
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
