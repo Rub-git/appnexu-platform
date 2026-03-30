@@ -26,18 +26,24 @@ export default async function AppPreviewPage({
 
   const t = await getTranslations();
 
-  // Fetch app and verify ownership
-  const app = await prisma.appProject.findUnique({
-    where: { id },
-  });
+  // Fetch app and verify ownership with try/catch to prevent 500 errors on invalid IDs
+  let app;
+  try {
+    app = await prisma.appProject.findUnique({
+      where: { id },
+    });
+  } catch (error) {
+    console.error("Preview error:", error);
+    return notFound();
+  }
 
   if (!app) {
-    notFound();
+    return notFound();
   }
 
   // Verify ownership
   if (app.userId !== session.user.id) {
-    notFound();
+    return notFound();
   }
 
   const icons = app.iconUrls ? app.iconUrls.split(',').map(s => s.trim()).filter(Boolean) : [];
