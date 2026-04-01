@@ -219,12 +219,13 @@ export default function TemplatesPage() {
             <div
               className="mb-6 rounded-2xl p-6"
               style={{
-               background: `linear-gradient(
-  135deg,
-  ${previewTemplate.configJson?.colorScheme?.primary || '#178BFF'},
-  ${previewTemplate.configJson?.colorScheme?.secondary || '#5B2CCF'}
-)`})`,
-              }}
+               style={{
+  background: `linear-gradient(
+    135deg,
+    ${previewTemplate.configJson?.colorScheme?.primary || '#178BFF'},
+    ${previewTemplate.configJson?.colorScheme?.secondary || '#5B2CCF'}
+  )`
+}}
             >
               <div className="flex items-center gap-2 mb-2">
                 {previewTemplate.isPremium && (
@@ -246,7 +247,7 @@ export default function TemplatesPage() {
                 {t('templates.modal.navigation')}
               </h4>
               <div className="flex flex-wrap gap-2">
-                {previewTemplate.configJson.navigation.map((nav, i) => (
+               previewTemplate.configJson?.navigation?.map(...) || []
                   <span key={i} className="inline-flex items-center rounded-xl bg-gray-100 px-3 py-1.5 text-sm font-medium text-gray-700 dark:bg-gray-800 dark:text-gray-300">
                     {nav.label}
                     <span className="ml-1.5 text-xs text-gray-400">{nav.path}</span>
@@ -261,7 +262,7 @@ export default function TemplatesPage() {
                 {t('templates.modal.quickActions')}
               </h4>
               <div className="grid grid-cols-2 gap-2">
-                {previewTemplate.configJson.quickActions.map((action, i) => (
+                {(previewTemplate.configJson?.quickActions || []).map((action, i) => (
                   <div key={i} className="rounded-xl border border-gray-200 p-3 dark:border-gray-700">
                     <p className="text-sm font-medium text-gray-900 dark:text-white">{action.label}</p>
                     <p className="text-xs text-gray-400">{action.action}</p>
@@ -277,13 +278,13 @@ export default function TemplatesPage() {
               </h4>
               <div className="flex gap-3">
                 <div className="flex items-center gap-2">
-                  <div className="h-8 w-8 rounded-xl border" style={{ backgroundColor: previewTemplate.configJson?.colorScheme?.primary || '#178BFF'}} />
+                  <div className="h-8 w-8 rounded-xl border" style={{ backgroundColor: {previewTemplate.configJson?.colorScheme?.primary || '#178BFF'}
                   <span className="text-sm text-gray-600 dark:text-gray-400">
                     {t('templates.modal.primary')}: {previewTemplate.configJson?.colorScheme?.primary || '#178BFF'}
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="h-8 w-8 rounded-xl border" style={{ backgroundColor: previewTemplate.configJson?.colorScheme?.secondary || '#5B2CCF' }} />
+                  <div className="h-8 w-8 rounded-xl border" style={{ backgroundColor: {previewTemplate.configJson?.colorScheme?.secondary || '#5B2CCF'}
                   <span className="text-sm text-gray-600 dark:text-gray-400">
                     {t('templates.modal.secondary')}: {previewTemplate.configJson?.colorScheme?.secondary || '#5B2CCF'}
                   </span>
