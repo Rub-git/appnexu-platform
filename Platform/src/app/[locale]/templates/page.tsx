@@ -283,7 +283,9 @@ export default function TemplatesPage() {
               </h4>
               <div className="flex gap-3">
                 <div className="flex items-center gap-2">
-                  <div className="h-8 w-8 rounded-xl border" style={{ backgroundColor: {previewTemplate?.configJson?.colorScheme?.primary || '#178BFF'}
+                  <div className="h-8 w-8 rounded-xl border" style={{
+  backgroundColor: previewTemplate.configJson?.colorScheme?.primary || '#178BFF'
+}}
                   <span className="text-sm text-gray-600 dark:text-gray-400">
                     {t('templates.modal.primary')}: {previewTemplate?.configJson?.colorScheme?.primary || '#178BFF'}
                   </span>
