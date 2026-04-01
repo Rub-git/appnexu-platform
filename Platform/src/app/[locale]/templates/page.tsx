@@ -72,16 +72,15 @@ export default function TemplatesPage() {
       .finally(() => setLoading(false));
   }, [activeCategory]);
 
-  const handleUseTemplate = (template: Template) => {
-    if (template.isPremium) {
-      // Check plan client-side for UX (server enforces this in /api/generate)
-    }
-    // Store template in sessionStorage and redirect to create page
-    sessionStorage.setItem('selectedTemplate', JSON.stringify(template));
-    router.push('/dashboard/create');
-  };
 export default function TemplatesPage() {
+const handleUseTemplate = (template: Template) => {
+  if (template.isPremium) {
+    return; 
+  }
 
+  sessionStorage.setItem('selectedTemplate', JSON.stringify(template));
+  router.push('/dashboard/create');
+};
   const config =
   previewTemplate && typeof previewTemplate.configJson === 'string'
     ? JSON.parse(previewTemplate.configJson)
