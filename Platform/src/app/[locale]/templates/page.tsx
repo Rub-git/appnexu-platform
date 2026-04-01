@@ -73,20 +73,21 @@ export default function TemplatesPage() {
   }, [activeCategory]);
 
 export default function TemplatesPage() {
-const handleUseTemplate = (template: Template) => {
-  if (template.isPremium) {
-    return; 
-  }
 
-  sessionStorage.setItem('selectedTemplate', JSON.stringify(template));
-  router.push('/dashboard/create');
-};
-  const config =
-  previewTemplate && typeof previewTemplate.configJson === 'string'
-    ? JSON.parse(previewTemplate.configJson)
-    : previewTemplate?.configJson || {};
+  useEffect(() => {
+    ...
+  }, [activeCategory]);
 
-    return (
+  const handleUseTemplate = (template: Template) => {
+    if (template.isPremium) return;
+
+    sessionStorage.setItem('selectedTemplate', JSON.stringify(template));
+    router.push('/dashboard/create');
+  };
+
+  const config = ...
+
+  return (
     <div className="min-h-screen bg-slate-50 dark:bg-black">
       {/* Hero */}
       <div className="bg-gradient-to-br from-[#178BFF] via-[#5B2CCF] to-[#F54291] px-6 py-16 text-center text-white">
