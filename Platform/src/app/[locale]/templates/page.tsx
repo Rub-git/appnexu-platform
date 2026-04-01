@@ -70,8 +70,7 @@ export default function TemplatesPage() {
       .then((d) => { if (d.data) setTemplates(d.data); })
       .catch(() => {})
       .finally(() => setLoading(false));
-  }, [activeCategory]);
-
+  
 export default function TemplatesPage() {
 
   useEffect(() => {
