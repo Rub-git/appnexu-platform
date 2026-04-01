@@ -150,22 +150,17 @@ export default function TemplatesPage() {
                     </div>
                   )}
                   <div className="absolute bottom-3 left-3 flex gap-1">
-                    {(template?.configJson?.navigation?.slice(0, 4) || []).map((nav, i) => (
+                   {(template?.configJson?.navigation?.slice(0, 4) || []).map((nav, i) => (
   <div
     key={i}
     className="rounded-md bg-white/20 px-2 py-1 text-[10px] font-medium"
   >
     {nav.label}
+    <span className="ml-1.5 text-xs text-gray-400">
+      {nav.path}
+    </span>
   </div>
 ))}
-                        key={i}
-                        className="rounded-md bg-white/20 px-2 py-1 text-[10px] font-medium text-white backdrop-blur-sm"
-                      >
-                        {nav.label}
-                      </div>
-                    ))}
-                  </div>
-                </div>
 
                 {/* Content */}
                 <div className="p-5">
@@ -253,15 +248,16 @@ export default function TemplatesPage() {
               </h4>
               <div className="flex flex-wrap gap-2">
               {(previewTemplate?.configJson?.navigation || []).map((nav, i) => (
-  <div key={i}>
+  <span
+    key={i}
+    className="inline-flex items-center rounded-xl bg-gray-100 px-3 py-1.5 text-sm font-medium text-gray-700 dark:bg-gray-800 dark:text-gray-300"
+  >
     {nav.label}
-  </div>
+    <span className="ml-1.5 text-xs text-gray-400">
+      {nav.path}
+    </span>
+  </span>
 ))}
-                  <span key={i} className="inline-flex items-center rounded-xl bg-gray-100 px-3 py-1.5 text-sm font-medium text-gray-700 dark:bg-gray-800 dark:text-gray-300">
-                    {nav.label}
-                    <span className="ml-1.5 text-xs text-gray-400">{nav.path}</span>
-                  </span>
-                ))}
               </div>
             </div>
 
@@ -287,15 +283,15 @@ export default function TemplatesPage() {
               </h4>
               <div className="flex gap-3">
                 <div className="flex items-center gap-2">
-                  <div className="h-8 w-8 rounded-xl border" style={{ backgroundColor: {previewTemplate.configJson?.colorScheme?.primary || '#178BFF'}
+                  <div className="h-8 w-8 rounded-xl border" style={{ backgroundColor: {previewTemplate?.configJson?.colorScheme?.primary || '#178BFF'}
                   <span className="text-sm text-gray-600 dark:text-gray-400">
-                    {t('templates.modal.primary')}: {previewTemplate.configJson?.colorScheme?.primary || '#178BFF'}
+                    {t('templates.modal.primary')}: {previewTemplate?.configJson?.colorScheme?.primary || '#178BFF'}
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="h-8 w-8 rounded-xl border" style={{ backgroundColor: {previewTemplate.configJson?.colorScheme?.secondary || '#5B2CCF'}
+                  <div className="h-8 w-8 rounded-xl border" style={{ backgroundColor: {previewTemplate?.configJson?.colorScheme?.secondary || '#5B2CCF'}
                   <span className="text-sm text-gray-600 dark:text-gray-400">
-                    {t('templates.modal.secondary')}: {previewTemplate.configJson?.colorScheme?.secondary || '#5B2CCF'}
+                    {t('templates.modal.secondary')}: {previewTemplate?.configJson?.colorScheme?.secondary || '#5B2CCF'}
                   </span>
                 </div>
               </div>
