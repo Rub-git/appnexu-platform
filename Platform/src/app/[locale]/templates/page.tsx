@@ -80,8 +80,14 @@ export default function TemplatesPage() {
     sessionStorage.setItem('selectedTemplate', JSON.stringify(template));
     router.push('/dashboard/create');
   };
+export default function TemplatesPage() {
 
-  return (
+  const config =
+  previewTemplate && typeof previewTemplate.configJson === 'string'
+    ? JSON.parse(previewTemplate.configJson)
+    : previewTemplate?.configJson || {};
+
+    return (
     <div className="min-h-screen bg-slate-50 dark:bg-black">
       {/* Hero */}
       <div className="bg-gradient-to-br from-[#178BFF] via-[#5B2CCF] to-[#F54291] px-6 py-16 text-center text-white">
@@ -275,14 +281,20 @@ export default function TemplatesPage() {
               </h4>
               <div className="flex gap-3">
                 <div className="flex items-center gap-2">
-                  <div className="h-8 w-8 rounded-xl border" style={{ backgroundColor: previewTemplate?.configJson as any)?.colorScheme?.primary || '#178BFF' }}
+                  <div className="h-8 w-8 rounded-xl border" style={{
+  backgroundColor:
+    JSON.parse(previewTemplate?.configJson || '{}')?.colorScheme?.primary || "#178BFF"
+}}
 ></div>
                   <span className="text-sm text-gray-600 dark:text-gray-400">
                   {t('templates.modal.primary')}: {previewTemplate?.configJson as any)?.colorScheme?.primary || '#178BFF'}
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="h-8 w-8 rounded-xl border" style={{ backgroundColor: {previewTemplate?.configJson as any)?.colorScheme?.secondary || '#5B2CCF'}
+                  <div className="h-8 w-8 rounded-xl border" style={{
+  backgroundColor:
+    JSON.parse(previewTemplate?.configJson || '{}')?.colorScheme?.secondary || "#178BFF"
+}}
                   <span className="text-sm text-gray-600 dark:text-gray-400">
                     {t('templates.modal.secondary')}: {previewTemplate?.configJson as any)?.colorScheme?.secondary || '#5B2CCF'}
                   </span>
