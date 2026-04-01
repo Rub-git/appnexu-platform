@@ -150,8 +150,14 @@ export default function TemplatesPage() {
                     </div>
                   )}
                   <div className="absolute bottom-3 left-3 flex gap-1">
-                    (template?.configJson?.navigation?.slice(0, 4) || []).map((nav, i) => (
-                      <div
+                    {(template?.configJson?.navigation?.slice(0, 4) || []).map((nav, i) => (
+  <div
+    key={i}
+    className="rounded-md bg-white/20 px-2 py-1 text-[10px] font-medium"
+  >
+    {nav.label}
+  </div>
+))}
                         key={i}
                         className="rounded-md bg-white/20 px-2 py-1 text-[10px] font-medium text-white backdrop-blur-sm"
                       >
@@ -246,7 +252,11 @@ export default function TemplatesPage() {
                 {t('templates.modal.navigation')}
               </h4>
               <div className="flex flex-wrap gap-2">
-               previewTemplate.configJson?.navigation?.map(...) || []
+              {(previewTemplate?.configJson?.navigation || []).map((nav, i) => (
+  <div key={i}>
+    {nav.label}
+  </div>
+))}
                   <span key={i} className="inline-flex items-center rounded-xl bg-gray-100 px-3 py-1.5 text-sm font-medium text-gray-700 dark:bg-gray-800 dark:text-gray-300">
                     {nav.label}
                     <span className="ml-1.5 text-xs text-gray-400">{nav.path}</span>
