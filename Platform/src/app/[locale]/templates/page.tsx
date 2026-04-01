@@ -150,7 +150,7 @@ export default function TemplatesPage() {
                     </div>
                   )}
                   <div className="absolute bottom-3 left-3 flex gap-1">
-                    template.configJson?.navigation?.slice(0, 4) || [].map((nav, i) => (
+                    (template?.configJson?.navigation?.slice(0, 4) || []).map((nav, i) => (
                       <div
                         key={i}
                         className="rounded-md bg-white/20 px-2 py-1 text-[10px] font-medium text-white backdrop-blur-sm"
@@ -218,12 +218,11 @@ export default function TemplatesPage() {
             {/* Modal Header with gradient */}
             <div
               className="mb-6 rounded-2xl p-6"
-              style={{
-               style={{
+   style={{
   background: `linear-gradient(
     135deg,
-    ${previewTemplate.configJson?.colorScheme?.primary || '#178BFF'},
-    ${previewTemplate.configJson?.colorScheme?.secondary || '#5B2CCF'}
+    ${template?.configJson?.colorScheme?.primary || '#178BFF'},
+    ${template?.configJson?.colorScheme?.secondary || '#5B2CCF'}
   )`
 }}
             >
