@@ -150,18 +150,12 @@ export default function TemplatesPage() {
                     </div>
                   )}
                   <div className="absolute bottom-3 left-3 flex gap-1">
-                   {(template?.configJson?.navigation?.slice(0, 4) || []).map((nav, i) => (
-  <div
-    key={i}
-    className="rounded-md bg-white/20 px-2 py-1 text-[10px] font-medium"
-  >
+                  {(template?.configJson?.navigation?.slice(0, 4) || []).map((nav, i) => (
+  <div key={i} className="rounded-md bg-white/20 px-2 py-1 text-[10px] font-medium">
     {nav.label}
-    <span className="ml-1.5 text-xs text-gray-400">
-      {nav.path}
-    </span>
+    <span className="ml-1.5 text-xs text-gray-400">{nav.path}</span>
   </div>
 ))}
-
                 {/* Content */}
                 <div className="p-5">
                   <div className="mb-2 flex items-center justify-between">
@@ -286,6 +280,7 @@ export default function TemplatesPage() {
                   <div className="h-8 w-8 rounded-xl border" style={{
   backgroundColor: previewTemplate.configJson?.colorScheme?.primary || '#178BFF'
 }}
+></div>
                   <span className="text-sm text-gray-600 dark:text-gray-400">
                     {t('templates.modal.primary')}: {previewTemplate?.configJson?.colorScheme?.primary || '#178BFF'}
                   </span>
