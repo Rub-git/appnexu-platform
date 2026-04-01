@@ -188,10 +188,8 @@ export default function TemplatesPage() {
                   </div>
                 </div>
               </div>
-            ))}
-          </div>
-        )}
-
+            </div>
+                 
         {!loading && templates.length === 0 && (
           <div className="text-center py-20 text-gray-500">
             {t('templates.noTemplates')}
