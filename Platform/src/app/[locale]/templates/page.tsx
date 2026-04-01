@@ -54,7 +54,6 @@ const categoryColors: Record<string, string> = {
   EDUCATION: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400',
   SERVICES: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
 };
-
 export default function TemplatesPage() {
   const t = useTranslations();
   const router = useRouter();
@@ -62,7 +61,6 @@ export default function TemplatesPage() {
   const [loading, setLoading] = useState(true);
   const [activeCategory, setActiveCategory] = useState('ALL');
   const [previewTemplate, setPreviewTemplate] = useState<Template | null>(null);
-
   useEffect(() => {
     const params = activeCategory !== 'ALL' ? `?category=${activeCategory}` : '';
     fetch(`/api/templates${params}`)
@@ -70,25 +68,19 @@ export default function TemplatesPage() {
       .then((d) => { if (d.data) setTemplates(d.data); })
       .catch(() => {})
       .finally(() => setLoading(false));
-  
-export default function TemplatesPage() {
 
-  useEffect(() => {
-    ...
   }, [activeCategory]);
 
-  const handleUseTemplate = (template: Template) => {
-    if (template.isPremium) return;
-
-    sessionStorage.setItem('selectedTemplate', JSON.stringify(template));
-    router.push('/dashboard/create');
-  };
+  const handleUseTemplate = ...
 
   const config = ...
 
-  return (
-    <div className="min-h-screen bg-slate-50 dark:bg-black">
-      {/* Hero */}
+return (
+  <div className="min-h-screen bg-slate-50 dark:bg-black">
+    ...
+  </div>
+);
+          {/* Hero */}
       <div className="bg-gradient-to-br from-[#178BFF] via-[#5B2CCF] to-[#F54291] px-6 py-16 text-center text-white">
         <div className="mx-auto max-w-4xl">
           <div className="mb-4 inline-flex items-center rounded-full bg-white/20 px-4 py-1.5 text-sm font-medium backdrop-blur-sm">
