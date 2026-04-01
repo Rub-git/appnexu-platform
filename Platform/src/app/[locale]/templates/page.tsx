@@ -188,7 +188,7 @@ export default function TemplatesPage() {
                   </div>
                 </div>
               </div>
-            </div>
+            
                  
         {!loading && templates.length === 0 && (
           <div className="text-center py-20 text-gray-500">
@@ -196,7 +196,7 @@ export default function TemplatesPage() {
           </div>
         )}
       </div>
-</div>
+
       {/* Preview Modal */}
       {previewTemplate && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm" onClick={() => setPreviewTemplate(null)}>
