@@ -137,7 +137,11 @@ export default function TemplatesPage() {
                 <div
                   className="relative h-32 w-full"
                   style={{
-                    background: `linear-gradient(135deg, ${template.configJson.colorScheme.primary}, ${template.configJson.colorScheme.secondary})`,
+                    background: `linear-gradient(135deg, ${
+  template.configJson?.colorScheme?.primary || '#178BFF'
+}, ${
+  template.configJson?.colorScheme?.secondary || '#5B2CCF'
+})`
                   }}
                 >
                   {template.isPremium && (
@@ -146,7 +150,7 @@ export default function TemplatesPage() {
                     </div>
                   )}
                   <div className="absolute bottom-3 left-3 flex gap-1">
-                    {template.configJson.navigation.slice(0, 4).map((nav, i) => (
+                    template.configJson?.navigation?.slice(0, 4) || [].map((nav, i) => (
                       <div
                         key={i}
                         className="rounded-md bg-white/20 px-2 py-1 text-[10px] font-medium text-white backdrop-blur-sm"
@@ -215,7 +219,11 @@ export default function TemplatesPage() {
             <div
               className="mb-6 rounded-2xl p-6"
               style={{
-                background: `linear-gradient(135deg, ${previewTemplate.configJson.colorScheme.primary}, ${previewTemplate.configJson.colorScheme.secondary})`,
+               background: `linear-gradient(
+  135deg,
+  ${previewTemplate.configJson?.colorScheme?.primary || '#178BFF'},
+  ${previewTemplate.configJson?.colorScheme?.secondary || '#5B2CCF'}
+)`})`,
               }}
             >
               <div className="flex items-center gap-2 mb-2">
@@ -269,15 +277,15 @@ export default function TemplatesPage() {
               </h4>
               <div className="flex gap-3">
                 <div className="flex items-center gap-2">
-                  <div className="h-8 w-8 rounded-xl border" style={{ backgroundColor: previewTemplate.configJson.colorScheme.primary }} />
+                  <div className="h-8 w-8 rounded-xl border" style={{ backgroundColor: previewTemplate.configJson?.colorScheme?.primary || '#178BFF'}} />
                   <span className="text-sm text-gray-600 dark:text-gray-400">
-                    {t('templates.modal.primary')}: {previewTemplate.configJson.colorScheme.primary}
+                    {t('templates.modal.primary')}: {previewTemplate.configJson?.colorScheme?.primary || '#178BFF'}
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="h-8 w-8 rounded-xl border" style={{ backgroundColor: previewTemplate.configJson.colorScheme.secondary }} />
+                  <div className="h-8 w-8 rounded-xl border" style={{ backgroundColor: previewTemplate.configJson?.colorScheme?.secondary || '#5B2CCF' }} />
                   <span className="text-sm text-gray-600 dark:text-gray-400">
-                    {t('templates.modal.secondary')}: {previewTemplate.configJson.colorScheme.secondary}
+                    {t('templates.modal.secondary')}: {previewTemplate.configJson?.colorScheme?.secondary || '#5B2CCF'}
                   </span>
                 </div>
               </div>
