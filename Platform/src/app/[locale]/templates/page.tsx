@@ -241,7 +241,7 @@ export default function TemplatesPage() {
                 {t('templates.modal.navigation')}
               </h4>
               <div className="flex flex-wrap gap-2">
-              {(previewTemplate?.configJson?.navigation || []).map((nav, i) => (
+             {(previewTemplate?.configJson?.navigation || []).map((nav, i) => (
   <span
     key={i}
     className="inline-flex items-center rounded-xl bg-gray-100 px-3 py-1.5 text-sm font-medium text-gray-700 dark:bg-gray-800 dark:text-gray-300"
@@ -277,12 +277,10 @@ export default function TemplatesPage() {
               </h4>
               <div className="flex gap-3">
                 <div className="flex items-center gap-2">
-                  <div className="h-8 w-8 rounded-xl border" style={{
-  backgroundColor: previewTemplate.configJson?.colorScheme?.primary || '#178BFF'
-}}
+                  <div className="h-8 w-8 rounded-xl border" style={{ backgroundColor: previewTemplate?.configJson?.colorScheme?.primary || '#178BFF' }}
 ></div>
                   <span className="text-sm text-gray-600 dark:text-gray-400">
-                    {t('templates.modal.primary')}: {previewTemplate?.configJson?.colorScheme?.primary || '#178BFF'}
+                  {t('templates.modal.primary')}: {previewTemplate?.configJson?.colorScheme?.primary || '#178BFF'}
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
