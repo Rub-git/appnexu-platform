@@ -128,8 +128,8 @@ return (
             >
               {t(`templates.categories.${cat.key}`)}
             </button>
-          ))}
-        </div>
+        })}
+</div>
 
         {/* Loading */}
         {loading && (
