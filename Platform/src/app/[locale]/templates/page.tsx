@@ -141,18 +141,15 @@ return (
         {/* Template Grid */}
         {!loading && (
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-           {templates.map((template) => {
+          {templates.map((template) => {
   const config =
     typeof template?.configJson === "string"
       ? JSON.parse(template.configJson)
       : template?.configJson || {};
 
   return (
-    <div
-      key={template.id}
-      className="group relative overflow-hidden rounded..."
-    >
-      {/* usa config aquí */}
+    <div key={template.id}>
+      {/* usa config aqui */}
     </div>
   );
 })}
