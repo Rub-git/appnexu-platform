@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -140,8 +141,21 @@ return (
         {/* Template Grid */}
         {!loading && (
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {templates.map((template) => (
-              <div
+           {templates.map((template) => {
+  const config =
+    typeof template?.configJson === "string"
+      ? JSON.parse(template.configJson)
+      : template?.configJson || {};
+
+  return (
+    <div
+      key={template.id}
+      className="group relative overflow-hidden rounded..."
+    >
+      {/* usa config aquí */}
+    </div>
+  );
+})}
                 key={template.id}
                 className="group relative overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-gray-200/60 transition-all hover:shadow-lg hover:ring-[#178BFF]/30 dark:bg-gray-900 dark:ring-gray-800 dark:hover:ring-[#178BFF]/40"
               >
@@ -162,7 +176,7 @@ return (
                     </div>
                   )}
                   <div className="absolute bottom-3 left-3 flex gap-1">
-                  {(template?.configJson?.navigation?.slice(0, 4) || []).map((nav, i) => (
+                 template?.configJson?.navigation?.slice(0, 4)
   <div key={i} className="rounded-md bg-white/20 px-2 py-1 text-[10px] font-medium">
     {nav.label}
     <span className="ml-1.5 text-xs text-gray-400">{nav.path}</span>
