@@ -71,9 +71,17 @@ export default function TemplatesPage() {
 
   }, [activeCategory]);
 
-  const handleUseTemplate = ...
+ const handleUseTemplate = (template) => {
+  if (template.isPremium) return;
 
-  const config = ...
+  sessionStorage.setItem('selectedTemplate', JSON.stringify(template));
+  router.push('/dashboard/create');
+};
+
+  const config =
+  typeof previewTemplate?.configJson === 'string'
+    ? JSON.parse(previewTemplate.configJson)
+    : previewTemplate?.configJson || {};
 
 return (
   <div className="min-h-screen bg-slate-50 dark:bg-black">
