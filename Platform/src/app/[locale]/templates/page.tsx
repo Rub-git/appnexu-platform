@@ -73,7 +73,6 @@ export default function TemplatesPage() {
   if (template.isPremium) return;
 
   sessionStorage.setItem('selectedTemplate', JSON.stringify(template));
-}, 
 
 export default function TemplatesPage() {
 
