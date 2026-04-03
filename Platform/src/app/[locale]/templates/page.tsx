@@ -76,14 +76,15 @@ export default function TemplatesPage() {
   router.push('/dashboard/create');
 };
 
-  const config =
-  typeof previewTemplate?.configJson === 'string'
-    ? JSON.parse(previewTemplate.configJson)
-    : previewTemplate?.configJson || {};
-      ...
 export default function TemplatesPage() {
 
   // hooks, estado, etc
+  const [previewTemplate, setPreviewTemplate] = useState(null)
+
+  const config =
+    typeof previewTemplate?.configJson === 'string'
+      ? JSON.parse(previewTemplate.configJson)
+      : previewTemplate?.configJson || {}
 
   return (
     <>
