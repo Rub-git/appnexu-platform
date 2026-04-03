@@ -55,32 +55,29 @@ const categoryColors = {
   SERVICES: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
 };
 export default function TemplatesPage() {
+
   const t = useTranslations();
   const router = useRouter();
-  const [templates, setTemplates] = useState<Template[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [activeCategory, setActiveCategory] = useState('ALL');
-  const [previewTemplate, setPreviewTemplate] = useState<Template | null>(null);
+
+  const [templates, setTemplates] = useState<Template[]>([])
+  const [loading, setLoading] = useState(true)
+  const [activeCategory, setActiveCategory] = useState('ALL')
+  const [previewTemplate, setPreviewTemplate] = useState<Template | null>(null)
+
   useEffect(() => {
-    const params = activeCategory !== 'ALL' ? `?category=${activeCategory}` : '';
+    const params =
+      activeCategory !== 'ALL'
+        ? `?category=${activeCategory}`
+        : ''
+
     fetch(`/api/templates${params}`)
-      .then((r) => r.json())
-      .then((d) => { if (d.data) setTemplates(d.data); })
+      .then(r => r.json())
+      .then(d => { if (d.data) setTemplates(d.data) })
       .catch(() => {})
-      .finally(() => setLoading(false));
-  }, 
-[activeCategory]);
-
-export default function TemplatesPage() {
-
-  const [previewTemplate, setPreviewTemplate] = useState(null)
-
-  const handleUseTemplate = (template) => {
-    if (template.isPremium) return;
-  }
+      .finally(() => setLoading(false))
+  }, [activeCategory])
 
   return (
-    <>
       {/* Hero */}
       <div className="bg-gradient-to-br from-[#178BFF] via-[#5B2CCF] to-[#F54291] px-6 py-16 text-center text-white">
         <div className="mx-auto max-w-4xl">
