@@ -74,7 +74,6 @@ export default function TemplatesPage() {
 
   sessionStorage.setItem('selectedTemplate', JSON.stringify(template));
   router.push('/dashboard/create');
-};
 
 export default function TemplatesPage() {
 
