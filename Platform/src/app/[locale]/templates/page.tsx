@@ -71,9 +71,7 @@ export default function TemplatesPage() {
 
  const handleUseTemplate = (template) => {
   if (template.isPremium) return;
-
-  sessionStorage.setItem('selectedTemplate', JSON.stringify(template));
-
+ 
 export default function TemplatesPage() {
 
   // hooks, estado, etc
