@@ -66,14 +66,14 @@ export default function TemplatesPage() {
       .then((d) => { if (d.data) setTemplates(d.data); })
       .catch(() => {})
       .finally(() => setLoading(false));
-
-  }, [activeCategory]);
+  }, 
+[activeCategory]);
 
  const handleUseTemplate = (template) => {
   if (template.isPremium) return;
 
   sessionStorage.setItem('selectedTemplate', JSON.stringify(template));
-  router.push('/dashboard/create');
+}, 
 
 export default function TemplatesPage() {
 
