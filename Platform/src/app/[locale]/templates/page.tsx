@@ -92,7 +92,7 @@ return (
       ...
     </div>
   </div>
-);          {/* Hero */}
+        {/* Hero */}
      <div className="bg-gradient-to-br from-[#178BFF] via-[#5B2CCF] to-[#F54291] px-6 py-16 text-center text-white">
   <div className="mx-auto max-w-4xl">
     <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">
