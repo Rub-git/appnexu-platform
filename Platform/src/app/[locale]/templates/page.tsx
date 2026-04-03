@@ -93,40 +93,39 @@ return (
     </div>
   </div>
 );          {/* Hero */}
-      <div className="bg-gradient-to-br from-[#178BFF] via-[#5B2CCF] to-[#F54291] px-6 py-16 text-center text-white">
-        <div className="mx-auto max-w-4xl">
-          <div className="mb-4 inline-flex items-center rounded-full bg-white/20 px-4 py-1.5 text-sm font-medium backdrop-blur-sm">
-            <LayoutTemplate className="mr-2 h-4 w-4" />
-            {t('templates.badge')}
-          </div>
-          <h1 className="text-4xl font-bold tracking-tight sm:text-5xl" style={{ fontFamily: "'Sora', sans-serif" }}>
-            {t('templates.title')}
-          </h1>
-          <p className="mt-4 text-lg text-white/80">
-            {t('templates.subtitle')}
-          </p>
-        </div>
-      </div>
+     <div className="bg-gradient-to-br from-[#178BFF] via-[#5B2CCF] to-[#F54291] px-6 py-16 text-center text-white">
+  <div className="mx-auto max-w-4xl">
+    <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">
+      {t('templates.title')}
+    </h1>
+    <p className="mt-4 text-lg text-white/80">
+      {t('templates.subtitle')}
+    </p>
+  </div>
 </div>
 
-   <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-       {/* Category Filters */}
-        <div className="mb-8 flex flex-wrap items-center gap-2">
-          <Filter className="mr-2 h-4 w-4 text-gray-400" />
-          {CATEGORIES.map((cat) => (
-))}
-            <button
-              key={cat.key}
-              onClick={() => { setActiveCategory(cat.key); setLoading(true); }}
-              className={`rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
-                activeCategory === cat.key
-                  ? 'bg-gradient-to-r from-[#178BFF] to-[#5B2CCF] text-white'
-                  : 'bg-white text-gray-600 hover:bg-gray-100 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700'
-              }`}
-            >
-              {t('templates.categories.' + cat.key)}
-            </button>
-        })}
+{/* Category Filters */}
+<div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+  <div className="mb-8 flex flex-wrap items-center gap-2">
+    <Filter className="mr-2 h-4 w-4 text-gray-400" />
+    
+    {CATEGORIES.map((cat) => (
+      <button
+        key={cat.key}
+        onClick={() => {
+          setActiveCategory(cat.key)
+          setLoading(true)
+        }}
+        className={`rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
+          activeCategory === cat.key
+            ? 'bg-gradient-to-r from-[#178BFF] to-[#5B2CCF] text-white'
+            : 'bg-white text-gray-600 hover:bg-gray-100 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700'
+        }`}
+      >
+        {t('templates.categories.' + cat.key)}
+      </button>
+    ))}
+  </div>
 </div>
 
         {/* Loading */}
