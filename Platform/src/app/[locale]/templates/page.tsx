@@ -1,14 +1,11 @@
 
 'use client';
-
-import { useEffect, useState } from 'react';
-import { useTranslations } from 'next-intl';
-import { Link, useRouter } from '@/i18n/routing';
 import {
+  Download,
   Loader2, Crown, Globe, Church, Utensils, HeartPulse,
   ShoppingBag, GraduationCap, Calendar, ArrowRight, X, Eye,
   Filter, Sparkles, LayoutTemplate,
-} from 'lucide-react';
+} from 'lucide-react'
 
 interface Template {
   id: string;
@@ -113,7 +110,7 @@ return (
      </div>
 
 <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-        {/* Category Filters */}
+       {/* Category Filters */}
         <div className="mb-8 flex flex-wrap items-center gap-2">
           <Filter className="mr-2 h-4 w-4 text-gray-400" />
           {CATEGORIES.map((cat) => (
@@ -126,7 +123,7 @@ return (
                   : 'bg-white text-gray-600 hover:bg-gray-100 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700'
               }`}
             >
-              {t(`templates.categories.${cat.key}`)}
+              {t('templates.categories.' + cat.key)}
             </button>
         })}
 </div>
