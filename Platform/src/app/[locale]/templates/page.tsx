@@ -82,6 +82,7 @@ export default function TemplatesPage() {
     : previewTemplate?.configJson || {};
 
 return (
+<>
   <div>
     <div className="min-h-screen bg-slate-50 dark:bg-black">
       ...
@@ -127,7 +128,8 @@ return (
     ))}
   </div>
 </div>
-
+</>
+)
         {/* Loading */}
         {loading && (
           <div className="flex items-center justify-center py-20">
