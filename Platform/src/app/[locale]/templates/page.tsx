@@ -77,25 +77,17 @@ export default function TemplatesPage() {
       .finally(() => setLoading(false))
   }, [activeCategory])
 
-    return (
+return (
   <>
-    <div>...</div>
-    <div>...</div>
-  </>
-)  
-      <div className="bg-gradient-to-br from-[#178BFF] via-[#5B2CCF] to-[#F54291] px-6 py-16 text-center text-white">
-        <div className="mx-auto max-w-4xl">
-          <h1 className="text-4xl font-bold">
-            {t('templates.title')}
-          </h1>
-          <p className="mt-4 text-lg text-white/80">
-            {t('templates.subtitle')}
-          </p>
-        </div>
+    <div className="bg-gradient-to-br from-[#178BFF] via-[#5B2CCF] to-[#F54291] px-6 py-16 text-center text-white">
+      <div className="mx-auto max-w-4xl">
+        <h1 className="text-4xl font-bold">
+          {t('templates.title')}
+        </h1>
       </div>
-    </>
-  )
-}
+    </div>
+  </>
+)
 
     {/* Category Filters */}
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
