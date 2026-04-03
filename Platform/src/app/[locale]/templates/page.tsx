@@ -14,6 +14,7 @@ interface Template {
   description: string;
   category: string;
   previewImage: string | null;
+
   configJson: {
     navigation: Array<{ label: string; icon: string; path: string }>;
     quickActions: Array<{ label: string; icon: string; action: string }>;
@@ -21,6 +22,7 @@ interface Template {
     iconSuggestions: string[];
     pageShortcuts: string[];
   };
+
   isPremium: boolean;
   usageCount: number;
 }
