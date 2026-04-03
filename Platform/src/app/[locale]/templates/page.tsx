@@ -116,13 +116,13 @@ return (
         {loading && (
           <div className="flex items-center justify-center py-20">
             <Loader2 className="h-8 w-8 animate-spin text-[#178BFF]" />
+		{/* Template Grid */}
+		{!loading && ( ... )}
           </div>
         )}
   </>
 )
-               {/* Template Grid */}
-        {!loading && (
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {templates.map((template) => {
   const config =
     typeof template?.configJson === "string"
