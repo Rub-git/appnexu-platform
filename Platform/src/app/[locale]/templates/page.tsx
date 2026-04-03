@@ -69,18 +69,13 @@ export default function TemplatesPage() {
   }, 
 [activeCategory]);
 
- const handleUseTemplate = (template) => {
-  if (template.isPremium) return;
- 
 export default function TemplatesPage() {
 
-  // hooks, estado, etc
   const [previewTemplate, setPreviewTemplate] = useState(null)
 
-  const config =
-    typeof previewTemplate?.configJson === 'string'
-      ? JSON.parse(previewTemplate.configJson)
-      : previewTemplate?.configJson || {}
+  const handleUseTemplate = (template) => {
+    if (template.isPremium) return;
+  }
 
   return (
     <>
