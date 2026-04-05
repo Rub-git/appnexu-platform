@@ -60,45 +60,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     };
   },
 })
-        // 1. Buscar usuario correctamente
-        const user = await prisma.user.findUnique({
-          where: { email: credentials.email as string },
-        });
-
-        // 3. Agregar log de debug: User
-        console.log("User:", user?.email ? { ...user, password: '[REDACTED]' } : null);
-
-        // 4. Manejar errores: Si no hay usuario -> return null (devuelve 401 en Auth.js)
-        if (!user || !user.password) {
-          console.log("Login NextAuth: User not found or OAuth user without password");
-          throw new CredentialsSignin("Invalid credentials");
-        }
-
-        // 2. Validar password con bcrypt
-        const passwordMatch = await bcrypt.compare(
-          credentials.password as string,
-          user.password
-        );
-
-        // 3. Agregar log de debug: Password valid
-        console.log("Password valid:", passwordMatch);
-
-        // 4. Manejar errores: Si password incorrecto -> return null / throw
-        if (!passwordMatch) {
-          console.log("Login NextAuth: Incorrect password");
-          throw new CredentialsSignin("Invalid credentials");
-        }
-
-        return {
-          id: user.id,
-          email: user.email,
-          name: user.name,
-          image: user.image,
-          role: user.role, // Include role in the authorized user object
-        };
-      },
-    }),
-  ],
+              
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
