@@ -71,7 +71,7 @@ export default function TemplatesPage() {
 
   }, [activeCategory]);
 
- const handleUseTemplate = (template) => {
+ const handleUseTemplate = (template: Template) => {
   if (template.isPremium) return;
 
   sessionStorage.setItem('selectedTemplate', JSON.stringify(template));
@@ -84,130 +84,123 @@ export default function TemplatesPage() {
     : previewTemplate?.configJson || {};
 
 return (
-  <div>
-    <div className="min-h-screen bg-slate-50 dark:bg-black">
-      ...
+  <div className="min-h-screen bg-slate-50 dark:bg-black">
+    {/* Hero */}
+    <div className="bg-gradient-to-br from-[#178BFF] via-[#5B2CCF] to-[#F54291] px-6 py-16 text-center text-white">
+      <div className="mx-auto max-w-4xl">
+        <div className="mb-4 inline-flex items-center rounded-full bg-white/20 px-4 py-1.5 text-sm font-medium backdrop-blur-sm">
+          <LayoutTemplate className="mr-2 h-4 w-4" />
+          {t('templates.badge')}
+        </div>
+        <h1 className="text-4xl font-bold tracking-tight sm:text-5xl" style={{ fontFamily: "'Sora', sans-serif" }}>
+          {t('templates.title')}
+        </h1>
+        <p className="mt-4 text-lg text-white/80">
+          {t('templates.subtitle')}
+        </p>
+      </div>
     </div>
 
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-      ...
-    </div>
-  </div>
-);          {/* Hero */}
-      <div className="bg-gradient-to-br from-[#178BFF] via-[#5B2CCF] to-[#F54291] px-6 py-16 text-center text-white">
-        <div className="mx-auto max-w-4xl">
-          <div className="mb-4 inline-flex items-center rounded-full bg-white/20 px-4 py-1.5 text-sm font-medium backdrop-blur-sm">
-            <LayoutTemplate className="mr-2 h-4 w-4" />
-            {t('templates.badge')}
-          </div>
-          <h1 className="text-4xl font-bold tracking-tight sm:text-5xl" style={{ fontFamily: "'Sora', sans-serif" }}>
-            {t('templates.title')}
-          </h1>
-          <p className="mt-4 text-lg text-white/80">
-            {t('templates.subtitle')}
-          </p>
-        </div>
+      {/* Category Filters */}
+      <div className="mb-8 flex flex-wrap items-center gap-2">
+        <Filter className="mr-2 h-4 w-4 text-gray-400" />
+        {CATEGORIES.map((cat) => (
+          <button
+            key={cat.key}
+            onClick={() => { setActiveCategory(cat.key); setLoading(true); }}
+            className={`rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
+              activeCategory === cat.key
+                ? 'bg-gradient-to-r from-[#178BFF] to-[#5B2CCF] text-white'
+                : 'bg-white text-gray-600 hover:bg-gray-100 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700'
+            }`}
+          >
+            {t(`templates.categories.${cat.key}`)}
+          </button>
+        ))}
       </div>
 
-     </div>
-
-<div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-        {/* Category Filters */}
-        <div className="mb-8 flex flex-wrap items-center gap-2">
-          <Filter className="mr-2 h-4 w-4 text-gray-400" />
-          {CATEGORIES.map((cat) => (
-            <button
-              key={cat.key}
-              onClick={() => { setActiveCategory(cat.key); setLoading(true); }}
-              className={`rounded-full px-4 py-1.5 text-sm font-medium transition-colors ${
-                activeCategory === cat.key
-                  ? 'bg-gradient-to-r from-[#178BFF] to-[#5B2CCF] text-white'
-                  : 'bg-white text-gray-600 hover:bg-gray-100 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700'
-              }`}
-            >
-              {t(`templates.categories.${cat.key}`)}
-            </button>
-          ))}
+      {/* Loading */}
+      {loading && (
+        <div className="flex items-center justify-center py-20">
+          <Loader2 className="h-8 w-8 animate-spin text-[#178BFF]" />
         </div>
+      )}
 
-        {/* Loading */}
-        {loading && (
-          <div className="flex items-center justify-center py-20">
-            <Loader2 className="h-8 w-8 animate-spin text-[#178BFF]" />
-          </div>
-        )}
-
-        {/* Template Grid */}
-        {!loading && (
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {templates.map((template) => (
+      {/* Template Grid */}
+      {!loading && (
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          {templates.map((template) => (
+            <div
+              key={template.id}
+              className="group relative overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-gray-200/60 transition-all hover:shadow-lg hover:ring-[#178BFF]/30 dark:bg-gray-900 dark:ring-gray-800 dark:hover:ring-[#178BFF]/40"
+            >
+              {/* Color Preview Header */}
               <div
-                key={template.id}
-                className="group relative overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-gray-200/60 transition-all hover:shadow-lg hover:ring-[#178BFF]/30 dark:bg-gray-900 dark:ring-gray-800 dark:hover:ring-[#178BFF]/40"
+                className="relative h-32 w-full"
+                style={{
+                  background: `linear-gradient(135deg, ${
+                    template.configJson?.colorScheme?.primary || '#178BFF'
+                  }, ${
+                    template.configJson?.colorScheme?.secondary || '#5B2CCF'
+                  })`
+                }}
               >
-                {/* Color Preview Header */}
-                <div
-                  className="relative h-32 w-full"
-                  style={{
-                    background: `linear-gradient(135deg, ${
-  template.configJson?.colorScheme?.primary || '#178BFF'
-}, ${
-  template.configJson?.colorScheme?.secondary || '#5B2CCF'
-})`
-                  }}
-                >
-                  {template.isPremium && (
-                    <div className="absolute right-3 top-3 flex items-center gap-1 rounded-full bg-amber-400 px-2 py-1 text-xs font-bold text-amber-900">
-                      <Crown className="h-3 w-3" /> {t('templates.premiumBadge')}
-                    </div>
-                  )}
-                  <div className="absolute bottom-3 left-3 flex gap-1">
+                {template.isPremium && (
+                  <div className="absolute right-3 top-3 flex items-center gap-1 rounded-full bg-amber-400 px-2 py-1 text-xs font-bold text-amber-900">
+                    <Crown className="h-3 w-3" /> {t('templates.premiumBadge')}
+                  </div>
+                )}
+                <div className="absolute bottom-3 left-3 flex gap-1">
                   {(template?.configJson?.navigation?.slice(0, 4) || []).map((nav, i) => (
-  <div key={i} className="rounded-md bg-white/20 px-2 py-1 text-[10px] font-medium">
-    {nav.label}
-    <span className="ml-1.5 text-xs text-gray-400">{nav.path}</span>
-  </div>
-))}
-                {/* Content */}
-                <div className="p-5">
-                  <div className="mb-2 flex items-center justify-between">
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                      {template.name}
-                    </h3>
-                    <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium ${categoryColors[template.category] || 'bg-gray-100 text-gray-600'}`}>
-                      {categoryIcons[template.category]}
-                      {template.category}
-                    </span>
-                  </div>
-                  <p className="mb-4 line-clamp-2 text-sm text-gray-500 dark:text-gray-400">
-                    {template.description}
-                  </p>
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => setPreviewTemplate(template)}
-                      className="flex flex-1 items-center justify-center rounded-xl border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
-                    >
-                      <Eye className="mr-1.5 h-4 w-4" />
-                      {t('templates.preview')}
-                    </button>
-                    <button
-                      onClick={() => handleUseTemplate(template)}
-                      className="flex flex-1 items-center justify-center rounded-xl bg-gradient-to-r from-[#178BFF] to-[#5B2CCF] px-3 py-2 text-sm font-medium text-white transition-all hover:shadow-md hover:shadow-[#178BFF]/25"
-                    >
-                      {t('templates.useTemplate')}
-                      <ArrowRight className="ml-1.5 h-4 w-4" />
-                    </button>
-                  </div>
+                    <div key={i} className="rounded-md bg-white/20 px-2 py-1 text-[10px] font-medium">
+                      {nav.label}
+                      <span className="ml-1.5 text-xs text-gray-400">{nav.path}</span>
+                    </div>
+                  ))}
                 </div>
               </div>
-            
-                 
-        {!loading && templates.length === 0 && (
-          <div className="text-center py-20 text-gray-500">
-            {t('templates.noTemplates')}
-          </div>
-        )}
-      </div>
+              {/* Content */}
+              <div className="p-5">
+                <div className="mb-2 flex items-center justify-between">
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                    {template.name}
+                  </h3>
+                  <span className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium ${categoryColors[template.category as keyof typeof categoryColors] || 'bg-gray-100 text-gray-600'}`}>
+                    {categoryIcons[template.category]}
+                    {template.category}
+                  </span>
+                </div>
+                <p className="mb-4 line-clamp-2 text-sm text-gray-500 dark:text-gray-400">
+                  {template.description}
+                </p>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setPreviewTemplate(template)}
+                    className="flex flex-1 items-center justify-center rounded-xl border border-gray-200 px-3 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50 dark:border-gray-700 dark:text-gray-300 dark:hover:bg-gray-800"
+                  >
+                    <Eye className="mr-1.5 h-4 w-4" />
+                    {t('templates.preview')}
+                  </button>
+                  <button
+                    onClick={() => handleUseTemplate(template)}
+                    className="flex flex-1 items-center justify-center rounded-xl bg-gradient-to-r from-[#178BFF] to-[#5B2CCF] px-3 py-2 text-sm font-medium text-white transition-all hover:shadow-md hover:shadow-[#178BFF]/25"
+                  >
+                    {t('templates.useTemplate')}
+                    <ArrowRight className="ml-1.5 h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {!loading && templates.length === 0 && (
+        <div className="text-center py-20 text-gray-500">
+          {t('templates.noTemplates')}
+        </div>
+      )}
 
       {/* Preview Modal */}
       {previewTemplate && (
@@ -223,13 +216,13 @@ return (
             {/* Modal Header with gradient */}
             <div
               className="mb-6 rounded-2xl p-6"
-   style={{
-  background: `linear-gradient(
-    135deg,
-    ${template?.configJson?.colorScheme?.primary || '#178BFF'},
-    ${template?.configJson?.colorScheme?.secondary || '#5B2CCF'}
-  )`
-}}
+              style={{
+                background: `linear-gradient(
+                  135deg,
+                  ${config?.colorScheme?.primary || '#178BFF'},
+                  ${config?.colorScheme?.secondary || '#5B2CCF'}
+                )`
+              }}
             >
               <div className="flex items-center gap-2 mb-2">
                 {previewTemplate.isPremium && (
@@ -251,17 +244,17 @@ return (
                 {t('templates.modal.navigation')}
               </h4>
               <div className="flex flex-wrap gap-2">
-             {(previewTemplate?.configJson?.navigation || []).map((nav, i) => (
-  <span
-    key={i}
-    className="inline-flex items-center rounded-xl bg-gray-100 px-3 py-1.5 text-sm font-medium text-gray-700 dark:bg-gray-800 dark:text-gray-300"
-  >
-    {nav.label}
-    <span className="ml-1.5 text-xs text-gray-400">
-      {nav.path}
-    </span>
-  </span>
-))}
+                {(config?.navigation || []).map((nav: any, i: number) => (
+                  <span
+                    key={i}
+                    className="inline-flex items-center rounded-xl bg-gray-100 px-3 py-1.5 text-sm font-medium text-gray-700 dark:bg-gray-800 dark:text-gray-300"
+                  >
+                    {nav.label}
+                    <span className="ml-1.5 text-xs text-gray-400">
+                      {nav.path}
+                    </span>
+                  </span>
+                ))}
               </div>
             </div>
 
@@ -271,7 +264,7 @@ return (
                 {t('templates.modal.quickActions')}
               </h4>
               <div className="grid grid-cols-2 gap-2">
-                {(previewTemplate.configJson?.quickActions || []).map((action, i) => (
+                {(config?.quickActions || []).map((action: any, i: number) => (
                   <div key={i} className="rounded-xl border border-gray-200 p-3 dark:border-gray-700">
                     <p className="text-sm font-medium text-gray-900 dark:text-white">{action.label}</p>
                     <p className="text-xs text-gray-400">{action.action}</p>
@@ -288,21 +281,18 @@ return (
               <div className="flex gap-3">
                 <div className="flex items-center gap-2">
                   <div className="h-8 w-8 rounded-xl border" style={{
-  backgroundColor:
-    JSON.parse(previewTemplate?.configJson || '{}')?.colorScheme?.primary || "#178BFF"
-}}
-></div>
+                    backgroundColor: config?.colorScheme?.primary || "#178BFF"
+                  }}></div>
                   <span className="text-sm text-gray-600 dark:text-gray-400">
-                  {t('templates.modal.primary')}: {previewTemplate?.configJson as any)?.colorScheme?.primary || '#178BFF'}
+                    {t('templates.modal.primary')}: {config?.colorScheme?.primary || '#178BFF'}
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="h-8 w-8 rounded-xl border" style={{
-  backgroundColor:
-    JSON.parse(previewTemplate?.configJson || '{}')?.colorScheme?.secondary || "#178BFF"
-}}
+                    backgroundColor: config?.colorScheme?.secondary || "#5B2CCF"
+                  }}></div>
                   <span className="text-sm text-gray-600 dark:text-gray-400">
-                    {t('templates.modal.secondary')}: {previewTemplate?.configJson as any)?.colorScheme?.secondary || '#5B2CCF'}
+                    {t('templates.modal.secondary')}: {config?.colorScheme?.secondary || '#5B2CCF'}
                   </span>
                 </div>
               </div>
@@ -322,5 +312,6 @@ return (
         </div>
       )}
     </div>
-  );
+  </div>
+);
 }
