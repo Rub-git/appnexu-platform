@@ -67,6 +67,11 @@ self.addEventListener('fetch', (event) => {
         return;
     }
 
+    // Skip authentication/API routes - these should NEVER be cached
+    if (request.url.includes('/api/auth/') || request.url.includes('/api/') && request.url.includes('session')) {
+        return;
+    }
+
     // Handle navigation requests
     if (request.mode === 'navigate') {
         event.respondWith(
