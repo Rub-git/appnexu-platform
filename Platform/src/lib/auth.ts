@@ -35,10 +35,40 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         email: { label: 'Email', type: 'email' },
         password: { label: 'Password', type: 'password' },
       },
-      async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) {
-          throw new CredentialsSignin("Missing credentials");
-        }
+     async authorize(credentials) {
+  if (!credentials?.email || !credentials?.password) {
+    throw new CredentialsSignin("Missing credentials")
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { email: credentials.email as string },
+  })
+
+  console.log("USER:", user)
+
+  if (!user || !user.password) {
+    console.log("User not found")
+    return null
+  }
+
+  const isValid = await bcrypt.compare(
+    credentials.password,
+    user.password
+  )
+
+  console.log("PASSWORD VALID:", isValid)
+
+  if (!isValid) {
+    return null
+  }
+
+  // 
+  return {
+    id: user.id,
+    email: user.email,
+    name: user.name,
+  }
+}
 
         // 1. Buscar usuario correctamente
         const user = await prisma.user.findUnique({

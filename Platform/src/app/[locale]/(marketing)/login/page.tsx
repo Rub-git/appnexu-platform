@@ -18,22 +18,29 @@ export default function LoginPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log("LOGIN CLICKED");
     setIsLoading(true);
     setError('');
 
     try {
-      await signIn("credentials", {
-        email,
-        password,
-        redirect: true,
-        callbackUrl: `/${locale}/dashboard`,
-      });
-    } catch (error) {
-      console.error("Login catch:", error);
-      setError(t('auth.errors.invalidCredentials'));
-      setIsLoading(false);
-    }
-  };
+      const result = await signIn("credentials", {
+  email,
+  password,
+  redirect: false,
+});
+
+console.log("LOGIN RESULT:", result);
+
+if (result?.error || !result?.ok) {
+  setError(t('auth.errors.invalidCredentials'));
+  setIsLoading(false);
+  return;
+}
+
+window.location.href = `/${locale}/dashboard`;
+
+// 👇 REDIRECCIÓN MANUAL
+window.location.href = `/${locale}/dashboard`;
 
   return (
     <div className="flex min-h-screen flex-col bg-slate-50 dark:bg-black">
