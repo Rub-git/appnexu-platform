@@ -1,48 +1,50 @@
-import { PrismaClient, TemplateCategory } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
+import bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log('🌱 Starting database seed...');
+  console.log('🌱 Seeding database...');
 
-  // Reset existing templates to avoid duplicates (safeguard)
-  await prisma.appTemplate.deleteMany();
-
-  await prisma.appTemplate.createMany({
-    data: [
-      {
-        name: "Iglesia Básica",
-        slug: "iglesia-basica",
-        category: TemplateCategory.CHURCH,
-        description: "Plantilla para iglesias",
-        configJson: {
-          theme: { color: "#4f46e5" },
-          pages: ["home", "about", "contact"]
-        },
-        isPremium: false,
-        isActive: true
-      },
-      {
-        name: "Negocio Local",
-        slug: "negocio-local",
-        category: TemplateCategory.BUSINESS,
-        description: "Para negocios pequeños",
-        configJson: {
-          theme: { color: "#16a34a" },
-          pages: ["home", "services", "contact"]
-        },
-        isPremium: false,
-        isActive: true
-      }
-    ]
+  // Create admin user
+  const adminPassword = await bcrypt.hash('Admin123!', 12);
+  const admin = await prisma.user.upsert({
+    where: { email: 'admin@appnexu.com' },
+    update: { password: adminPassword },
+    create: {
+      email: 'admin@appnexu.com',
+      name: 'Admin User',
+      password: adminPassword,
+      role: 'ADMIN',
+      plan: 'AGENCY',
+    },
   });
+  console.log(`✅ Admin user: ${admin.email} (password: Admin123!)`);
 
-  console.log('✅ Seed finished successfully!');
+  // Create test user
+  const userPassword = await bcrypt.hash('User123!', 12);
+  const user = await prisma.user.upsert({
+    where: { email: 'user@appnexu.com' },
+    update: { password: userPassword },
+    create: {
+      email: 'user@appnexu.com',
+      name: 'Test User',
+      password: userPassword,
+      role: 'USER',
+      plan: 'FREE',
+    },
+  });
+  console.log(`✅ Test user: ${user.email} (password: User123!)`);
+
+  console.log('\n🎉 Seeding complete!');
+  console.log('\nYou can now login with:');
+  console.log('  Admin: admin@appnexu.com / Admin123!');
+  console.log('  User:  user@appnexu.com / User123!');
 }
 
 main()
   .catch((e) => {
-    console.error('❌ Error during database seed:', e);
+    console.error('❌ Seed error:', e);
     process.exit(1);
   })
   .finally(async () => {
