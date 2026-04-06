@@ -8,6 +8,7 @@ import type { User, Role } from '@prisma/client';
 const useSecureCookies = process.env.NODE_ENV === 'production';
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
+secret: process.env.NEXTAUTH_SECRET,
   session: {
     strategy: 'jwt',
     maxAge: 30 * 24 * 60 * 60, // 30 days
