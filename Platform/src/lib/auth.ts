@@ -8,7 +8,11 @@ import type { User, Role } from '@prisma/client';
 const useSecureCookies = process.env.NODE_ENV === 'production';
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
-secret: process.env.AUTH_SECRET,
+  // Auth.js v5 requires AUTH_SECRET (auto-read from env, but explicit for safety)
+  secret: process.env.AUTH_SECRET,
+  // CRITICAL for Vercel/production: trust the host header
+  // Needed because Next.js 16 can return null for x-forwarded-proto
+  trustHost: true,
   session: {
     strategy: 'jwt',
     maxAge: 30 * 24 * 60 * 60, // 30 days
@@ -53,46 +57,56 @@ secret: process.env.AUTH_SECRET,
         password: { label: 'Password', type: 'password' },
       },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) {
-          throw new CredentialsSignin("Missing credentials");
+        try {
+          console.log("[AUTH] authorize called, AUTH_SECRET exists:", !!process.env.AUTH_SECRET);
+          console.log("[AUTH] DATABASE_URL exists:", !!process.env.DATABASE_URL);
+
+          if (!credentials?.email || !credentials?.password) {
+            throw new CredentialsSignin("Missing credentials");
+          }
+
+          // 1. Buscar usuario en la base de datos
+          const user = await prisma.user.findUnique({
+            where: { email: credentials.email as string },
+          });
+
+          console.log("[AUTH] User found:", user?.email ? "yes" : "no");
+
+          if (!user || !user.password) {
+            console.log("[AUTH] User not found or OAuth user without password");
+            throw new CredentialsSignin("Invalid credentials");
+          }
+
+          // 2. Validar password con bcrypt
+          const passwordMatch = await bcrypt.compare(
+            credentials.password as string,
+            user.password
+          );
+
+          console.log("[AUTH] Password valid:", passwordMatch);
+
+          if (!passwordMatch) {
+            console.log("[AUTH] Incorrect password");
+            throw new CredentialsSignin("Invalid credentials");
+          }
+
+          return {
+            id: user.id,
+            email: user.email,
+            name: user.name,
+            image: user.image,
+            role: user.role,
+          };
+        } catch (error) {
+          // Re-throw CredentialsSignin errors (these are expected auth failures)
+          if (error instanceof CredentialsSignin) {
+            throw error;
+          }
+          // Log unexpected errors (DB connection, etc.) that would otherwise
+          // be swallowed and returned as generic "Configuration" error
+          console.error("[AUTH] Unexpected error in authorize:", error);
+          throw new CredentialsSignin("Server error during authentication");
         }
-
-        // 1. Buscar usuario correctamente
-        const user = await prisma.user.findUnique({
-          where: { email: credentials.email as string },
-        });
-
-        // 3. Agregar log de debug: User
-        console.log("User:", user?.email ? { ...user, password: '[REDACTED]' } : null);
-
-        // 4. Manejar errores: Si no hay usuario -> return null (devuelve 401 en Auth.js)
-        if (!user || !user.password) {
-          console.log("Login NextAuth: User not found or OAuth user without password");
-          throw new CredentialsSignin("Invalid credentials");
-        }
-
-        // 2. Validar password con bcrypt
-        const passwordMatch = await bcrypt.compare(
-          credentials.password as string,
-          user.password
-        );
-
-        // 3. Agregar log de debug: Password valid
-        console.log("Password valid:", passwordMatch);
-
-        // 4. Manejar errores: Si password incorrecto -> return null / throw
-        if (!passwordMatch) {
-          console.log("Login NextAuth: Incorrect password");
-          throw new CredentialsSignin("Invalid credentials");
-        }
-
-        return {
-          id: user.id,
-          email: user.email,
-          name: user.name,
-          image: user.image,
-          role: user.role, // Include role in the authorized user object
-        };
       },
     }),
   ],
