@@ -96,6 +96,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     }),
   ],
 
+});
+
 // Helper function to get the current user with plan info
 export async function getCurrentUser() {
   const session = await auth();

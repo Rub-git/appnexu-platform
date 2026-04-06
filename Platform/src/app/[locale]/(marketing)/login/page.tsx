@@ -24,23 +24,26 @@ export default function LoginPage() {
 
     try {
       const result = await signIn("credentials", {
-  email,
-  password,
-  redirect: false,
-});
+        email,
+        password,
+        redirect: false,
+      });
 
-console.log("LOGIN RESULT:", result);
+      console.log("LOGIN RESULT:", result);
 
-if (result?.error || !result?.ok) {
-  setError(t('auth.errors.invalidCredentials'));
-  setIsLoading(false);
-  return;
-}
+      if (result?.error || !result?.ok) {
+        setError(t('auth.errors.invalidCredentials'));
+        setIsLoading(false);
+        return;
+      }
 
-window.location.href = `/${locale}/dashboard`;
-
-// 👇 REDIRECCIÓN MANUAL
-window.location.href = `/${locale}/dashboard`;
+      window.location.href = `/${locale}/dashboard`;
+    } catch (error) {
+      console.error("Login error:", error);
+      setError(t('auth.errors.invalidCredentials'));
+      setIsLoading(false);
+    }
+  };
 
   return (
     <div className="flex min-h-screen flex-col bg-slate-50 dark:bg-black">
