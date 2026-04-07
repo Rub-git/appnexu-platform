@@ -1,8 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
-import { Loader2, Zap, Crown } from 'lucide-react';
+import { Loader2, Zap, Crown, AlertTriangle } from 'lucide-react';
 
 interface UpgradeButtonProps {
   targetPlan: 'PRO' | 'AGENCY';
@@ -12,6 +12,11 @@ interface UpgradeButtonProps {
 export default function UpgradeButton({ targetPlan, currentPlan }: UpgradeButtonProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [configStatus, setConfigStatus] = useState<{
+    stripeConfigured: boolean;
+    proPriceConfigured: boolean;
+    agencyPriceConfigured: boolean;
+  } | null>(null);
   const t = useTranslations();
 
   // Don't show if already on a higher or same plan
@@ -21,6 +26,19 @@ export default function UpgradeButton({ targetPlan, currentPlan }: UpgradeButton
   ) {
     return null;
   }
+
+  // Pre-check Stripe configuration on mount
+  // eslint-disable-next-line react-hooks/rules-of-hooks
+  useEffect(() => {
+    fetch('/api/stripe/config')
+      .then(res => res.json())
+      .then(data => setConfigStatus(data))
+      .catch(() => {}); // silently fail
+  }, []);
+
+  const isPriceConfigured = configStatus
+    ? (targetPlan === 'PRO' ? configStatus.proPriceConfigured : configStatus.agencyPriceConfigured)
+    : true; // assume configured until we know
 
   const handleUpgrade = async () => {
     setIsLoading(true);
@@ -36,6 +54,16 @@ export default function UpgradeButton({ targetPlan, currentPlan }: UpgradeButton
       const data = await response.json();
 
       if (!response.ok) {
+        if (data.code === 'PRICE_NOT_CONFIGURED') {
+          throw new Error(
+            `Price configuration missing for ${targetPlan} plan. Please contact support.`
+          );
+        }
+        if (data.code === 'STRIPE_NOT_CONFIGURED') {
+          throw new Error(
+            'Billing is not configured yet. Please contact support.'
+          );
+        }
         throw new Error(data.error || 'Failed to start checkout');
       }
 
@@ -55,6 +83,16 @@ export default function UpgradeButton({ targetPlan, currentPlan }: UpgradeButton
 
   return (
     <div>
+      {/* Show pre-check warning if price is not configured */}
+      {configStatus && !isPriceConfigured && (
+        <div className="mb-2 flex items-start gap-2 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-700 dark:bg-amber-900/20 dark:text-amber-400">
+          <AlertTriangle className="h-3.5 w-3.5 mt-0.5 flex-shrink-0" />
+          <span>
+            {targetPlan} plan pricing not yet configured. 
+            {!configStatus.stripeConfigured && ' Stripe is not connected.'}
+          </span>
+        </div>
+      )}
       {error && (
         <div className="mb-2 rounded-lg bg-red-50 px-3 py-2 text-xs text-red-700 dark:bg-red-900/20 dark:text-red-400">
           {error}
