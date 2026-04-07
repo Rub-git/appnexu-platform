@@ -36,6 +36,17 @@ export default function UpgradeButton({ targetPlan, currentPlan }: UpgradeButton
       const data = await response.json();
 
       if (!response.ok) {
+        // Show user-friendly message for missing price config
+        if (data.code === 'PRICE_NOT_CONFIGURED') {
+          throw new Error(
+            `Price configuration missing for ${targetPlan} plan. Please contact support.`
+          );
+        }
+        if (data.code === 'STRIPE_NOT_CONFIGURED') {
+          throw new Error(
+            'Billing is not configured yet. Please contact support.'
+          );
+        }
         throw new Error(data.error || 'Failed to start checkout');
       }
 
