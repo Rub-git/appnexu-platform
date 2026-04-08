@@ -1,79 +1,103 @@
 import { NextResponse } from 'next/server';
+import { stripe, STRIPE_PRICE_IDS, getStripeMode } from '@/lib/stripe';
 
 /**
- * GET /api/stripe/debug — Public endpoint to check Stripe env var configuration.
- * Does NOT expose any secret values, only shows if variables are present.
- * 
- * REMOVE OR PROTECT THIS IN PRODUCTION after debugging.
+ * PUBLIC diagnostic endpoint for Stripe configuration.
+ * ⚠️  Remove or protect in production after debugging.
+ *
+ * GET /api/stripe/debug
  */
 export async function GET() {
-  const envVars = {
-    STRIPE_SECRET_KEY: {
-      set: !!process.env.STRIPE_SECRET_KEY,
-      preview: process.env.STRIPE_SECRET_KEY
-        ? `${process.env.STRIPE_SECRET_KEY.slice(0, 7)}...${process.env.STRIPE_SECRET_KEY.slice(-4)}`
-        : '❌ NOT SET',
-    },
-    STRIPE_PRO_PRICE_ID: {
-      set: !!process.env.STRIPE_PRO_PRICE_ID,
-      value: process.env.STRIPE_PRO_PRICE_ID || '❌ NOT SET',
-      length: process.env.STRIPE_PRO_PRICE_ID?.length || 0,
-    },
-    STRIPE_AGENCY_PRICE_ID: {
-      set: !!process.env.STRIPE_AGENCY_PRICE_ID,
-      value: process.env.STRIPE_AGENCY_PRICE_ID || '❌ NOT SET',
-      length: process.env.STRIPE_AGENCY_PRICE_ID?.length || 0,
-    },
-    STRIPE_WEBHOOK_SECRET: {
-      set: !!process.env.STRIPE_WEBHOOK_SECRET,
-      preview: process.env.STRIPE_WEBHOOK_SECRET
-        ? `${process.env.STRIPE_WEBHOOK_SECRET.slice(0, 8)}...`
-        : '❌ NOT SET',
-    },
-  };
+  const secretKey = process.env.STRIPE_SECRET_KEY || '';
+  const mode = getStripeMode();
 
-  // Also check what the resolved PRICE_IDS object looks like
-  // We import dynamically to avoid server-only issues
-  let resolvedPriceIds = { PRO: '', AGENCY: '' };
-  try {
-    const { STRIPE_PRICE_IDS } = await import('@/lib/stripe');
-    resolvedPriceIds = { ...STRIPE_PRICE_IDS };
-  } catch (e) {
-    // If import fails, note it
+  // Check if price IDs actually exist on Stripe
+  const priceChecks: Record<string, unknown> = {};
+
+  if (stripe) {
+    for (const [plan, priceId] of Object.entries(STRIPE_PRICE_IDS)) {
+      if (!priceId) {
+        priceChecks[plan] = { status: 'NOT_SET', priceId: '' };
+        continue;
+      }
+      try {
+        const price = await stripe.prices.retrieve(priceId);
+        priceChecks[plan] = {
+          status: 'VALID',
+          priceId: priceId.slice(0, 25) + '...',
+          active: price.active,
+          currency: price.currency,
+          unitAmount: price.unit_amount,
+          interval: price.recurring?.interval,
+          productId: typeof price.product === 'string' ? price.product : (price.product as { id: string })?.id,
+          livemode: price.livemode,
+        };
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        priceChecks[plan] = {
+          status: 'ERROR',
+          priceId: priceId.slice(0, 25) + '...',
+          error: msg,
+          hint: msg.includes('No such price')
+            ? `This price ID does not exist in ${mode} mode. You may have a test/live mismatch.`
+            : undefined,
+        };
+      }
+    }
   }
 
-  const allConfigured = envVars.STRIPE_SECRET_KEY.set && 
-    envVars.STRIPE_PRO_PRICE_ID.set && 
-    envVars.STRIPE_AGENCY_PRICE_ID.set;
+  const diagnosis: Record<string, unknown> = {};
+
+  // Test/live mismatch detection
+  if (stripe && priceChecks) {
+    const hasErrors = Object.values(priceChecks).some(
+      (c: unknown) => (c as Record<string, unknown>).status === 'ERROR',
+    );
+    if (hasErrors) {
+      diagnosis.mismatch_warning =
+        `Your STRIPE_SECRET_KEY is in ${mode} mode. ` +
+        `Make sure your Price IDs were also created in ${mode} mode in Stripe Dashboard. ` +
+        `Test-mode prices only work with test-mode keys, and vice versa.`;
+    }
+  }
+
+  // Check env var source (NEXT_PUBLIC_ fallback)
+  const proFromPublic = !process.env.STRIPE_PRO_PRICE_ID && !!process.env.NEXT_PUBLIC_STRIPE_PRO_PRICE_ID;
+  const agencyFromPublic = !process.env.STRIPE_AGENCY_PRICE_ID && !!process.env.NEXT_PUBLIC_STRIPE_AGENCY_PRICE_ID;
 
   return NextResponse.json({
     timestamp: new Date().toISOString(),
-    status: allConfigured ? '✅ All Stripe variables configured' : '❌ Missing configuration',
-    environment: process.env.NODE_ENV,
-    vercel: !!process.env.VERCEL,
-    env_vars: envVars,
-    resolved_price_ids: resolvedPriceIds,
-    diagnosis: {
-      price_ids_empty: !resolvedPriceIds.PRO || !resolvedPriceIds.AGENCY,
-      note: !resolvedPriceIds.PRO || !resolvedPriceIds.AGENCY
-        ? 'STRIPE_PRICE_IDS are empty strings. This means the env vars were NOT available when the module was loaded. Possible causes: (1) Variables not set in Vercel for the correct environment (Production vs Preview), (2) Variables contain extra whitespace or quotes, (3) Deployment was not triggered after adding variables.'
-        : 'Price IDs are correctly loaded.',
+    stripe_initialized: !!stripe,
+    stripe_mode: mode,
+    environment: {
+      STRIPE_SECRET_KEY: secretKey
+        ? `${secretKey.slice(0, 8)}...${secretKey.slice(-4)} (${secretKey.length} chars)`
+        : 'NOT SET',
+      STRIPE_PRO_PRICE_ID: process.env.STRIPE_PRO_PRICE_ID || 'NOT SET',
+      STRIPE_AGENCY_PRICE_ID: process.env.STRIPE_AGENCY_PRICE_ID || 'NOT SET',
+      NEXT_PUBLIC_STRIPE_PRO_PRICE_ID: process.env.NEXT_PUBLIC_STRIPE_PRO_PRICE_ID || 'NOT SET',
+      NEXT_PUBLIC_STRIPE_AGENCY_PRICE_ID: process.env.NEXT_PUBLIC_STRIPE_AGENCY_PRICE_ID || 'NOT SET',
+      STRIPE_WEBHOOK_SECRET: process.env.STRIPE_WEBHOOK_SECRET ? 'SET' : 'NOT SET',
     },
-    required_variables: {
-      STRIPE_SECRET_KEY: 'Your Stripe secret key (starts with sk_test_ or sk_live_)',
-      STRIPE_PRO_PRICE_ID: 'Price ID for PRO plan from Stripe Dashboard (starts with price_)',
-      STRIPE_AGENCY_PRICE_ID: 'Price ID for AGENCY plan from Stripe Dashboard (starts with price_)',
-      STRIPE_WEBHOOK_SECRET: 'Webhook signing secret (starts with whsec_) — optional for checkout but needed for subscription updates',
+    resolved_price_ids: {
+      PRO: STRIPE_PRICE_IDS.PRO || 'EMPTY',
+      AGENCY: STRIPE_PRICE_IDS.AGENCY || 'EMPTY',
+      pro_from_public_env: proFromPublic,
+      agency_from_public_env: agencyFromPublic,
     },
-    troubleshooting: [
-      '1. Go to Vercel Dashboard → Your Project → Settings → Environment Variables',
-      '2. Verify ALL these variables are set for "Production" environment (not just Preview)',
-      '3. Make sure values do NOT have quotes around them (Vercel adds them automatically)',
-      '4. Make sure there is no leading/trailing whitespace in the values',
-      '5. After adding/changing variables, you MUST redeploy (Deployments → Redeploy)',
-      '6. Price IDs look like: price_1ABC123def456 (from Stripe Dashboard → Products → Price ID)',
-    ],
-  }, {
-    headers: { 'Cache-Control': 'no-store, no-cache, must-revalidate' },
+    price_validation: priceChecks,
+    diagnosis,
+    auth_urls: {
+      NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL || 'NOT SET',
+      AUTH_URL: process.env.AUTH_URL || 'NOT SET',
+      NEXTAUTH_URL: process.env.NEXTAUTH_URL || 'NOT SET',
+    },
+    instructions: {
+      step1: 'Verify stripe_mode matches the mode where you created your products/prices',
+      step2: 'Check price_validation – each plan should show status: VALID',
+      step3: 'If you see "No such price" errors, your key mode and price mode are mismatched',
+      step4: 'In Stripe Dashboard, toggle "Test mode" switch to match your key',
+      fix_mismatch: 'Either switch your STRIPE_SECRET_KEY to match the price mode, or create new prices in the correct mode',
+    },
   });
 }

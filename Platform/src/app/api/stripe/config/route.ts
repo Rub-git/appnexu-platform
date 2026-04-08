@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/lib/auth';
+import { STRIPE_PRICE_IDS } from '@/lib/stripe';
 
 /**
  * GET /api/stripe/config — Returns stripe configuration status for the settings page.
@@ -13,7 +14,7 @@ export async function GET() {
 
   return NextResponse.json({
     stripeConfigured: !!process.env.STRIPE_SECRET_KEY,
-    proPriceConfigured: !!process.env.STRIPE_PRO_PRICE_ID,
-    agencyPriceConfigured: !!process.env.STRIPE_AGENCY_PRICE_ID,
+    proPriceConfigured: !!STRIPE_PRICE_IDS.PRO,
+    agencyPriceConfigured: !!STRIPE_PRICE_IDS.AGENCY,
   });
 }
