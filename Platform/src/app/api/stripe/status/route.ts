@@ -31,7 +31,8 @@ export async function GET() {
           : '❌ NOT SET — This causes the "Price configuration missing for AGENCY" error',
       },
       resolved_price_ids: STRIPE_PRICE_IDS,
-      instructions: !process.env.STRIPE_PRO_PRICE_ID || !process.env.STRIPE_AGENCY_PRICE_ID
+      note: 'resolved_price_ids checks both STRIPE_*_PRICE_ID and NEXT_PUBLIC_STRIPE_*_PRICE_ID env vars',
+      instructions: !STRIPE_PRICE_IDS.PRO || !STRIPE_PRICE_IDS.AGENCY
         ? 'See STRIPE-SETUP.md for step-by-step instructions to fix this.'
         : 'All Stripe price IDs are configured ✅',
     };
