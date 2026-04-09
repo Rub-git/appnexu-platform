@@ -1,4 +1,5 @@
 import { auth, canCreateApp } from '@/lib/auth';
+import { withRetry } from '@/lib/prisma';
 import { apiError, apiSuccess } from '@/lib/api-utils';
 import { logger } from '@/lib/logger';
 
@@ -9,14 +10,15 @@ export async function GET() {
       return apiError('Unauthorized', 401, 'UNAUTHORIZED');
     }
 
-    const result = await canCreateApp(session.user.id);
+    // Use retry wrapper for transient Supabase connection issues
+    const result = await withRetry(() => canCreateApp(session.user!.id));
     return apiSuccess(result);
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown';
     logger.error('apps.checkLimit', 'Failed to check limit', { error: message });
 
     // Provide more descriptive error based on error type
-    if (message.includes("Can't reach database") || message.includes('connect')) {
+    if (message.includes("Can't reach database") || message.includes('connect') || message.includes('ECONNREFUSED')) {
       return apiError(
         'No se pudo conectar a la base de datos. Por favor, inténtalo de nuevo en unos momentos.',
         503,

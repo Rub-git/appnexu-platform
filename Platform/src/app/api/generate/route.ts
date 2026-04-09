@@ -1,4 +1,4 @@
-import { prisma } from '@/lib/prisma';
+import { prisma, withRetry } from '@/lib/prisma';
 import { auth, canCreateApp } from '@/lib/auth';
 import { generateSchema, formatZodErrors } from '@/lib/validations';
 import { apiError, apiSuccess } from '@/lib/api-utils';
@@ -34,8 +34,8 @@ export async function POST(request: Request) {
 
     const data = parsed.data;
 
-    // Check plan limits
-    const limitCheck = await canCreateApp(session.user.id);
+    // Check plan limits (with retry for transient DB errors)
+    const limitCheck = await withRetry(() => canCreateApp(session.user!.id));
     if (!limitCheck.allowed) {
       logger.info('generate', 'Plan limit reached', { userId: session.user.id, current: limitCheck.current, limit: limitCheck.limit });
       return apiError('Plan limit reached. Please upgrade your plan to create more apps.', 403, 'PLAN_LIMIT_REACHED');
@@ -46,9 +46,11 @@ export async function POST(request: Request) {
     let templateId: string | null = null;
 
     if (data.templateSlug) {
-      const template = await prisma.appTemplate.findUnique({
-        where: { slug: data.templateSlug },
-      });
+      const template = await withRetry(() =>
+        prisma.appTemplate.findUnique({
+          where: { slug: data.templateSlug! },
+        })
+      );
 
       if (!template) {
         return apiError('Template not found', 404, 'TEMPLATE_NOT_FOUND');
@@ -84,18 +86,21 @@ export async function POST(request: Request) {
     // Merge template colors if present
     const colorScheme = templateConfig?.colorScheme as { primary?: string; secondary?: string } | undefined;
 
-    const appProject = await prisma.appProject.create({
-      data: {
-        targetUrl: data.url,
-        appName: data.title || 'My App',
-        shortName,
-        themeColor: data.themeColor || colorScheme?.primary || '#178BFF',
-        backgroundColor: data.backgroundColor || colorScheme?.secondary || '#ffffff',
-        iconUrls: data.iconUrls || '/icons/icon-192.png',
-        userId: session.user.id,
-        templateId: templateId,
-      },
-    });
+    // Create app project with retry for transient DB errors
+    const appProject = await withRetry(() =>
+      prisma.appProject.create({
+        data: {
+          targetUrl: data.url,
+          appName: data.title || 'My App',
+          shortName,
+          themeColor: data.themeColor || colorScheme?.primary || '#178BFF',
+          backgroundColor: data.backgroundColor || colorScheme?.secondary || '#ffffff',
+          iconUrls: data.iconUrls || '/icons/icon-192.png',
+          userId: session.user!.id,
+          templateId: templateId,
+        },
+      })
+    );
 
     logger.info('generate', 'App created', {
       userId: session.user.id,
@@ -112,8 +117,12 @@ export async function POST(request: Request) {
     const message = error instanceof Error ? error.message : 'Unknown';
     logger.error('generate', 'App creation failed', { error: message });
 
-    if (message.includes("Can't reach database") || message.includes('connect')) {
-      return apiError('Error de conexión a la base de datos. Inténtalo de nuevo.', 503, 'DATABASE_UNAVAILABLE');
+    if (message.includes("Can't reach database") || message.includes('connect') || message.includes('ECONNREFUSED')) {
+      return apiError('No se pudo conectar a la base de datos. Inténtalo de nuevo.', 503, 'DATABASE_UNAVAILABLE');
+    }
+
+    if (message.includes('prisma') || message.includes('Prisma') || message.includes('Unique constraint')) {
+      return apiError('Error de base de datos. Por favor, inténtalo de nuevo.', 500, 'DATABASE_ERROR');
     }
 
     return apiError('Error al crear la app. Inténtalo de nuevo.', 500, 'INTERNAL_ERROR');
