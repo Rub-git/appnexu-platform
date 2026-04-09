@@ -36,21 +36,55 @@ export default function CreateAppPage() {
     } catch { /* ignore */ }
   }, []);
 
+  // Normalize URL: add https:// if missing
+  const normalizeUrl = (input: string): string => {
+    let trimmed = input.trim();
+    if (!trimmed) return trimmed;
+    // If it doesn't start with http(s)://, add https://
+    if (!/^https?:\/\//i.test(trimmed)) {
+      trimmed = 'https://' + trimmed;
+    }
+    return trimmed;
+  };
+
   const handleAnalyze = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!url) return;
+    const normalizedUrl = normalizeUrl(url);
+    if (!normalizedUrl) return;
 
+    // Update the URL in the input to show the normalized version
+    setUrl(normalizedUrl);
     setIsAnalyzing(true);
     setError('');
 
     try {
       // First check if user can create more apps
       const limitRes = await fetch('/api/apps/check-limit');
-      const limitData = await limitRes.json();
 
+      if (!limitRes.ok) {
+        const limitErr = await limitRes.json().catch(() => ({}));
+        if (limitRes.status === 503) {
+          setError(limitErr.error || 'Error de conexión a la base de datos. Inténtalo de nuevo.');
+          setIsAnalyzing(false);
+          return;
+        }
+        if (limitRes.status === 401) {
+          setError('Tu sesión ha expirado. Por favor, inicia sesión de nuevo.');
+          setIsAnalyzing(false);
+          return;
+        }
+        setError(limitErr.error || 'Error al verificar el límite de apps.');
+        setIsAnalyzing(false);
+        return;
+      }
+
+      const limitData = await limitRes.json();
       const limitInfo = limitData.data || limitData;
       if (!limitInfo.allowed) {
-        setError(t('plans.limitReached.title'));
+        const planMsg = limitInfo.plan === 'FREE'
+          ? `Has alcanzado el límite de ${limitInfo.limit} app(s) en tu plan gratuito. Mejora tu plan para crear más apps.`
+          : t('plans.limitReached.title');
+        setError(planMsg);
         setIsAnalyzing(false);
         return;
       }
@@ -58,7 +92,7 @@ export default function CreateAppPage() {
       const response = await fetch('/api/analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url }),
+        body: JSON.stringify({ url: normalizedUrl }),
       });
 
       if (!response.ok) {
@@ -67,9 +101,22 @@ export default function CreateAppPage() {
       }
 
       const result = await response.json();
+      const analyzeData = result.data || result;
+
+      // Map analyze response fields to generate API schema
+      // analyze returns { url, title, description, themeColor, icons: string[] }
+      // generate expects { url, title, themeColor, backgroundColor, iconUrls: string, templateSlug }
+      const generateData: Record<string, unknown> = {
+        url: analyzeData.url,
+        title: analyzeData.title,
+        themeColor: analyzeData.themeColor,
+        // Convert icons array to comma-separated string for iconUrls field
+        iconUrls: Array.isArray(analyzeData.icons) && analyzeData.icons.length > 0
+          ? analyzeData.icons.join(',')
+          : undefined,
+      };
 
       // Apply template colors if selected
-      const generateData = { ...result.data };
       if (selectedTemplate) {
         generateData.themeColor = selectedTemplate.configJson.colorScheme.primary;
         generateData.backgroundColor = '#ffffff';
@@ -181,7 +228,7 @@ export default function CreateAppPage() {
                   <LinkIcon className="h-5 w-5 text-gray-400" aria-hidden="true" />
                 </div>
                 <input
-                  type="url"
+                  type="text"
                   name="url"
                   id="url"
                   className="block w-full rounded-md border-0 py-3 pl-10 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-primary sm:text-lg sm:leading-6 dark:bg-gray-800 dark:text-white dark:ring-gray-700 dark:placeholder:text-gray-500"

@@ -43,15 +43,28 @@ export async function POST(request: Request) {
       response = await fetch(url, {
         signal: controller.signal,
         headers: {
-          'User-Agent': 'Appnexu-Analyzer/1.0',
+          'User-Agent': 'Mozilla/5.0 (compatible; Appnexu-Analyzer/1.0)',
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+          'Accept-Language': 'es,en;q=0.9',
         },
+        redirect: 'follow',
       });
     } catch (fetchError) {
       clearTimeout(timeoutId);
       if (fetchError instanceof Error && fetchError.name === 'AbortError') {
-        return apiError('Request timeout — the target URL took too long to respond', 504, 'TIMEOUT');
+        return apiError('El sitio web tardó demasiado en responder. Verifica que la URL sea accesible.', 504, 'TIMEOUT');
       }
-      return apiError('Failed to fetch the URL. Please check the URL is accessible.', 502, 'FETCH_FAILED');
+      const fetchMsg = fetchError instanceof Error ? fetchError.message : '';
+      if (fetchMsg.includes('ENOTFOUND') || fetchMsg.includes('getaddrinfo')) {
+        return apiError('No se encontró el dominio. Verifica que la URL sea correcta.', 502, 'DOMAIN_NOT_FOUND');
+      }
+      if (fetchMsg.includes('ECONNREFUSED')) {
+        return apiError('No se pudo conectar al sitio web. Verifica que esté activo.', 502, 'CONNECTION_REFUSED');
+      }
+      if (fetchMsg.includes('certificate') || fetchMsg.includes('SSL') || fetchMsg.includes('TLS')) {
+        return apiError('Error de certificado SSL en el sitio web.', 502, 'SSL_ERROR');
+      }
+      return apiError('No se pudo acceder a la URL. Verifica que el sitio web sea accesible.', 502, 'FETCH_FAILED');
     }
 
     clearTimeout(timeoutId);

@@ -12,7 +12,26 @@ export async function GET() {
     const result = await canCreateApp(session.user.id);
     return apiSuccess(result);
   } catch (error) {
-    logger.error('apps.checkLimit', 'Failed to check limit', { error: error instanceof Error ? error.message : 'Unknown' });
-    return apiError('Failed to check limit', 500, 'INTERNAL_ERROR');
+    const message = error instanceof Error ? error.message : 'Unknown';
+    logger.error('apps.checkLimit', 'Failed to check limit', { error: message });
+
+    // Provide more descriptive error based on error type
+    if (message.includes("Can't reach database") || message.includes('connect')) {
+      return apiError(
+        'No se pudo conectar a la base de datos. Por favor, inténtalo de nuevo en unos momentos.',
+        503,
+        'DATABASE_UNAVAILABLE'
+      );
+    }
+
+    if (message.includes('prisma') || message.includes('Prisma')) {
+      return apiError(
+        'Error de base de datos. Por favor, inténtalo de nuevo.',
+        500,
+        'DATABASE_ERROR'
+      );
+    }
+
+    return apiError('Error al verificar el límite de apps. Por favor, inténtalo de nuevo.', 500, 'INTERNAL_ERROR');
   }
 }
