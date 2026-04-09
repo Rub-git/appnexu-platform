@@ -46,25 +46,16 @@ export default async function AppPreviewPage({
     return notFound();
   }
 
-  console.log("APP DATA:", app);
-
-  const appData = app as any;
-  if (!appData || !appData.config) {
-    return notFound();
-  }
-
-  let parsedConfig: any = null;
-  try {
-    parsedConfig = typeof appData.config === "string"
-      ? JSON.parse(appData.config)
-      : appData.config;
-  } catch (e) {
-    console.error("Invalid config JSON:", e);
-    return notFound();
-  }
+  // Build a parsedConfig-like object from the actual DB fields
+  const parsedConfig: Record<string, any> = {
+    theme: {
+      color: app.themeColor || '#178BFF',
+      backgroundColor: app.backgroundColor || '#ffffff',
+    },
+  };
 
   try {
-    const icons = appData.iconUrls ? appData.iconUrls.split(',').map((s: string) => s.trim()).filter(Boolean) : [];
+    const icons = app.iconUrls ? app.iconUrls.split(',').map((s: string) => s.trim()).filter(Boolean) : [];
 
     return (
       <div className="mx-auto max-w-5xl space-y-8">
