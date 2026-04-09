@@ -162,7 +162,7 @@ export const PLAN_LIMITS = {
 } as const;
 
 // Check if user can create more apps
-export async function canCreateApp(userId: string): Promise<{ allowed: boolean; limit: number; current: number }> {
+export async function canCreateApp(userId: string): Promise<{ allowed: boolean; limit: number; current: number; plan: string }> {
   const user = await prisma.user.findUnique({
     where: { id: userId },
     include: {
@@ -173,15 +173,16 @@ export async function canCreateApp(userId: string): Promise<{ allowed: boolean; 
   });
 
   if (!user) {
-    return { allowed: false, limit: 0, current: 0 };
+    return { allowed: false, limit: 0, current: 0, plan: 'FREE' };
   }
 
-  const limit = PLAN_LIMITS[user.plan];
+  const limit = PLAN_LIMITS[user.plan] ?? PLAN_LIMITS.FREE;
   const current = user._count.apps;
 
   return {
     allowed: current < limit,
     limit: limit === Infinity ? -1 : limit,
     current,
+    plan: user.plan,
   };
 }

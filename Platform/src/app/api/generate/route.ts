@@ -109,7 +109,13 @@ export async function POST(request: Request) {
       slug: appProject.slug,
     }, 201);
   } catch (error) {
-    logger.error('generate', 'App creation failed', { error: error instanceof Error ? error.message : 'Unknown' });
-    return apiError('Failed to create app', 500, 'INTERNAL_ERROR');
+    const message = error instanceof Error ? error.message : 'Unknown';
+    logger.error('generate', 'App creation failed', { error: message });
+
+    if (message.includes("Can't reach database") || message.includes('connect')) {
+      return apiError('Error de conexión a la base de datos. Inténtalo de nuevo.', 503, 'DATABASE_UNAVAILABLE');
+    }
+
+    return apiError('Error al crear la app. Inténtalo de nuevo.', 500, 'INTERNAL_ERROR');
   }
 }
