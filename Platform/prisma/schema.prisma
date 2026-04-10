@@ -6,9 +6,10 @@ generator client {
 }
 
 datasource db {
-  provider  = "postgresql"
-  url       = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")  // Direct connection for migrations (bypasses pgBouncer)
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  // Note: If using Supabase with pgBouncer, add DIRECT_URL env var and uncomment:
+  // directUrl = env("DIRECT_URL")
 }
 
 // User plan enumeration

@@ -7,6 +7,10 @@ import { NextResponse } from 'next/server';
  * Access: GET /api/debug
  */
 export async function GET() {
+  const dbUrl = process.env.DATABASE_URL || '';
+  const hasWhitespace = dbUrl !== dbUrl.trim();
+  const hasNewlines = dbUrl.includes('\n') || dbUrl.includes('\r');
+
   const checks = {
     timestamp: new Date().toISOString(),
     env: {
@@ -14,15 +18,18 @@ export async function GET() {
       AUTH_URL: process.env.AUTH_URL || 'NOT SET ⚠️',
       AUTH_TRUST_HOST: process.env.AUTH_TRUST_HOST || 'NOT SET',
       NEXTAUTH_URL: process.env.NEXTAUTH_URL || 'NOT SET (Auth.js v5 uses AUTH_URL instead)',
-      DATABASE_URL: process.env.DATABASE_URL ? `set (${process.env.DATABASE_URL.substring(0, 20)}...)` : 'MISSING ❌',
+      DATABASE_URL: dbUrl ? `set (${dbUrl.length} chars)` : 'MISSING ❌',
+      DATABASE_URL_HAS_WHITESPACE: hasWhitespace ? '⚠️ YES - FIX THIS IN VERCEL ENV VARS!' : 'No ✅',
+      DATABASE_URL_HAS_NEWLINES: hasNewlines ? '⚠️ YES - FIX THIS IN VERCEL ENV VARS!' : 'No ✅',
+      DIRECT_URL: process.env.DIRECT_URL ? 'set' : 'NOT SET',
       NODE_ENV: process.env.NODE_ENV,
     },
     notes: [
       'Auth.js v5 reads AUTH_SECRET (not NEXTAUTH_SECRET)',
       'Auth.js v5 reads AUTH_URL (not NEXTAUTH_URL)',
       'AUTH_TRUST_HOST=true is needed for Vercel deployments',
-      'If AUTH_URL is NOT SET, set it to your production URL (e.g., https://www.appnexu.com)',
-    ],
+      hasWhitespace ? '🚨 CRITICAL: DATABASE_URL has whitespace! Edit it in Vercel and remove extra spaces/newlines.' : '',
+    ].filter(Boolean),
   };
 
   // Test database connection
@@ -33,10 +40,12 @@ export async function GET() {
       status: 'connected ✅',
       userCount,
     };
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const errMsg = error instanceof Error ? error.message : String(error);
     (checks as any).database = {
       status: 'FAILED ❌',
-      error: error.message,
+      error: errMsg,
+      hint: hasWhitespace ? 'DATABASE_URL has whitespace - this is likely the cause!' : '',
     };
   }
 
