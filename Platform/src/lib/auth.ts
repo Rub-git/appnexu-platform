@@ -58,38 +58,54 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       },
       async authorize(credentials) {
         try {
-          console.log("[AUTH] authorize called, AUTH_SECRET exists:", !!process.env.AUTH_SECRET);
-          console.log("[AUTH] DATABASE_URL exists:", !!process.env.DATABASE_URL);
+          const dbUrl = process.env.DATABASE_URL || '';
+          const hasWhitespace = dbUrl !== dbUrl.trim();
+          console.log("[AUTH] authorize called");
+          console.log("[AUTH] AUTH_SECRET exists:", !!process.env.AUTH_SECRET);
+          console.log("[AUTH] DATABASE_URL exists:", !!process.env.DATABASE_URL, "length:", dbUrl.length);
+          if (hasWhitespace) {
+            console.error("[AUTH] ⚠️ DATABASE_URL has leading/trailing whitespace! This WILL cause connection failures.");
+          }
 
           if (!credentials?.email || !credentials?.password) {
             throw new CredentialsSignin("Missing credentials");
           }
 
+          const email = (credentials.email as string).trim().toLowerCase();
+          const password = credentials.password as string;
+
+          console.log("[AUTH] Looking up user:", email);
+
           // 1. Buscar usuario en la base de datos
-          const user = await prisma.user.findUnique({
-            where: { email: credentials.email as string },
-          });
+          let user;
+          try {
+            user = await prisma.user.findUnique({
+              where: { email },
+            });
+          } catch (dbError) {
+            console.error("[AUTH] Database query FAILED:", dbError instanceof Error ? dbError.message : dbError);
+            throw new CredentialsSignin("Database connection error");
+          }
 
           console.log("[AUTH] User found:", user?.email ? "yes" : "no");
 
           if (!user || !user.password) {
-            console.log("[AUTH] User not found or OAuth user without password");
+            console.log("[AUTH] User not found or no password set");
             throw new CredentialsSignin("Invalid credentials");
           }
 
           // 2. Validar password con bcrypt
-          const passwordMatch = await bcrypt.compare(
-            credentials.password as string,
-            user.password
-          );
+          console.log("[AUTH] Comparing password, hash prefix:", user.password.substring(0, 7), "hash length:", user.password.length);
+          const passwordMatch = await bcrypt.compare(password, user.password);
 
           console.log("[AUTH] Password valid:", passwordMatch);
 
           if (!passwordMatch) {
-            console.log("[AUTH] Incorrect password");
+            console.log("[AUTH] Incorrect password for", email);
             throw new CredentialsSignin("Invalid credentials");
           }
 
+          console.log("[AUTH] ✅ Login successful for", email);
           return {
             id: user.id,
             email: user.email,
