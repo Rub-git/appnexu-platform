@@ -108,11 +108,17 @@ export default async function AppPreviewPage({
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
         {/* Left Col: Details & Checklist */}
         <div className="space-y-6 lg:col-span-2">
-          {/* AI Suggestions Panel */}
           <AiSuggestionsPanel
             appId={app.id}
             currentName={app.appName}
-            onApplySuggestions={() => {}}
+            onApplySuggestions={async (updates) => {
+              "use server";
+              const { prisma } = await import('@/lib/prisma');
+              await prisma.appProject.update({
+                where: { id: app.id },
+                data: updates
+              });
+            }}
           />
 
           {/* Details Card */}

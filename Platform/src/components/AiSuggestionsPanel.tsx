@@ -6,6 +6,7 @@ import {
   Sparkles, Loader2, Check, X, RefreshCw, Wand2,
   ChevronDown, ChevronUp, AlertTriangle,
 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 interface AISuggestions {
   name: string | null;
@@ -68,12 +69,15 @@ export default function AiSuggestionsPanel({ appId, currentName, onApplySuggesti
     }
   };
 
-  const handleAcceptAll = () => {
+  const router = useRouter();
+
+  const handleAcceptAll = async () => {
     if (!suggestions) return;
     const updates: Record<string, string> = {};
     if (suggestions.name) updates.appName = suggestions.name;
     if (suggestions.colors?.primary) updates.themeColor = suggestions.colors.primary;
-    onApplySuggestions(updates);
+    await onApplySuggestions(updates);
+    router.refresh();
   };
 
   // Not yet analyzed — show trigger button
