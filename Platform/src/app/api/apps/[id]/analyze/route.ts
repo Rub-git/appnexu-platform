@@ -13,6 +13,9 @@ import { analyzeWebsiteWithAI } from '@/lib/ai-analyzer';
 import { checkRateLimit } from '@/lib/rate-limit';
 import { getUserPlan, checkAiAnalysisQuota } from '@/lib/plan-gates';
 
+export const maxDuration = 60; // Extend Vercel Hobby plan timeout
+export const dynamic = 'force-dynamic';
+
 export async function POST(
   _request: Request,
   { params }: { params: Promise<{ id: string }> }
