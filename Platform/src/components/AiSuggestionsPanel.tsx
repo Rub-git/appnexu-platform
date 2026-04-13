@@ -126,15 +126,28 @@ export default function AiSuggestionsPanel({ appId, currentName, onApplySuggesti
   if (status === 'ANALYZING' || loading) {
     return (
       <div className="rounded-xl border border-indigo-200 bg-indigo-50 p-4 dark:border-indigo-800 dark:bg-indigo-900/20">
-        <div className="flex items-center gap-2">
-          <Loader2 className="h-5 w-5 animate-spin text-[#178BFF]" />
-          <span className="text-sm font-medium text-indigo-900 dark:text-indigo-300">
-            {t('aiAnalyzer.analyzing')}
-          </span>
+        <div className="flex flex-col gap-3">
+          <div className="flex items-center gap-2">
+            <Loader2 className="h-5 w-5 animate-spin text-[#178BFF]" />
+            <span className="text-sm font-medium text-indigo-900 dark:text-indigo-300">
+              {t('aiAnalyzer.analyzing')}
+            </span>
+          </div>
+          <p className="text-xs text-[#178BFF]/70 dark:text-[#178BFF]/70">
+            {t('aiAnalyzer.analyzingDesc')}
+          </p>
+          <div className="mt-2 text-right">
+            <button
+              onClick={() => {
+                setStatus('NOT_ANALYZED');
+                setLoading(false);
+              }}
+              className="text-xs font-semibold text-indigo-600 underline hover:text-indigo-800 dark:text-indigo-400"
+            >
+              Forzar Reintento / Cancelar
+            </button>
+          </div>
         </div>
-        <p className="mt-2 text-xs text-[#178BFF]/70 dark:text-[#178BFF]/70">
-          {t('aiAnalyzer.analyzingDesc')}
-        </p>
       </div>
     );
   }

@@ -34,8 +34,8 @@ interface ExtractedData {
 
 // ─── Constants ───────────────────────────────────────────────────────
 
-const FETCH_TIMEOUT_MS = 15_000;  // max time to fetch the website
-const LLM_TIMEOUT_MS  = 30_000;  // max time for LLM API call
+const FETCH_TIMEOUT_MS = 3_000;  // max time to fetch the website
+const LLM_TIMEOUT_MS  = 6_000;  // max time for LLM API call
 const MAX_HTML_SIZE    = 2_000_000; // 2 MB – refuse absurdly large pages
 
 // ─── Main entry point ────────────────────────────────────────────────
