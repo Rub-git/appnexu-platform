@@ -93,13 +93,13 @@ export default function CustomDomainForm({ appId, currentDomain }: CustomDomainF
         </div>
       )}
 
-      <div className="flex gap-2">
+      <div className="flex flex-col xl:flex-row gap-2">
         <input
           type="text"
           value={domain}
           onChange={(e) => setDomain(e.target.value)}
           placeholder="app.yourdomain.com"
-          className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary dark:border-gray-600 dark:bg-gray-800 dark:text-white"
+          className="w-full xl:flex-1 min-w-0 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary dark:border-gray-600 dark:bg-gray-800 dark:text-white"
         />
         <button
           onClick={handleSave}

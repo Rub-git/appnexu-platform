@@ -114,10 +114,12 @@ export default async function AppPreviewPage({
             onApplySuggestions={async (updates) => {
               "use server";
               const { prisma } = await import('@/lib/prisma');
+              const { revalidatePath } = await import('next/cache');
               await prisma.appProject.update({
                 where: { id: app.id },
                 data: updates
               });
+              revalidatePath('/[locale]/(dashboard)/dashboard/preview/[id]', 'page');
             }}
           />
 

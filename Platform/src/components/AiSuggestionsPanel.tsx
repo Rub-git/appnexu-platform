@@ -71,13 +71,20 @@ export default function AiSuggestionsPanel({ appId, currentName, onApplySuggesti
 
   const router = useRouter();
 
+  const [isApplying, setIsApplying] = useState(false);
+
   const handleAcceptAll = async () => {
     if (!suggestions) return;
-    const updates: Record<string, string> = {};
-    if (suggestions.name) updates.appName = suggestions.name;
-    if (suggestions.colors?.primary) updates.themeColor = suggestions.colors.primary;
-    await onApplySuggestions(updates);
-    router.refresh();
+    setIsApplying(true);
+    try {
+      const updates: Record<string, string> = {};
+      if (suggestions.name) updates.appName = suggestions.name;
+      if (suggestions.colors?.primary) updates.themeColor = suggestions.colors.primary;
+      await onApplySuggestions(updates);
+      router.refresh();
+    } finally {
+      setIsApplying(false);
+    }
   };
 
   // Not yet analyzed — show trigger button
@@ -208,9 +215,14 @@ export default function AiSuggestionsPanel({ appId, currentName, onApplySuggesti
             <div className="mt-4 flex gap-2">
               <button
                 onClick={handleAcceptAll}
-                className="inline-flex items-center rounded-lg bg-green-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-green-700"
+                disabled={isApplying}
+                className="inline-flex items-center rounded-lg bg-green-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-green-700 disabled:opacity-50"
               >
-                <Check className="mr-1.5 h-4 w-4" />
+                {isApplying ? (
+                  <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
+                ) : (
+                  <Check className="mr-1.5 h-4 w-4" />
+                )}
                 {t('aiAnalyzer.acceptAll')}
               </button>
               <button
