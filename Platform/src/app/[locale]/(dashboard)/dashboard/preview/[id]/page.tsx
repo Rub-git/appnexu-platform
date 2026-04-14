@@ -5,20 +5,10 @@ import { ArrowLeft, Check, ExternalLink, Settings2, BarChart3 } from 'lucide-rea
 import { prisma } from '@/lib/prisma';
 import { auth } from '@/lib/auth';
 import { notFound, redirect } from 'next/navigation';
-import InstallButton from '@/components/InstallButton';
 import PublishButton from '@/components/PublishButton';
 import CustomDomainForm from '@/components/CustomDomainForm';
 import AiSuggestionsPanel from '@/components/AiSuggestionsPanel';
 import ApkExportButton from '@/components/ApkExportButton';
-
-import { Metadata } from 'next';
-
-export async function generateMetadata({ params }: { params: Promise<{ id: string; locale: string }> }): Promise<Metadata> {
-  const { id } = await params;
-  return {
-    manifest: `/pwa/${id}/manifest.json`,
-  };
-}
 
 export default async function AppPreviewPage({ 
   params 
@@ -110,7 +100,6 @@ export default async function AppPreviewPage({
             <Settings2 className="-ml-1 mr-2 h-4 w-4" />
             {t('preview.configure')}
           </Link>
-          <InstallButton appId={app.id} />
         </div>
       </div>
 

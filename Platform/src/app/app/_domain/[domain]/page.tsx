@@ -4,12 +4,18 @@ import InstallButton from '@/components/InstallButton';
 import AnalyticsTracker from '@/components/AnalyticsTracker';
 import { Smartphone } from 'lucide-react';
 
+export const dynamic = 'force-dynamic';
+
 export default async function CustomDomainPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ domain: string }>;
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
   const { domain } = await params;
+  const resolvedSearchParams = await searchParams;
+  const isPwa = resolvedSearchParams?.pwa === 'true';
 
   // Look up app by custom domain
   const app = await prisma.appProject.findUnique({
@@ -18,6 +24,20 @@ export default async function CustomDomainPage({
 
   if (!app || app.status !== 'PUBLISHED') {
     notFound();
+  }
+
+  if (isPwa) {
+    return (
+      <div className="h-[100dvh] w-screen overflow-hidden bg-white dark:bg-black">
+        <AnalyticsTracker appId={app.id} />
+        <iframe
+          src={app.targetUrl}
+          className="h-full w-full border-0"
+          title={app.appName}
+          sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
+        />
+      </div>
+    );
   }
 
   return (

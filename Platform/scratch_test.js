@@ -1,11 +1,9 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 async function main() {
-  const apps = await prisma.appProject.findMany({
-    select: { id: true, slug: true, status: true, appName: true },
-    orderBy: { createdAt: 'desc' },
-    take: 3
+  const app = await prisma.appProject.findUnique({
+    where: { slug: 'cmnxj7l4x0003kz04r5js866g' }
   });
-  console.log(apps);
+  console.log('App by slug:', app ? app.status : 'NOT FOUND');
 }
 main().catch(console.error).finally(() => prisma.$disconnect());
