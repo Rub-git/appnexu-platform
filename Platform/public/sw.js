@@ -90,7 +90,11 @@ self.addEventListener('fetch', (event) => {
                     if (cachedResponse) {
                         return cachedResponse;
                     }
-                    return caches.match(OFFLINE_URL);
+                    const offlineResponse = await caches.match(OFFLINE_URL);
+                    if (offlineResponse) {
+                        return offlineResponse;
+                    }
+                    return new Response('Offline', { status: 503, headers: { 'Content-Type': 'text/plain' } });
                 })
         );
         return;
@@ -98,7 +102,7 @@ self.addEventListener('fetch', (event) => {
 
     // Stale-while-revalidate for other requests
     event.respondWith(
-        caches.match(request).then((cachedResponse) => {
+        caches.match(request).then(async (cachedResponse) => {
             const fetchPromise = fetch(request)
                 .then((networkResponse) => {
                     if (networkResponse && networkResponse.ok) {
@@ -111,7 +115,18 @@ self.addEventListener('fetch', (event) => {
                 })
                 .catch(() => null);
 
-            return cachedResponse || fetchPromise;
+            if (cachedResponse) {
+                // Return cached but trigger fetch in background
+                fetchPromise;
+                return cachedResponse;
+            }
+
+            const networkResponse = await fetchPromise;
+            if (networkResponse) {
+                return networkResponse;
+            }
+            
+            return new Response('Network error', { status: 503 });
         })
     );
 });
