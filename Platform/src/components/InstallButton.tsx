@@ -26,9 +26,9 @@ export default function InstallButton({ appId }: InstallButtonProps) {
       return;
     }
 
-    // Inject app-specific manifest
-    const existingManifest = document.querySelector('link[rel="manifest"][data-app-manifest]');
-    if (existingManifest) existingManifest.remove();
+    // Remove ALL existing manifests to prevent the browser from reading the platform's default manifest
+    const existingManifests = document.querySelectorAll('link[rel="manifest"]');
+    existingManifests.forEach(m => m.remove());
 
     const manifestLink = document.createElement('link');
     manifestLink.rel = 'manifest';
@@ -39,7 +39,7 @@ export default function InstallButton({ appId }: InstallButtonProps) {
     // Register app-specific service worker
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker
-        .register(`/pwa/${appId}/sw.js`, { scope: '/' })
+        .register(`/pwa/${appId}/sw.js`, { scope: '/app/' })
         .then((registration) => {
           console.log('App SW registered:', registration.scope);
         })

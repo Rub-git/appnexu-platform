@@ -11,6 +11,15 @@ import CustomDomainForm from '@/components/CustomDomainForm';
 import AiSuggestionsPanel from '@/components/AiSuggestionsPanel';
 import ApkExportButton from '@/components/ApkExportButton';
 
+import { Metadata } from 'next';
+
+export async function generateMetadata({ params }: { params: Promise<{ id: string; locale: string }> }): Promise<Metadata> {
+  const { id } = await params;
+  return {
+    manifest: `/pwa/${id}/manifest.json`,
+  };
+}
+
 export default async function AppPreviewPage({ 
   params 
 }: { 

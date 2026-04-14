@@ -97,6 +97,8 @@ function generateIcons(iconUrls: string[]): ManifestIcon[] {
     return icons;
 }
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(
     request: Request,
     { params }: { params: Promise<{ id: string }> }
@@ -123,8 +125,8 @@ export async function GET(
             name: app.appName,
             short_name: shortName,
             description: `${app.appName} - Progressive Web App`,
-            start_url: '/',
-            scope: '/',
+            start_url: `/app/${app.slug}?pwa=true`,
+            scope: `/app/${app.slug}`,
             display: 'standalone',
             orientation: 'portrait-primary',
             theme_color: app.themeColor || '#178BFF',
@@ -139,7 +141,7 @@ export async function GET(
                     name: `Open ${app.appName}`,
                     short_name: 'Open',
                     description: `Open ${app.appName}`,
-                    url: '/',
+                    url: `/app/${app.slug}`,
                     icons: icons.length > 0 ? [icons[0]] : []
                 }
             ]
@@ -148,7 +150,7 @@ export async function GET(
         return new NextResponse(JSON.stringify(manifest, null, 2), {
             headers: {
                 'Content-Type': 'application/manifest+json',
-                'Cache-Control': 'public, max-age=3600',
+                'Cache-Control': 'no-cache, no-store, must-revalidate',
                 'Access-Control-Allow-Origin': '*',
             },
         });

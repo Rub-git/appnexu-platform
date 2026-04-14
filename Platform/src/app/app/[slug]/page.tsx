@@ -4,17 +4,27 @@ import InstallButton from '@/components/InstallButton';
 import AnalyticsTracker from '@/components/AnalyticsTracker';
 import { Smartphone, Globe } from 'lucide-react';
 
+export const dynamic = 'force-dynamic';
+
 export default async function PublicAppPage({ 
-  params 
+  params,
+  searchParams
 }: { 
-  params: Promise<{ slug: string }> 
+  params: Promise<{ slug: string }>;
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
   const { slug } = await params;
+  const resolvedSearchParams = await searchParams;
+  const isPwa = resolvedSearchParams?.pwa === 'true';
+
+  console.log('PublicAppPage requested slug:', slug);
 
   // Find app by slug - only show PUBLISHED apps publicly
   const app = await prisma.appProject.findUnique({
     where: { slug },
   });
+
+  console.log('PublicAppPage app found:', app?.id, 'status:', app?.status);
 
   if (!app) {
     notFound();
@@ -25,6 +35,21 @@ export default async function PublicAppPage({
     notFound();
   }
   
+  if (isPwa) {
+    return (
+      <div className="h-[100dvh] w-screen overflow-hidden bg-white dark:bg-black">
+        {/* Analytics Tracking */}
+        <AnalyticsTracker appId={app.id} />
+        <iframe
+          src={app.targetUrl}
+          className="h-full w-full border-0"
+          title={app.appName}
+          sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-black">
       {/* Analytics Tracking */}

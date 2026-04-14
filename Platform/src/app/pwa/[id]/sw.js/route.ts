@@ -26,7 +26,8 @@ const OFFLINE_URL = '/offline.html';
 
 // Resources to pre-cache during installation
 const PRECACHE_URLS = [
-    '/',
+    '/app/${app.slug}?pwa=true',
+    '/app/${app.slug}',
     OFFLINE_URL,
     '/icons/icon-192.png',
     '/icons/icon-512.png'
@@ -87,6 +88,11 @@ self.addEventListener('fetch', (event) => {
 
     // Skip non-GET requests
     if (request.method !== 'GET') {
+        return;
+    }
+
+    // Skip non-HTTP(S) schemes (e.g., chrome-extension://)
+    if (!url.protocol.startsWith('http')) {
         return;
     }
 

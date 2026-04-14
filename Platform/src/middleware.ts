@@ -31,6 +31,7 @@ export default async function middleware(request: NextRequest) {
   if (
     pathname.startsWith('/api') ||
     pathname.startsWith('/pwa') ||
+    pathname.startsWith('/app') ||
     pathname.startsWith('/_next') ||
     pathname.startsWith('/icons') ||
     pathname.includes('.') // Static files
