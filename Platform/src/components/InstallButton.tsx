@@ -19,12 +19,7 @@ export default function InstallButton({ appId }: InstallButtonProps) {
   const deferredPrompt = useRef<BeforeInstallPromptEvent | null>(null);
 
   useEffect(() => {
-    // Check if already installed
-    if (window.matchMedia('(display-mode: standalone)').matches) {
-      setIsInstalled(true);
-      setIsLoading(false);
-      return;
-    }
+    // Removed standalone check because it conflicts if the parent platform (Appnexu) itself is installed as a PWA
 
     // Remove ALL existing manifests to prevent the browser from reading the platform's default manifest
     const existingManifests = document.querySelectorAll('link[rel="manifest"]');
