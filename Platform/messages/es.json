@@ -99,6 +99,9 @@
     "form": {
       "appName": "Nombre de la App",
       "shortName": "Nombre Corto",
+      "iconUrls": "URLs de iconos de la App",
+      "iconUrlsPlaceholder": "https://ejemplo.com/icon-192.png, https://ejemplo.com/icon-512.png",
+      "iconUrlsHelp": "Separar varias URLs de iconos con comas. También se permiten rutas relativas como /icons/icon-192.png.",
       "themeColor": "Color del Tema",
       "backgroundColor": "Color de Fondo",
       "saveButton": "Guardar Cambios",

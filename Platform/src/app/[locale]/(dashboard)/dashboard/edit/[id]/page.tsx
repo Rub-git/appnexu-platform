@@ -11,6 +11,7 @@ interface App {
   shortName: string | null;
   themeColor: string | null;
   backgroundColor: string | null;
+  iconUrls: string | null;
 }
 
 export default function EditAppPage({ params }: { params: Promise<{ id: string }> }) {
@@ -23,6 +24,7 @@ export default function EditAppPage({ params }: { params: Promise<{ id: string }
   const [shortName, setShortName] = useState('');
   const [themeColor, setThemeColor] = useState('#178BFF');
   const [backgroundColor, setBackgroundColor] = useState('#ffffff');
+  const [iconUrls, setIconUrls] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState('');
@@ -39,6 +41,7 @@ export default function EditAppPage({ params }: { params: Promise<{ id: string }
         setShortName(appData.shortName || '');
         setThemeColor(appData.themeColor || '#178BFF');
         setBackgroundColor(appData.backgroundColor || '#ffffff');
+        setIconUrls(appData.iconUrls || '');
       } catch (err) {
         setError(t('errors.appNotFound'));
       } finally {
@@ -62,6 +65,7 @@ export default function EditAppPage({ params }: { params: Promise<{ id: string }
           shortName: shortName || undefined,
           themeColor,
           backgroundColor,
+          iconUrls: iconUrls.trim() ? iconUrls : undefined,
         }),
       });
 
@@ -146,6 +150,34 @@ export default function EditAppPage({ params }: { params: Promise<{ id: string }
               maxLength={12}
               className="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-3 text-gray-900 focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
             />
+          </div>
+
+          <div>
+            <label htmlFor="iconUrls" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              {t('editApp.form.iconUrls')}
+            </label>
+            <textarea
+              id="iconUrls"
+              value={iconUrls}
+              onChange={(e) => setIconUrls(e.target.value)}
+              rows={4}
+              placeholder={t('editApp.form.iconUrlsPlaceholder')}
+              className="mt-1 block w-full rounded-lg border border-gray-300 px-4 py-3 text-gray-900 focus:border-primary focus:ring-2 focus:ring-primary/20 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+            />
+            <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+              {t('editApp.form.iconUrlsHelp')}
+            </p>
+            {iconUrls.trim() && (
+              <div className="mt-4 grid grid-cols-3 gap-3">
+                {iconUrls.split(',').map((url) => url.trim()).filter(Boolean).map((url, index) => (
+                  <div key={index} className="overflow-hidden rounded-2xl border border-gray-200 bg-white p-2 dark:border-gray-700 dark:bg-gray-950">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={url} alt={`Icon ${index + 1}`} className="h-16 w-16 rounded-xl object-cover" />
+                    <p className="mt-2 truncate text-xs text-gray-500 dark:text-gray-400">{url}</p>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           <div className="grid grid-cols-2 gap-4">

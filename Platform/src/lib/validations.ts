@@ -67,11 +67,29 @@ export const generateSchema = z.object({
 
 // ─── Update app ───────────────────────────────────────────────────────
 
+const iconUrlsSchema = z.string().max(5000).optional().refine((value) => {
+  if (!value || value.trim() === '') return true;
+  return value
+    .split(',')
+    .map((part) => part.trim())
+    .filter(Boolean)
+    .every((url) => {
+      if (url.startsWith('/')) return true;
+      try {
+        const parsed = new URL(url);
+        return ['http:', 'https:'].includes(parsed.protocol) && isSafeUrl(url);
+      } catch {
+        return false;
+      }
+    });
+}, { message: 'Invalid icon URL list' });
+
 export const updateAppSchema = z.object({
   appName: z.string().min(1).max(200).optional(),
   shortName: z.string().max(12).optional(),
   themeColor: z.string().regex(/^#[0-9a-fA-F]{3,8}$/, 'Invalid color format').optional(),
   backgroundColor: z.string().regex(/^#[0-9a-fA-F]{3,8}$/, 'Invalid color format').optional(),
+  iconUrls: iconUrlsSchema,
 });
 
 // ─── Custom domain ────────────────────────────────────────────────────
