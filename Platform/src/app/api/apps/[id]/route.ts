@@ -87,6 +87,7 @@ export async function PATCH(
         shortName: data.shortName ?? app.shortName,
         themeColor: data.themeColor ?? app.themeColor,
         backgroundColor: data.backgroundColor ?? app.backgroundColor,
+        iconUrls: data.iconUrls ?? app.iconUrls,
       },
     });
 
