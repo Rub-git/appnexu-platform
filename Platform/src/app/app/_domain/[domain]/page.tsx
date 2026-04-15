@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import { prisma } from '@/lib/prisma';
 import { notFound } from 'next/navigation';
 import InstallButton from '@/components/InstallButton';
@@ -5,6 +6,16 @@ import AnalyticsTracker from '@/components/AnalyticsTracker';
 import { Smartphone } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
+
+export async function generateMetadata({ params }: { params: Promise<{ domain: string }> }): Promise<Metadata> {
+  const { domain } = await params;
+  const app = await prisma.appProject.findUnique({ where: { customDomain: domain } });
+  if (!app) return {};
+
+  return {
+    manifest: `/pwa/${app.id}/manifest.json?startUrl=${encodeURIComponent('/')}&scope=${encodeURIComponent('/')}`,
+  };
+}
 
 export default async function CustomDomainPage({
   params,

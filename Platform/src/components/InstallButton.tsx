@@ -21,21 +21,10 @@ export default function InstallButton({ appId }: InstallButtonProps) {
   useEffect(() => {
     // Removed standalone check because it conflicts if the parent platform (Appnexu) itself is installed as a PWA
 
-    // Remove ALL existing manifests to prevent the browser from reading the platform's default manifest
-    const existingManifests = document.querySelectorAll('link[rel="manifest"]');
-    existingManifests.forEach(m => m.remove());
-
     const pathname = window.location.pathname.replace(/\/$/, '');
     const basePath = pathname.split('/').slice(0, -1).join('/') || '/';
     const scope = `${basePath}/`;
-    const manifestUrl = `/pwa/${appId}/manifest.json?startUrl=${encodeURIComponent(pathname)}&scope=${encodeURIComponent(scope)}`;
     const swUrl = `${scope}sw.js?appId=${encodeURIComponent(appId)}`;
-
-    const manifestLink = document.createElement('link');
-    manifestLink.rel = 'manifest';
-    manifestLink.href = manifestUrl;
-    manifestLink.setAttribute('data-app-manifest', 'true');
-    document.head.appendChild(manifestLink);
 
     // Register app-specific service worker
     if ('serviceWorker' in navigator) {
