@@ -25,16 +25,22 @@ export default function InstallButton({ appId }: InstallButtonProps) {
     const existingManifests = document.querySelectorAll('link[rel="manifest"]');
     existingManifests.forEach(m => m.remove());
 
+    const pathname = window.location.pathname.replace(/\/$/, '');
+    const basePath = pathname.split('/').slice(0, -1).join('/') || '/';
+    const scope = `${basePath}/`;
+    const manifestUrl = `/pwa/${appId}/manifest.json?startUrl=${encodeURIComponent(pathname)}&scope=${encodeURIComponent(scope)}`;
+    const swUrl = `${scope}sw.js?appId=${encodeURIComponent(appId)}`;
+
     const manifestLink = document.createElement('link');
     manifestLink.rel = 'manifest';
-    manifestLink.href = `/pwa/${appId}/manifest.json`;
+    manifestLink.href = manifestUrl;
     manifestLink.setAttribute('data-app-manifest', 'true');
     document.head.appendChild(manifestLink);
 
     // Register app-specific service worker
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker
-        .register(`/pwa/${appId}/sw.js`, { scope: '/' })
+        .register(swUrl, { scope })
         .then((registration) => {
           console.log('App SW registered:', registration.scope);
         })

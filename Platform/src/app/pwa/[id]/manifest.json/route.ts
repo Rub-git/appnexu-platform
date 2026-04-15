@@ -114,6 +114,10 @@ export async function GET(
             return new NextResponse('App not found', { status: 404 });
         }
 
+        const url = new URL(request.url);
+        const requestedStartUrl = url.searchParams.get('startUrl');
+        const requestedScope = url.searchParams.get('scope');
+
         // Parse iconUrls from comma-separated string
         const parsedIconUrls = parseIconUrls(app.iconUrls);
         const icons = generateIcons(parsedIconUrls);
@@ -125,8 +129,8 @@ export async function GET(
             name: app.appName,
             short_name: shortName,
             description: `${app.appName} - Progressive Web App`,
-            start_url: `/app/${app.slug}?pwa=true`,
-            scope: `/app/${app.slug}`,
+            start_url: requestedStartUrl || `/app/${app.slug}?pwa=true`,
+            scope: requestedScope || `/app/${app.slug}`,
             display: 'standalone',
             orientation: 'portrait-primary',
             theme_color: app.themeColor || '#178BFF',
