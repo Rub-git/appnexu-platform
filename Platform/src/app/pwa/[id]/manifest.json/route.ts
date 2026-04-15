@@ -114,10 +114,6 @@ export async function GET(
             return new NextResponse('App not found', { status: 404 });
         }
 
-        const url = new URL(request.url);
-        const requestedStartUrl = url.searchParams.get('startUrl');
-        const requestedScope = url.searchParams.get('scope');
-
         // Parse iconUrls from comma-separated string
         const parsedIconUrls = parseIconUrls(app.iconUrls);
         const icons = generateIcons(parsedIconUrls);
@@ -125,12 +121,17 @@ export async function GET(
         // Generate short_name - truncate to 12 characters if needed (PWA requirement)
         const shortName = (app.shortName || app.appName).substring(0, 12);
 
+        // Extract dynamic start_url and scope from request, with fallbacks
+        const urlObj = new URL(request.url);
+        const startUrl = urlObj.searchParams.get('start_url') || `/app/${app.slug}?pwa=true`;
+        const scope = urlObj.searchParams.get('scope') || `/app/${app.slug}`;
+
         const manifest = {
             name: app.appName,
             short_name: shortName,
             description: `${app.appName} - Progressive Web App`,
-            start_url: requestedStartUrl || `/app/${app.slug}?pwa=true`,
-            scope: requestedScope || `/app/${app.slug}`,
+            start_url: startUrl,
+            scope: scope,
             display: 'standalone',
             orientation: 'portrait-primary',
             theme_color: app.themeColor || '#178BFF',

@@ -21,15 +21,25 @@ export default function InstallButton({ appId }: InstallButtonProps) {
   useEffect(() => {
     // Removed standalone check because it conflicts if the parent platform (Appnexu) itself is installed as a PWA
 
-    const pathname = window.location.pathname.replace(/\/$/, '');
-    const basePath = pathname.split('/').slice(0, -1).join('/') || '/';
-    const scope = `${basePath}/`;
-    const swUrl = `${scope}sw.js?appId=${encodeURIComponent(appId)}`;
+    // Remove ALL existing manifests to prevent the browser from reading the platform's default manifest
+    const existingManifests = document.querySelectorAll('link[rel="manifest"]');
+    existingManifests.forEach(m => m.remove());
+
+    // Dynamically determine the scope based on the current URL
+    // This allows the PWA to work correctly under locales (e.g. /es/app/...) and custom domains.
+    const currentPath = window.location.pathname;
+    const startUrl = `${currentPath}?pwa=true`;
+
+    const manifestLink = document.createElement('link');
+    manifestLink.rel = 'manifest';
+    manifestLink.href = `/pwa/${appId}/manifest.json?start_url=${encodeURIComponent(startUrl)}&scope=${encodeURIComponent(currentPath)}`;
+    manifestLink.setAttribute('data-app-manifest', 'true');
+    document.head.appendChild(manifestLink);
 
     // Register app-specific service worker
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker
-        .register(swUrl, { scope })
+        .register(`/pwa/${appId}/sw.js?scope=${encodeURIComponent(currentPath)}`, { scope: currentPath })
         .then((registration) => {
           console.log('App SW registered:', registration.scope);
         })

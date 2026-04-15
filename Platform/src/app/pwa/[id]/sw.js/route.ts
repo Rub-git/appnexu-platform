@@ -16,6 +16,10 @@ export async function GET(
             return new NextResponse('App not found', { status: 404 });
         }
 
+        const urlObj = new URL(request.url);
+        const scope = urlObj.searchParams.get('scope') || `/app/${app.slug}`;
+        const startUrl = `${scope}?pwa=true`;
+
         // Service Worker with stale-while-revalidate strategy
         const swScript = `
 // Service Worker for ${app.appName}
@@ -26,8 +30,8 @@ const OFFLINE_URL = '/offline.html';
 
 // Resources to pre-cache during installation
 const PRECACHE_URLS = [
-    '/app/${app.slug}?pwa=true',
-    '/app/${app.slug}',
+    '${startUrl}',
+    '${scope}',
     OFFLINE_URL,
     '/icons/icon-192.png',
     '/icons/icon-512.png'
