@@ -265,7 +265,7 @@ export default async function AppPreviewPage({
               />
               {app.status === 'PUBLISHED' && (
                 <p className="mt-3 text-sm text-gray-500 dark:text-gray-400">
-                  {t('publish.publicUrl')}: <a href={`/app/${app.slug}`} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">/app/{app.slug}</a>
+                  {t('publish.publicUrl')}: <a href={`/${locale}/app/${app.slug}`} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">{`/${locale}/app/${app.slug}`}</a>
                 </p>
               )}
             </div>

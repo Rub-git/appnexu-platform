@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useTransition, useCallback } from 'react';
 import { useRouter } from '@/i18n/routing';
-import { useTranslations } from 'next-intl';
+import { useTranslations, useLocale } from 'next-intl';
 import { Rocket, Loader2, Globe, XCircle, RotateCw, AlertTriangle } from 'lucide-react';
 
 interface PublishButtonProps {
@@ -28,6 +28,7 @@ export default function PublishButton({
   const [liveFailureReason, setLiveFailureReason] = useState(failureReason);
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
+  const locale = useLocale();
   const t = useTranslations();
 
   const isPublished = liveStatus === 'PUBLISHED';
@@ -235,7 +236,7 @@ export default function PublishButton({
         )}
         <div className="flex items-center gap-2">
           <a
-            href={`/app/${slug}`}
+            href={`/${locale}/app/${slug}`}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-2 rounded-lg bg-green-50 px-4 py-2 text-sm font-medium text-green-700 hover:bg-green-100 dark:bg-green-900/20 dark:text-green-400 dark:hover:bg-green-900/30"

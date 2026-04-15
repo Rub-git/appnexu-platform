@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { useTranslations } from 'next-intl';
+import { useTranslations, useLocale } from 'next-intl';
 import {
   Smartphone,
   Search,
@@ -42,6 +42,7 @@ interface Pagination {
 
 export default function AdminAppsPage() {
   const t = useTranslations();
+  const locale = useLocale();
   const [apps, setApps] = useState<AppRow[]>([]);
   const [pagination, setPagination] = useState<Pagination>({ page: 1, limit: 20, total: 0, totalPages: 0 });
   const [loading, setLoading] = useState(true);
@@ -137,9 +138,9 @@ export default function AdminAppsPage() {
                     <div>
                       <p className="font-medium text-gray-900 dark:text-white">{app.appName}</p>
                       <p className="text-xs text-gray-400 flex items-center gap-1">
-                        /{app.slug}
+                        {`/${locale}/app/${app.slug}`}
                         {app.status === 'PUBLISHED' && (
-                          <a href={`/app/${app.slug}`} target="_blank" rel="noreferrer" className="text-primary hover:underline">
+                          <a href={`/${locale}/app/${app.slug}`} target="_blank" rel="noreferrer" className="text-primary hover:underline">
                             <ExternalLink size={10} />
                           </a>
                         )}
