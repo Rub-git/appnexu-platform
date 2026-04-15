@@ -34,7 +34,7 @@ export default function InstallButton({ appId }: InstallButtonProps) {
     // Register app-specific service worker
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker
-        .register(`/pwa/${appId}/sw.js`, { scope: '/app/' })
+        .register(`/pwa/${appId}/sw.js`, { scope: '/' })
         .then((registration) => {
           console.log('App SW registered:', registration.scope);
         })
