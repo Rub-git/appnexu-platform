@@ -142,15 +142,15 @@ export default async function DashboardPage({
                   <h3 className="text-lg font-medium text-gray-900 dark:text-white">
                     <Link
                       href={`/dashboard/preview/${app.id}`}
-                      className="hover:text-[#178BFF]"
+                      className="hover:text-[#178BFF] break-all"
                     >
                       {app.appName}
                     </Link>
                   </h3>
-                  <p className="mt-1 flex items-center gap-1 truncate text-sm text-gray-500 dark:text-gray-400">
-                    {app.targetUrl}
-                    <ExternalLink size={12} className="flex-shrink-0" />
-                  </p>
+                  <div className="mt-1 flex items-start gap-1 text-sm text-gray-500 dark:text-gray-400">
+                    <span className="break-all">{app.targetUrl}</span>
+                    <ExternalLink size={12} className="flex-shrink-0 mt-1" />
+                  </div>
                 </div>
 
                 {/* Publish actions */}
@@ -208,9 +208,9 @@ export default async function DashboardPage({
                   <StatusBadge status={app.status} t={t} />
                 </div>
                 {app.customDomain && (
-                  <div className="mt-1 flex items-center gap-1 text-xs text-gray-400">
-                    <Globe size={10} />
-                    {app.customDomain}
+                  <div className="mt-1 flex items-start gap-1 text-xs text-gray-400">
+                    <Globe size={10} className="flex-shrink-0 mt-0.5" />
+                    <span className="break-all">{app.customDomain}</span>
                   </div>
                 )}
               </div>
