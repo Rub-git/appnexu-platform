@@ -12,10 +12,22 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const app = await prisma.appProject.findUnique({ where: { slug } });
   if (!app) return {};
 
+  const iconUrls = app.iconUrls ? app.iconUrls.split(',').map(u => u.trim()).filter(Boolean) : [];
+  const primaryIcon = iconUrls.length > 0 ? iconUrls[0] : '/icons/icon-192.png';
+
   const pathname = `/app/${slug}`;
   const scope = `/app/`;
   return {
+    title: app.appName,
     manifest: `/pwa/${app.id}/manifest.json?startUrl=${encodeURIComponent(pathname)}&scope=${encodeURIComponent(scope)}`,
+    appleWebApp: {
+      capable: true,
+      title: app.appName,
+      statusBarStyle: 'default',
+    },
+    icons: {
+      apple: primaryIcon,
+    },
   };
 }
 
