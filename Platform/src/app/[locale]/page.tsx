@@ -20,9 +20,9 @@ function HomeContent() {
     <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white dark:from-gray-950 dark:to-black">
       {/* Navigation */}
       <nav className="sticky top-0 z-50 w-full border-b border-gray-200/60 bg-white/80 backdrop-blur-xl dark:border-gray-800 dark:bg-black/80">
-        <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+        <div className="mx-auto flex h-48 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
           <Link href="/" className="transition-opacity hover:opacity-80">
-            <Logo size={56} variant="icon" />
+            <Logo size={168} variant="icon" />
           </Link>
           <div className="flex items-center gap-4">
             <LanguageSwitcher />
