@@ -16,10 +16,23 @@ export default function InstallButton({ appId }: InstallButtonProps) {
   const [isInstallable, setIsInstallable] = useState(false);
   const [isInstalled, setIsInstalled] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [supportsManualInstallHints, setSupportsManualInstallHints] = useState(false);
   const deferredPrompt = useRef<BeforeInstallPromptEvent | null>(null);
 
   useEffect(() => {
-    // Removed standalone check because it conflicts if the parent platform (Appnexu) itself is installed as a PWA
+    // If this page is already running in standalone/app mode, treat it as installed.
+    const isStandalone =
+      window.matchMedia('(display-mode: standalone)').matches ||
+      (window.navigator as Navigator & { standalone?: boolean }).standalone === true;
+
+    const manualInstallCapable = /iPad|iPhone|iPod|Android/.test(navigator.userAgent);
+    setSupportsManualInstallHints(manualInstallCapable);
+
+    if (isStandalone) {
+      setIsInstalled(true);
+      setIsLoading(false);
+      return;
+    }
 
     // Remove ALL existing manifests to prevent the browser from reading the platform's default manifest
     const existingManifests = document.querySelectorAll('link[rel="manifest"]');
@@ -98,6 +111,7 @@ export default function InstallButton({ appId }: InstallButtonProps) {
     } else {
       // Fallback for iOS and browsers without beforeinstallprompt
       const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+      const isAndroid = /Android/.test(navigator.userAgent);
       if (isIOS) {
         alert(
           'To install on iOS:\n' +
@@ -105,8 +119,16 @@ export default function InstallButton({ appId }: InstallButtonProps) {
           '2. Select "Add to Home Screen"\n' +
           '3. Tap "Add"'
         );
+      } else if (isAndroid) {
+        alert(
+          'To install on Android:\n' +
+          '1. Open browser menu (three dots)\n' +
+          '2. Select "Install app" or "Add to Home screen"\n' +
+          '3. Confirm installation'
+        );
       } else {
         alert(
+          'Automatic install is not available in this browser context.\n\n' +
           'To install this app:\n' +
           '1. Open browser menu (three dots)\n' +
           '2. Select "Install app" or "Add to Home screen"'
@@ -142,10 +164,11 @@ export default function InstallButton({ appId }: InstallButtonProps) {
   return (
     <button
       onClick={handleInstall}
-      className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+      disabled={!isInstallable && !supportsManualInstallHints}
+      className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
     >
       <Download className="-ml-1 mr-2 h-4 w-4" />
-      Install App
+      {isInstallable ? 'Install App' : 'Install Help'}
     </button>
   );
 }
