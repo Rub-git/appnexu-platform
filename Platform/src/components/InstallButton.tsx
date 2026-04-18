@@ -16,7 +16,6 @@ export default function InstallButton({ appId }: InstallButtonProps) {
   const [isInstallable, setIsInstallable] = useState(false);
   const [isInstalled, setIsInstalled] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [supportsManualInstallHints, setSupportsManualInstallHints] = useState(false);
   const deferredPrompt = useRef<BeforeInstallPromptEvent | null>(null);
 
   useEffect(() => {
@@ -24,9 +23,6 @@ export default function InstallButton({ appId }: InstallButtonProps) {
     const isStandalone =
       window.matchMedia('(display-mode: standalone)').matches ||
       (window.navigator as Navigator & { standalone?: boolean }).standalone === true;
-
-    const manualInstallCapable = /iPad|iPhone|iPod|Android/.test(navigator.userAgent);
-    setSupportsManualInstallHints(manualInstallCapable);
 
     if (isStandalone) {
       setIsInstalled(true);
@@ -164,8 +160,7 @@ export default function InstallButton({ appId }: InstallButtonProps) {
   return (
     <button
       onClick={handleInstall}
-      disabled={!isInstallable && !supportsManualInstallHints}
-      className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+      className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
     >
       <Download className="-ml-1 mr-2 h-4 w-4" />
       {isInstallable ? 'Install App' : 'Install Help'}
