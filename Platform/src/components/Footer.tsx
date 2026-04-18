@@ -12,7 +12,15 @@ export default function Footer() {
       <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
         <div className="flex flex-col items-center gap-6 sm:flex-row sm:justify-between">
           <div className="flex flex-col items-center gap-2 sm:items-start">
-            <Logo size={28} />
+            <div className="sm:hidden">
+              <Logo size={56} variant="icon" />
+            </div>
+            <div className="hidden sm:block lg:hidden">
+              <Logo size={72} variant="icon" />
+            </div>
+            <div className="hidden lg:block">
+              <Logo size={88} variant="icon" />
+            </div>
             <p className="text-sm text-gray-500 dark:text-gray-400">
               {t('common.tagline')}
             </p>
