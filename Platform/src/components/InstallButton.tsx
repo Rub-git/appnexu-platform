@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useRef } from 'react';
+import Image from 'next/image';
 import { Download, Check, Loader2, ExternalLink, Copy } from 'lucide-react';
 
 interface BeforeInstallPromptEvent extends Event {
@@ -130,6 +131,11 @@ export default function InstallButton({ appId }: InstallButtonProps) {
 
   const isIOS = typeof navigator !== 'undefined' && /iPad|iPhone|iPod/.test(navigator.userAgent);
   const isAndroid = typeof navigator !== 'undefined' && /Android/.test(navigator.userAgent);
+  const guideImageSrc = isIOS
+    ? '/images/install-guides/ios-install.svg'
+    : isAndroid
+      ? '/images/install-guides/android-install.svg'
+      : '/images/install-guides/desktop-install.svg';
 
   if (isInstalled) {
     return (
@@ -170,6 +176,16 @@ export default function InstallButton({ appId }: InstallButtonProps) {
           <p className="text-sm font-semibold text-gray-900 dark:text-white">
             Install steps
           </p>
+
+          <div className="mt-3 overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700">
+            <Image
+              src={guideImageSrc}
+              alt="Install guide"
+              width={640}
+              height={360}
+              className="h-auto w-full"
+            />
+          </div>
 
           {isIOS ? (
             <ol className="mt-2 list-decimal space-y-1 pl-5 text-sm text-gray-600 dark:text-gray-300">

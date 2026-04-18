@@ -1,0 +1,20 @@
+<svg width="640" height="360" viewBox="0 0 640 360" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect x="8" y="8" width="624" height="344" rx="18" fill="#F8FAFC" stroke="#CBD5E1" stroke-width="2"/>
+  <rect x="8" y="8" width="624" height="42" rx="18" fill="#E2E8F0"/>
+  <circle cx="34" cy="29" r="6" fill="#94A3B8"/>
+  <circle cx="56" cy="29" r="6" fill="#94A3B8"/>
+  <circle cx="78" cy="29" r="6" fill="#94A3B8"/>
+  <rect x="104" y="19" width="320" height="20" rx="10" fill="#FFFFFF" stroke="#CBD5E1"/>
+  <rect x="480" y="92" width="118" height="150" rx="12" fill="#FFFFFF" stroke="#94A3B8" stroke-dasharray="5 5"/>
+  <circle cx="572" cy="112" r="4" fill="#0F172A"/>
+  <circle cx="572" cy="126" r="4" fill="#0F172A"/>
+  <circle cx="572" cy="140" r="4" fill="#0F172A"/>
+  <rect x="495" y="156" width="88" height="26" rx="8" fill="#2563EB"/>
+  <text x="539" y="174" font-family="Arial, sans-serif" font-size="12" text-anchor="middle" fill="#FFFFFF">Install App</text>
+  <text x="42" y="92" font-family="Arial, sans-serif" font-size="21" font-weight="700" fill="#0F172A">Desktop install</text>
+  <text x="42" y="124" font-family="Arial, sans-serif" font-size="16" fill="#334155">1. Open browser menu (three dots)</text>
+  <text x="42" y="152" font-family="Arial, sans-serif" font-size="16" fill="#334155">2. Click Install App</text>
+  <text x="42" y="180" font-family="Arial, sans-serif" font-size="16" fill="#334155">3. Confirm install</text>
+  <path d="M430 170L478 170" stroke="#2563EB" stroke-width="3"/>
+  <path d="M472 164L480 170L472 176" stroke="#2563EB" stroke-width="3"/>
+</svg>

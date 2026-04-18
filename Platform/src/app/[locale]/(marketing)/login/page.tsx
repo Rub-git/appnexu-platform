@@ -50,7 +50,7 @@ export default function LoginPage() {
       {/* Nav */}
       <nav className="flex items-center justify-between px-6 py-4">
         <Link href="/" className="transition-opacity hover:opacity-80">
-          <Logo size={32} />
+          <Logo size={72} variant="icon" />
         </Link>
         <LanguageSwitcher />
       </nav>
