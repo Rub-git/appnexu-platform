@@ -39,9 +39,9 @@ export default async function DashboardLayout({
       {/* Sidebar */}
       <aside className="border-r border-gray-200/60 bg-white md:w-64 md:flex-shrink-0 dark:border-gray-800 dark:bg-gray-900">
         <div className="flex h-full flex-col">
-          <div className="flex h-16 items-center justify-between px-6">
+          <div className="flex h-20 items-center justify-between px-6">
             <Link href="/dashboard" className="transition-opacity hover:opacity-80">
-              <Logo size={28} />
+              <Logo size={56} variant="icon" />
             </Link>
             <div className="md:hidden">
               <LanguageSwitcher />
