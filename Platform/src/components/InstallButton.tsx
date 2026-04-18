@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useRef } from 'react';
-import { Download, Check, Loader2 } from 'lucide-react';
+import { Download, Check, Loader2, ExternalLink, Copy } from 'lucide-react';
 
 interface BeforeInstallPromptEvent extends Event {
   prompt(): Promise<void>;
@@ -16,6 +16,8 @@ export default function InstallButton({ appId }: InstallButtonProps) {
   const [isInstallable, setIsInstallable] = useState(false);
   const [isInstalled, setIsInstalled] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [showHelp, setShowHelp] = useState(false);
+  const [copied, setCopied] = useState(false);
   const deferredPrompt = useRef<BeforeInstallPromptEvent | null>(null);
 
   useEffect(() => {
@@ -104,34 +106,30 @@ export default function InstallButton({ appId }: InstallButtonProps) {
       }
       deferredPrompt.current = null;
       setIsInstallable(false);
+      setShowHelp(false);
     } else {
-      // Fallback for iOS and browsers without beforeinstallprompt
-      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-      const isAndroid = /Android/.test(navigator.userAgent);
-      if (isIOS) {
-        alert(
-          'To install on iOS:\n' +
-          '1. Tap the Share button\n' +
-          '2. Select "Add to Home Screen"\n' +
-          '3. Tap "Add"'
-        );
-      } else if (isAndroid) {
-        alert(
-          'To install on Android:\n' +
-          '1. Open browser menu (three dots)\n' +
-          '2. Select "Install app" or "Add to Home screen"\n' +
-          '3. Confirm installation'
-        );
-      } else {
-        alert(
-          'Automatic install is not available in this browser context.\n\n' +
-          'To install this app:\n' +
-          '1. Open browser menu (three dots)\n' +
-          '2. Select "Install app" or "Add to Home screen"'
-        );
-      }
+      // Browsers block fully automatic install without a native prompt.
+      // Show non-blocking help with next steps and shortcuts.
+      setShowHelp(true);
     }
   };
+
+  const handleCopyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      setCopied(false);
+    }
+  };
+
+  const handleOpenNewTab = () => {
+    window.open(window.location.href, '_blank', 'noopener,noreferrer');
+  };
+
+  const isIOS = typeof navigator !== 'undefined' && /iPad|iPhone|iPod/.test(navigator.userAgent);
+  const isAndroid = typeof navigator !== 'undefined' && /Android/.test(navigator.userAgent);
 
   if (isInstalled) {
     return (
@@ -158,12 +156,59 @@ export default function InstallButton({ appId }: InstallButtonProps) {
   }
 
   return (
-    <button
-      onClick={handleInstall}
-      className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
-    >
-      <Download className="-ml-1 mr-2 h-4 w-4" />
-      {isInstallable ? 'Install App' : 'Install Help'}
-    </button>
+    <div className="mx-auto w-full max-w-md">
+      <button
+        onClick={handleInstall}
+        className="inline-flex w-full items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+      >
+        <Download className="-ml-1 mr-2 h-4 w-4" />
+        Install App
+      </button>
+
+      {showHelp && (
+        <div className="mt-3 rounded-xl border border-gray-200 bg-white p-4 text-left shadow-sm dark:border-gray-700 dark:bg-gray-900">
+          <p className="text-sm font-semibold text-gray-900 dark:text-white">
+            Install steps
+          </p>
+
+          {isIOS ? (
+            <ol className="mt-2 list-decimal space-y-1 pl-5 text-sm text-gray-600 dark:text-gray-300">
+              <li>Tap the Share button in Safari.</li>
+              <li>Select Add to Home Screen.</li>
+              <li>Tap Add.</li>
+            </ol>
+          ) : isAndroid ? (
+            <ol className="mt-2 list-decimal space-y-1 pl-5 text-sm text-gray-600 dark:text-gray-300">
+              <li>Open browser menu (three dots).</li>
+              <li>Select Install app or Add to Home screen.</li>
+              <li>Confirm installation.</li>
+            </ol>
+          ) : (
+            <ol className="mt-2 list-decimal space-y-1 pl-5 text-sm text-gray-600 dark:text-gray-300">
+              <li>Click browser menu (three dots) at top-right.</li>
+              <li>Select Install App.</li>
+              <li>If available, you can also click the install icon in the address bar.</li>
+            </ol>
+          )}
+
+          <div className="mt-3 flex flex-wrap gap-2">
+            <button
+              onClick={handleOpenNewTab}
+              className="inline-flex items-center rounded-md border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-800"
+            >
+              <ExternalLink className="mr-1.5 h-3.5 w-3.5" />
+              Open in New Tab
+            </button>
+            <button
+              onClick={handleCopyLink}
+              className="inline-flex items-center rounded-md border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-800"
+            >
+              <Copy className="mr-1.5 h-3.5 w-3.5" />
+              {copied ? 'Link Copied' : 'Copy Link'}
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
