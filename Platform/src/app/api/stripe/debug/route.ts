@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { stripe, STRIPE_PRICE_IDS, getStripeMode } from '@/lib/stripe';
+import { requireAdmin } from '@/lib/auth';
 
 /**
  * PUBLIC diagnostic endpoint for Stripe configuration.
@@ -8,6 +9,14 @@ import { stripe, STRIPE_PRICE_IDS, getStripeMode } from '@/lib/stripe';
  * GET /api/stripe/debug
  */
 export async function GET() {
+  if (process.env.NODE_ENV === 'production') {
+    const admin = await requireAdmin();
+    if (!admin) {
+      // Hide this diagnostic endpoint in production for non-admin users.
+      return NextResponse.json({ error: 'Not found' }, { status: 404 });
+    }
+  }
+
   const secretKey = process.env.STRIPE_SECRET_KEY || '';
   const mode = getStripeMode();
 

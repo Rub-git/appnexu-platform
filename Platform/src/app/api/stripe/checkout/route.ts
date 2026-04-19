@@ -129,11 +129,9 @@ export async function POST(request: Request) {
     }
 
     // ─── 7. Create Checkout Session ─────────────────────────────────
-    const baseUrl =
-      process.env.NEXT_PUBLIC_APP_URL ||
-      process.env.AUTH_URL ||
-      process.env.NEXTAUTH_URL ||
-      'http://localhost:3000';
+    const requestOrigin = new URL(request.url).origin;
+    const configuredAppUrl = process.env.NEXT_PUBLIC_APP_URL?.trim();
+    const baseUrl = (configuredAppUrl || requestOrigin || 'http://localhost:3000').replace(/\/+$/, '');
 
     try {
       const checkoutSession = await stripe.checkout.sessions.create({
