@@ -70,7 +70,7 @@ function HomeContent() {
               <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
             </Link>
             <Link
-              href="/dashboard"
+              href="/#features"
               className="rounded-full border border-gray-300 px-8 py-3.5 text-base font-semibold text-gray-700 transition-all hover:border-gray-400 hover:bg-gray-50 dark:border-gray-700 dark:text-gray-200 dark:hover:border-gray-600 dark:hover:bg-gray-800"
             >
               {t('landing.hero.demo')}
@@ -80,7 +80,7 @@ function HomeContent() {
       </section>
 
       {/* Features Section */}
-      <section className="mx-auto max-w-7xl px-4 py-24 sm:px-6 lg:px-8">
+      <section id="features" className="mx-auto max-w-7xl px-4 py-24 sm:px-6 lg:px-8">
         <h2 className="text-center text-3xl font-bold tracking-tight text-gray-900 sm:text-4xl dark:text-white" style={{ fontFamily: "'Sora', sans-serif" }}>
           {t('landing.features.title')}
         </h2>
