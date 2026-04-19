@@ -8,23 +8,10 @@ import { Smartphone } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
 
-function selectAppleIcon(iconUrls: string[]): string {
-  const preferredRaster = iconUrls.find((url) => /\.(png|jpg|jpeg|webp)(\?|#|$)/i.test(url));
-  if (preferredRaster) return preferredRaster;
-
-  const nonSvgIco = iconUrls.find((url) => !/\.(svg|ico)(\?|#|$)/i.test(url));
-  if (nonSvgIco) return nonSvgIco;
-
-  return iconUrls[0] || '/icons/icon-192.png';
-}
-
 export async function generateMetadata({ params }: { params: Promise<{ domain: string }> }): Promise<Metadata> {
   const { domain } = await params;
   const app = await prisma.appProject.findUnique({ where: { customDomain: domain } });
   if (!app) return {};
-
-  const iconUrls = app.iconUrls ? app.iconUrls.split(',').map(u => u.trim()).filter(Boolean) : [];
-  const primaryIcon = selectAppleIcon(iconUrls);
 
   return {
     title: app.appName,
@@ -37,8 +24,9 @@ export async function generateMetadata({ params }: { params: Promise<{ domain: s
     icons: {
       apple: [
         {
-          url: primaryIcon,
+          url: `/api/icon-proxy/${app.id}?size=180`,
           sizes: '180x180',
+          type: 'image/png',
         },
       ],
     },
