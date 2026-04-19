@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { prisma } from '@/lib/prisma';
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
+import { headers } from 'next/headers';
 import InstallButton from '@/components/InstallButton';
 import AnalyticsTracker from '@/components/AnalyticsTracker';
 import { Smartphone } from 'lucide-react';
@@ -17,7 +18,7 @@ export async function generateMetadata({ params }: { params: Promise<{ domain: s
 
   return {
     title: app.appName,
-    manifest: `/pwa/${app.id}/manifest.json?startUrl=${encodeURIComponent('/')}&scope=${encodeURIComponent('/')}`,
+    manifest: `/pwa/${app.id}/manifest.json?start_url=${encodeURIComponent('/')}&scope=${encodeURIComponent('/')}`,
     appleWebApp: {
       capable: true,
       title: app.appName,
@@ -39,6 +40,8 @@ export default async function CustomDomainPage({
   const { domain } = await params;
   const resolvedSearchParams = await searchParams;
   const isPwa = resolvedSearchParams?.pwa === 'true';
+  const userAgent = headers().get('user-agent') || '';
+  const isMobileDevice = /Android|iPhone|iPad|iPod|Mobile/i.test(userAgent);
 
   // Look up app by custom domain
   const app = await prisma.appProject.findUnique({
@@ -47,6 +50,10 @@ export default async function CustomDomainPage({
 
   if (!app || app.status !== 'PUBLISHED') {
     notFound();
+  }
+
+  if (isPwa && !isMobileDevice) {
+    redirect(app.targetUrl);
   }
 
   if (isPwa) {
@@ -90,7 +97,7 @@ export default async function CustomDomainPage({
 
           {/* Install Button */}
           <div className="mt-8">
-            <InstallButton appId={app.id} />
+            <InstallButton appId={app.id} targetUrl={app.targetUrl} />
           </div>
 
           {/* Preview */}

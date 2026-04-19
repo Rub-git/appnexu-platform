@@ -11,9 +11,10 @@ interface BeforeInstallPromptEvent extends Event {
 
 interface InstallButtonProps {
   appId: string;
+  targetUrl?: string;
 }
 
-export default function InstallButton({ appId }: InstallButtonProps) {
+export default function InstallButton({ appId, targetUrl }: InstallButtonProps) {
   const [isInstallable, setIsInstallable] = useState(false);
   const [isInstalled, setIsInstalled] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -111,7 +112,8 @@ export default function InstallButton({ appId }: InstallButtonProps) {
     } catch { /* ignore */ }
 
     if (!isMobileDevice) {
-      setShowHelp(true);
+      const destination = targetUrl || window.location.href;
+      window.location.href = destination;
       return;
     }
 

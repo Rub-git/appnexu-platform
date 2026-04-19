@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { prisma } from '@/lib/prisma';
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
+import { headers } from 'next/headers';
 import InstallButton from '@/components/InstallButton';
 import AnalyticsTracker from '@/components/AnalyticsTracker';
 import { Smartphone, Globe } from 'lucide-react';
@@ -10,19 +11,37 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
   const app = await prisma.appProject.findUnique({ where: { slug } });
   if (!app) return {};
 
+  const iconUrls = app.iconUrls ? app.iconUrls.split(',').map(u => u.trim()).filter(Boolean) : [];
+  const primaryIcon = iconUrls.length > 0 ? iconUrls[0] : '/icons/icon-192.png';
+
   const pathname = `/${locale}/app/${slug}`;
   const scope = `/${locale}/app/`;
   return {
-    manifest: `/pwa/${app.id}/manifest.json?startUrl=${encodeURIComponent(pathname)}&scope=${encodeURIComponent(scope)}`,
+    title: app.appName,
+    manifest: `/pwa/${app.id}/manifest.json?start_url=${encodeURIComponent(pathname)}&scope=${encodeURIComponent(scope)}`,
+    appleWebApp: {
+      capable: true,
+      title: app.appName,
+      statusBarStyle: 'default',
+    },
+    icons: {
+      apple: primaryIcon,
+    },
   };
 }
 
 export default async function PublicAppPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ locale: string; slug: string }>;
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
   const { slug } = await params;
+  const resolvedSearchParams = await searchParams;
+  const isPwa = resolvedSearchParams?.pwa === 'true';
+  const userAgent = headers().get('user-agent') || '';
+  const isMobileDevice = /Android|iPhone|iPad|iPod|Mobile/i.test(userAgent);
 
   const app = await prisma.appProject.findUnique({
     where: { slug },
@@ -30,6 +49,24 @@ export default async function PublicAppPage({
 
   if (!app || app.status !== 'PUBLISHED') {
     notFound();
+  }
+
+  if (isPwa && !isMobileDevice) {
+    redirect(app.targetUrl);
+  }
+
+  if (isPwa) {
+    return (
+      <div className="h-[100dvh] w-screen overflow-hidden bg-white dark:bg-black">
+        <AnalyticsTracker appId={app.id} />
+        <iframe
+          src={app.targetUrl}
+          className="h-full w-full border-0"
+          title={app.appName}
+          sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
+        />
+      </div>
+    );
   }
 
   return (
@@ -61,7 +98,7 @@ export default async function PublicAppPage({
           )}
 
           <div className="mt-8">
-            <InstallButton appId={app.id} />
+            <InstallButton appId={app.id} targetUrl={app.targetUrl} />
           </div>
 
           <div className="mt-12">

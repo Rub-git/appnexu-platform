@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { prisma } from '@/lib/prisma';
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
+import { headers } from 'next/headers';
 import InstallButton from '@/components/InstallButton';
 import AnalyticsTracker from '@/components/AnalyticsTracker';
 import { Smartphone, Globe } from 'lucide-react';
@@ -19,7 +20,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const scope = `/app/`;
   return {
     title: app.appName,
-    manifest: `/pwa/${app.id}/manifest.json?startUrl=${encodeURIComponent(pathname)}&scope=${encodeURIComponent(scope)}`,
+    manifest: `/pwa/${app.id}/manifest.json?start_url=${encodeURIComponent(pathname)}&scope=${encodeURIComponent(scope)}`,
     appleWebApp: {
       capable: true,
       title: app.appName,
@@ -41,6 +42,8 @@ export default async function PublicAppPage({
   const { slug } = await params;
   const resolvedSearchParams = await searchParams;
   const isPwa = resolvedSearchParams?.pwa === 'true';
+  const userAgent = headers().get('user-agent') || '';
+  const isMobileDevice = /Android|iPhone|iPad|iPod|Mobile/i.test(userAgent);
 
   console.log('PublicAppPage requested slug:', slug);
 
@@ -58,6 +61,10 @@ export default async function PublicAppPage({
   // Only show published apps to the public
   if (app.status !== 'PUBLISHED') {
     notFound();
+  }
+
+  if (isPwa && !isMobileDevice) {
+    redirect(app.targetUrl);
   }
   
   if (isPwa) {
@@ -110,7 +117,7 @@ export default async function PublicAppPage({
 
           {/* Install Button */}
           <div className="mt-8">
-            <InstallButton appId={app.id} />
+            <InstallButton appId={app.id} targetUrl={app.targetUrl} />
           </div>
 
           {/* Preview */}
