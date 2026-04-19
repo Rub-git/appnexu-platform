@@ -42,7 +42,8 @@ export default async function PublicAppPage({
   const { slug } = await params;
   const resolvedSearchParams = await searchParams;
   const isPwa = resolvedSearchParams?.pwa === 'true';
-  const userAgent = headers().get('user-agent') || '';
+  const requestHeaders = await headers();
+  const userAgent = requestHeaders.get('user-agent') || '';
   const isMobileDevice = /Android|iPhone|iPad|iPod|Mobile/i.test(userAgent);
 
   console.log('PublicAppPage requested slug:', slug);
