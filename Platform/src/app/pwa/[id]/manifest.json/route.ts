@@ -29,6 +29,10 @@ function getImageType(url: string): string {
     return 'image/png';
 }
 
+function isPreferredRasterIcon(url: string): boolean {
+    return /\.(png|jpg|jpeg|webp)(\?|#|$)/i.test(url);
+}
+
 // Generate icons array from parsed URLs or use defaults
 function generateIcons(iconUrls: string[]): ManifestIcon[] {
     const defaultIcons: ManifestIcon[] = [
@@ -51,9 +55,11 @@ function generateIcons(iconUrls: string[]): ManifestIcon[] {
     }
 
     const icons: ManifestIcon[] = [];
+    const preferredIcons = iconUrls.filter(isPreferredRasterIcon);
+    const orderedIcons = preferredIcons.length > 0 ? preferredIcons : iconUrls;
     
     // Add provided icons with appropriate sizes
-    iconUrls.forEach((url, index) => {
+    orderedIcons.forEach((url, index) => {
         const type = getImageType(url);
         
         // First icon gets 192x192, second gets 512x512, rest get both
@@ -65,7 +71,7 @@ function generateIcons(iconUrls: string[]): ManifestIcon[] {
                 purpose: 'any maskable'
             });
         }
-        if (index === 1 || iconUrls.length === 1) {
+        if (index === 1 || orderedIcons.length === 1) {
             icons.push({
                 src: url,
                 sizes: '512x512',

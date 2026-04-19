@@ -6,13 +6,23 @@ import InstallButton from '@/components/InstallButton';
 import AnalyticsTracker from '@/components/AnalyticsTracker';
 import { Smartphone, Globe } from 'lucide-react';
 
+function selectAppleIcon(iconUrls: string[]): string {
+  const preferredRaster = iconUrls.find((url) => /\.(png|jpg|jpeg|webp)(\?|#|$)/i.test(url));
+  if (preferredRaster) return preferredRaster;
+
+  const nonSvgIco = iconUrls.find((url) => !/\.(svg|ico)(\?|#|$)/i.test(url));
+  if (nonSvgIco) return nonSvgIco;
+
+  return iconUrls[0] || '/icons/icon-192.png';
+}
+
 export async function generateMetadata({ params }: { params: Promise<{ locale: string; slug: string }> }): Promise<Metadata> {
   const { locale, slug } = await params;
   const app = await prisma.appProject.findUnique({ where: { slug } });
   if (!app) return {};
 
   const iconUrls = app.iconUrls ? app.iconUrls.split(',').map(u => u.trim()).filter(Boolean) : [];
-  const primaryIcon = iconUrls.length > 0 ? iconUrls[0] : '/icons/icon-192.png';
+  const primaryIcon = selectAppleIcon(iconUrls);
 
   const pathname = `/${locale}/app/${slug}`;
   const scope = `/${locale}/app/`;
@@ -25,7 +35,12 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
       statusBarStyle: 'default',
     },
     icons: {
-      apple: primaryIcon,
+      apple: [
+        {
+          url: primaryIcon,
+          sizes: '180x180',
+        },
+      ],
     },
   };
 }
