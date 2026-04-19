@@ -37,14 +37,6 @@ export default function InstallButton({ appId, targetUrl }: InstallButtonProps) 
       return;
     }
 
-    // On desktop, do not force-install a standalone PWA window.
-    // We keep normal website behavior and provide manual shortcut help instead.
-    if (!isMobileDevice) {
-      setIsInstallable(false);
-      setIsLoading(false);
-      return;
-    }
-
     // Remove ALL existing manifests to prevent the browser from reading the platform's default manifest
     const existingManifests = document.querySelectorAll('link[rel="manifest"]');
     existingManifests.forEach(m => m.remove());
@@ -110,12 +102,6 @@ export default function InstallButton({ appId, targetUrl }: InstallButtonProps) 
         body: JSON.stringify({ appId, eventType: 'INSTALL_CLICK' }),
       }).catch(() => {});
     } catch { /* ignore */ }
-
-    if (!isMobileDevice) {
-      const destination = targetUrl || window.location.href;
-      window.location.href = destination;
-      return;
-    }
 
     if (deferredPrompt.current) {
       await deferredPrompt.current.prompt();
