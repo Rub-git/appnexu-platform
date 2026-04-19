@@ -125,6 +125,8 @@ export async function GET(
         const urlObj = new URL(request.url);
         const startUrl = urlObj.searchParams.get('start_url') || `/app/${app.slug}?pwa=true`;
         const scope = urlObj.searchParams.get('scope') || `/app/${app.slug}`;
+        const userAgent = request.headers.get('user-agent') || '';
+        const isMobileDevice = /Android|iPhone|iPad|iPod|Mobile/i.test(userAgent);
 
         const manifest = {
             name: app.appName,
@@ -132,7 +134,7 @@ export async function GET(
             description: `${app.appName} - Progressive Web App`,
             start_url: startUrl,
             scope: scope,
-            display: 'standalone',
+            display: isMobileDevice ? 'standalone' : 'browser',
             orientation: 'portrait-primary',
             theme_color: app.themeColor || '#178BFF',
             background_color: app.backgroundColor || '#ffffff',

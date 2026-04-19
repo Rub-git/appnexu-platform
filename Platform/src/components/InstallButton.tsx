@@ -20,6 +20,9 @@ export default function InstallButton({ appId }: InstallButtonProps) {
   const [showHelp, setShowHelp] = useState(false);
   const [copied, setCopied] = useState(false);
   const deferredPrompt = useRef<BeforeInstallPromptEvent | null>(null);
+  const isIOS = typeof navigator !== 'undefined' && /iPad|iPhone|iPod/.test(navigator.userAgent);
+  const isAndroid = typeof navigator !== 'undefined' && /Android/.test(navigator.userAgent);
+  const isMobileDevice = isIOS || isAndroid;
 
   useEffect(() => {
     // If this page is already running in standalone/app mode, treat it as installed.
@@ -29,6 +32,14 @@ export default function InstallButton({ appId }: InstallButtonProps) {
 
     if (isStandalone) {
       setIsInstalled(true);
+      setIsLoading(false);
+      return;
+    }
+
+    // On desktop, do not force-install a standalone PWA window.
+    // We keep normal website behavior and provide manual shortcut help instead.
+    if (!isMobileDevice) {
+      setIsInstallable(false);
       setIsLoading(false);
       return;
     }
@@ -87,7 +98,7 @@ export default function InstallButton({ appId }: InstallButtonProps) {
       window.removeEventListener('appinstalled', handleAppInstalled);
       clearTimeout(timeout);
     };
-  }, [appId]);
+  }, [appId, isMobileDevice]);
 
   const handleInstall = async () => {
     // Track install click (fire and forget)
@@ -98,6 +109,11 @@ export default function InstallButton({ appId }: InstallButtonProps) {
         body: JSON.stringify({ appId, eventType: 'INSTALL_CLICK' }),
       }).catch(() => {});
     } catch { /* ignore */ }
+
+    if (!isMobileDevice) {
+      setShowHelp(true);
+      return;
+    }
 
     if (deferredPrompt.current) {
       await deferredPrompt.current.prompt();
@@ -129,8 +145,6 @@ export default function InstallButton({ appId }: InstallButtonProps) {
     window.open(window.location.href, '_blank', 'noopener,noreferrer');
   };
 
-  const isIOS = typeof navigator !== 'undefined' && /iPad|iPhone|iPod/.test(navigator.userAgent);
-  const isAndroid = typeof navigator !== 'undefined' && /Android/.test(navigator.userAgent);
   const guideImageSrc = isIOS
     ? '/images/install-guides/ios-install.svg'
     : isAndroid
@@ -168,7 +182,7 @@ export default function InstallButton({ appId }: InstallButtonProps) {
         className="inline-flex w-full items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
       >
         <Download className="-ml-1 mr-2 h-4 w-4" />
-        Install App
+        {isMobileDevice ? 'Install App' : 'Open Website'}
       </button>
 
       {showHelp && (
