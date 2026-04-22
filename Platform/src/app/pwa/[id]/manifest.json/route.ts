@@ -5,7 +5,7 @@ interface ManifestIcon {
     src: string;
     sizes: string;
     type: string;
-    purpose: string;
+    purpose?: string;
 }
 
 // Helper function to parse iconUrls from comma-separated string
@@ -54,7 +54,7 @@ function generateIcons(iconUrls: string[]): ManifestIcon[] {
         return defaultIcons;
     }
 
-    const icons: ManifestIcon[] = [];
+    const icons: ManifestIcon[] = [...defaultIcons];
     const preferredIcons = iconUrls.filter(isPreferredRasterIcon);
     const orderedIcons = preferredIcons.length > 0 ? preferredIcons : iconUrls;
     
@@ -89,17 +89,6 @@ function generateIcons(iconUrls: string[]): ManifestIcon[] {
         }
     });
 
-    // Ensure we have at least the required sizes
-    const has192 = icons.some(i => i.sizes === '192x192');
-    const has512 = icons.some(i => i.sizes === '512x512');
-    
-    if (!has192) {
-        icons.unshift(defaultIcons[0]);
-    }
-    if (!has512) {
-        icons.push(defaultIcons[1]);
-    }
-
     return icons;
 }
 
@@ -127,20 +116,17 @@ export async function GET(
         // Generate short_name - truncate to 12 characters if needed (PWA requirement)
         const shortName = (app.shortName || app.appName).substring(0, 12);
 
-        // Extract dynamic start_url and scope from request, with fallbacks
-        const urlObj = new URL(request.url);
-        const startUrl = urlObj.searchParams.get('start_url') || `/app/${app.slug}?pwa=true`;
-        const scope = urlObj.searchParams.get('scope') || `/app/${app.slug}`;
-        const userAgent = request.headers.get('user-agent') || '';
-        const isMobileDevice = /Android|iPhone|iPad|iPod|Mobile/i.test(userAgent);
+        const pwaScope = `/pwa/${id}/`;
+        const pwaStartUrl = `${pwaScope}launch`;
 
         const manifest = {
             name: app.appName,
             short_name: shortName,
+            id: `/pwa/${id}`,
             description: `${app.appName} - Progressive Web App`,
-            start_url: startUrl,
-            scope: scope,
-            display: isMobileDevice ? 'standalone' : 'browser',
+            start_url: pwaStartUrl,
+            scope: pwaScope,
+            display: 'standalone',
             orientation: 'portrait-primary',
             theme_color: app.themeColor || '#178BFF',
             background_color: app.backgroundColor || '#ffffff',
@@ -154,7 +140,7 @@ export async function GET(
                     name: `Open ${app.appName}`,
                     short_name: 'Open',
                     description: `Open ${app.appName}`,
-                    url: `/app/${app.slug}`,
+                    url: pwaStartUrl,
                     icons: icons.length > 0 ? [icons[0]] : []
                 }
             ]

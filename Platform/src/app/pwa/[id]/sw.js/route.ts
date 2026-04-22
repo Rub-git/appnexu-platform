@@ -16,9 +16,8 @@ export async function GET(
             return new NextResponse('App not found', { status: 404 });
         }
 
-        const urlObj = new URL(request.url);
-        const scope = urlObj.searchParams.get('scope') || `/app/${app.slug}`;
-        const startUrl = `${scope}?pwa=true`;
+        const appScope = `/pwa/${id}/`;
+        const startUrl = `${appScope}launch`;
 
         // Service Worker with stale-while-revalidate strategy
         const swScript = `
@@ -27,11 +26,12 @@ export async function GET(
 
 const CACHE_NAME = 'pwa-cache-v1-${id}';
 const OFFLINE_URL = '/offline.html';
+    const APP_SCOPE = '${appScope}';
+    const START_URL = '${startUrl}';
 
 // Resources to pre-cache during installation
 const PRECACHE_URLS = [
-    '${startUrl}',
-    '${scope}',
+    START_URL,
     OFFLINE_URL,
     '/icons/icon-192.png',
     '/icons/icon-512.png'
@@ -95,13 +95,13 @@ self.addEventListener('fetch', (event) => {
         return;
     }
 
-    // Skip non-HTTP(S) schemes (e.g., chrome-extension://)
-    if (!url.protocol.startsWith('http')) {
+    // Skip cross-origin requests entirely.
+    if (url.origin !== self.location.origin) {
         return;
     }
 
-    // Skip cross-origin requests (except for images)
-    if (url.origin !== self.location.origin && !request.destination.includes('image')) {
+    // Handle only requests inside this app scope.
+    if (!url.pathname.startsWith(APP_SCOPE)) {
         return;
     }
 
@@ -135,6 +135,12 @@ async function handleNavigationRequest(request) {
         const cachedResponse = await caches.match(request);
         if (cachedResponse) {
             return cachedResponse;
+        }
+
+        // Fall back to the app entry point if a route is not cached.
+        const cachedStartUrl = await caches.match(START_URL);
+        if (cachedStartUrl) {
+            return cachedStartUrl;
         }
         
         // If not in cache, serve offline page
@@ -235,7 +241,7 @@ console.log('[ServiceWorker] Loaded for ${app.appName}');
             headers: {
                 'Content-Type': 'application/javascript',
                 'Cache-Control': 'no-cache, no-store, must-revalidate',
-                'Service-Worker-Allowed': '/',
+                'Service-Worker-Allowed': appScope,
             },
         });
     } catch (error) {
