@@ -32,6 +32,7 @@ export default function InstallButton({ appId, assetVersion = '1' }: InstallButt
   const isIOS = typeof navigator !== 'undefined' && /iPad|iPhone|iPod/.test(navigator.userAgent);
   const isAndroid = typeof navigator !== 'undefined' && /Android/.test(navigator.userAgent);
   const isMobileDevice = isIOS || isAndroid;
+  const isDesktop = !isMobileDevice;
 
   useEffect(() => {
     // When already in standalone mode, no prompt is needed.
@@ -220,6 +221,35 @@ export default function InstallButton({ appId, assetVersion = '1' }: InstallButt
         <Loader2 className="-ml-1 mr-2 h-4 w-4 animate-spin" />
         Setting up...
       </button>
+    );
+  }
+
+  if (isDesktop) {
+    return (
+      <div className="mx-auto w-full max-w-md rounded-xl border border-amber-200 bg-amber-50 p-4 text-left dark:border-amber-900/30 dark:bg-amber-950/20">
+        <p className="text-sm font-semibold text-amber-900 dark:text-amber-200">
+          Desktop install note
+        </p>
+        <p className="mt-1 text-xs text-amber-800 dark:text-amber-300">
+          On desktop, Chrome can keep the host app container identity. Open this page in a regular browser tab first, then use Chrome install from that tab.
+        </p>
+        <div className="mt-3 flex flex-wrap gap-2">
+          <button
+            onClick={handleOpenNewTab}
+            className="inline-flex items-center rounded-md border border-amber-300 bg-white px-3 py-1.5 text-xs font-medium text-amber-900 hover:bg-amber-100 dark:border-amber-700 dark:bg-amber-900/30 dark:text-amber-100 dark:hover:bg-amber-900/50"
+          >
+            <ExternalLink className="mr-1.5 h-3.5 w-3.5" />
+            Open in Browser
+          </button>
+          <button
+            onClick={handleCopyLink}
+            className="inline-flex items-center rounded-md border border-amber-300 bg-white px-3 py-1.5 text-xs font-medium text-amber-900 hover:bg-amber-100 dark:border-amber-700 dark:bg-amber-900/30 dark:text-amber-100 dark:hover:bg-amber-900/50"
+          >
+            <Copy className="mr-1.5 h-3.5 w-3.5" />
+            {copied ? 'Link Copied' : 'Copy Link'}
+          </button>
+        </div>
+      </div>
     );
   }
 
