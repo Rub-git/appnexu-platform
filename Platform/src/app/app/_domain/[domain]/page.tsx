@@ -7,6 +7,8 @@ import AnalyticsTracker from '@/components/AnalyticsTracker';
 import { getAppAssetVersion, getAppIconUrl, getAppManifestUrl } from '@/lib/pwa-assets';
 
 export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+export const fetchCache = 'force-no-store';
 
 export async function generateMetadata({ params }: { params: Promise<{ domain: string }> }): Promise<Metadata> {
   const { domain } = await params;
@@ -16,6 +18,8 @@ export async function generateMetadata({ params }: { params: Promise<{ domain: s
 
   return {
     title: app.appName,
+    description: `${app.appName} - Installable app for ${app.targetUrl}`,
+    applicationName: app.appName,
     manifest: getAppManifestUrl(app.id, assetVersion),
     appleWebApp: {
       capable: true,
@@ -42,6 +46,23 @@ export async function generateMetadata({ params }: { params: Promise<{ domain: s
           type: 'image/png',
         },
       ],
+    },
+    openGraph: {
+      title: app.appName,
+      description: `${app.appName} - Installable app`,
+      url: app.targetUrl,
+      type: 'website',
+      images: [
+        {
+          url: getAppIconUrl(app.id, 512, assetVersion),
+        },
+      ],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: app.appName,
+      description: `${app.appName} - Installable app`,
+      images: [getAppIconUrl(app.id, 512, assetVersion)],
     },
   };
 }

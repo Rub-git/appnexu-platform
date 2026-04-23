@@ -7,6 +7,18 @@ export default function ServiceWorkerRegistration() {
         // Only run in the browser
         if (typeof window === 'undefined') return;
 
+        const path = window.location.pathname;
+        const isPublicAppRoute =
+            /^\/app\//.test(path) ||
+            /^\/[a-z]{2}\/app\//i.test(path) ||
+            /^\/app\/_domain\//.test(path);
+
+        if (isPublicAppRoute) {
+            // Public generated app routes must be controlled only by their app-specific SW.
+            console.log('[Main] On public app route, skipping main SW registration');
+            return;
+        }
+
         // Register service worker
         if ('serviceWorker' in navigator) {
             // Check if viewing a specific app preview (those have their own SW)

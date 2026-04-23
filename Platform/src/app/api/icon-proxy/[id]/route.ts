@@ -72,6 +72,8 @@ async function getFallbackPng(size: number, appName: string, targetUrl: string, 
 }
 
 export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+export const fetchCache = 'force-no-store';
 
 export async function GET(
   request: Request,
@@ -96,7 +98,7 @@ export async function GET(
       return new NextResponse(new Uint8Array(fallback), {
         headers: {
           'Content-Type': 'image/png',
-          'Cache-Control': 'public, max-age=3600, s-maxage=86400',
+          'Cache-Control': 'no-store',
         },
       });
     }
@@ -134,7 +136,7 @@ export async function GET(
     return new NextResponse(new Uint8Array(pngBuffer), {
       headers: {
         'Content-Type': 'image/png',
-        'Cache-Control': 'public, max-age=3600, s-maxage=86400',
+        'Cache-Control': 'no-store',
       },
     });
   } catch (error) {
@@ -144,7 +146,7 @@ export async function GET(
       return new NextResponse(new Uint8Array(fallback), {
         headers: {
           'Content-Type': 'image/png',
-          'Cache-Control': 'public, max-age=600, s-maxage=3600',
+          'Cache-Control': 'no-store',
         },
       });
     } catch {
