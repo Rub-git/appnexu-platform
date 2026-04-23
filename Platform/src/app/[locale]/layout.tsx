@@ -5,7 +5,6 @@ import { getMessages, setRequestLocale } from 'next-intl/server';
 import { routing } from '@/i18n/routing';
 import { notFound } from 'next/navigation';
 import "../globals.css";
-import ServiceWorkerRegistration from "@/components/ServiceWorkerRegistration";
 import { brand } from "@/config/brand";
 import { SessionProvider } from "@/components/SessionProvider";
 
@@ -31,10 +30,8 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   title: brand.seo.defaultTitle,
   description: brand.seo.defaultDescription,
-  applicationName: brand.name,
   keywords: [...brand.seo.keywords],
   authors: [{ name: brand.name }],
-  manifest: "/manifest.json",
   metadataBase: new URL(brand.seo.canonicalDomain),
   openGraph: {
     title: brand.seo.defaultTitle,
@@ -48,21 +45,6 @@ export const metadata: Metadata = {
     title: brand.seo.defaultTitle,
     description: brand.seo.defaultDescription,
     images: [brand.seo.ogImage],
-  },
-  appleWebApp: {
-    capable: true,
-    statusBarStyle: "default",
-    title: brand.name,
-  },
-  icons: {
-    icon: [
-      { url: brand.logo.favicon, sizes: "32x32", type: "image/x-icon" },
-      { url: brand.logo.icon192, sizes: "192x192", type: "image/png" },
-      { url: brand.logo.icon512, sizes: "512x512", type: "image/png" },
-    ],
-    apple: [
-      { url: brand.logo.appleTouchIcon, sizes: "192x192", type: "image/png" },
-    ],
   },
 };
 
@@ -92,22 +74,9 @@ export default async function LocaleLayout({
 
   return (
     <html lang={locale}>
-      <head>
-        <link rel="icon" href={brand.logo.favicon} />
-        <meta name="apple-mobile-web-app-capable" content="yes" />
-        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-        <meta name="apple-mobile-web-app-title" content={brand.name} />
-        <link rel="apple-touch-icon" href={brand.logo.appleTouchIcon} />
-        <link rel="apple-touch-startup-image" href={brand.logo.icon512} />
-        <meta name="msapplication-TileColor" content={brand.colors.primary} />
-        <meta name="msapplication-TileImage" content={brand.logo.icon192} />
-        <meta name="mobile-web-app-capable" content="yes" />
-        <meta name="application-name" content={brand.name} />
-      </head>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <NextIntlClientProvider messages={messages}>
           <SessionProvider>
-            <ServiceWorkerRegistration />
             {children}
           </SessionProvider>
         </NextIntlClientProvider>

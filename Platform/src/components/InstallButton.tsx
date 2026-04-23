@@ -39,28 +39,87 @@ export default function InstallButton({ appId, assetVersion = '1' }: InstallButt
       return;
     }
 
-    // Ensure app-specific manifest is linked once.
+    // Ensure generated pages expose only the generated app manifest.
     const manifestHref = getAppManifestUrl(appId, assetVersion);
-    const existingManifest = document.querySelector('link[rel="manifest"]') as HTMLLinkElement | null;
-    if (existingManifest) {
-      existingManifest.href = manifestHref;
-      existingManifest.setAttribute('data-app-manifest', 'true');
-    } else {
-      const manifestLink = document.createElement('link');
-      manifestLink.rel = 'manifest';
-      manifestLink.href = manifestHref;
-      manifestLink.setAttribute('data-app-manifest', 'true');
-      document.head.appendChild(manifestLink);
+    const existingManifestLinks = Array.from(document.querySelectorAll('link[rel="manifest"]')) as HTMLLinkElement[];
+    existingManifestLinks.forEach((link) => link.remove());
+
+    const manifestLink = document.createElement('link');
+    manifestLink.rel = 'manifest';
+    manifestLink.href = manifestHref;
+    manifestLink.setAttribute('data-app-manifest', 'true');
+    document.head.appendChild(manifestLink);
+
+    const hostNameMeta = document.querySelector('meta[name="application-name"]');
+    if (hostNameMeta) {
+      hostNameMeta.setAttribute('content', '');
     }
+
+    const unregisterHostServiceWorkers = async () => {
+      if (!('serviceWorker' in navigator)) return;
+
+      const currentController = navigator.serviceWorker.controller?.scriptURL || '';
+      const isHostController = currentController.includes('/sw.js') && !currentController.includes(`/pwa/${appId}/sw.js`);
+      const registrations = await navigator.serviceWorker.getRegistrations();
+      const shouldRemove = (scriptUrl: string) => {
+        try {
+          const pathname = new URL(scriptUrl).pathname;
+          if (pathname.includes(`/pwa/${appId}/sw.js`)) {
+            return false;
+          }
+          return pathname === '/sw.js' || pathname.includes('/app/sw.js') || pathname.includes('/[locale]/app/sw.js');
+        } catch {
+          return false;
+        }
+      };
+
+      const unregisterTasks = registrations
+        .filter((registration) => {
+          const scriptUrl =
+            registration.active?.scriptURL ||
+            registration.waiting?.scriptURL ||
+            registration.installing?.scriptURL ||
+            '';
+          return scriptUrl.length > 0 && shouldRemove(scriptUrl);
+        })
+        .map((registration) => registration.unregister());
+
+      if (unregisterTasks.length > 0) {
+        await Promise.allSettled(unregisterTasks);
+      }
+
+      if (isHostController) {
+        const reloadKey = `generated-sw-reset-${appId}`;
+        if (sessionStorage.getItem(reloadKey) !== '1') {
+          sessionStorage.setItem(reloadKey, '1');
+          window.location.reload();
+          return;
+        }
+      }
+
+      sessionStorage.removeItem(`generated-sw-reset-${appId}`);
+    };
+
+    const logInstallContext = () => {
+      const controllerScript = navigator.serviceWorker.controller?.scriptURL || 'none';
+      const activeManifest = (document.querySelector('link[rel="manifest"]') as HTMLLinkElement | null)?.href || 'none';
+      console.log('[InstallContext]', {
+        href: window.location.href,
+        origin: window.location.origin,
+        manifestHref: activeManifest,
+        controllerScript,
+      });
+    };
 
     // Register an app-specific service worker scoped to the current public app route.
     if ('serviceWorker' in navigator) {
       const scope = window.location.pathname;
       const swUrl = getAppServiceWorkerUrl(appId, assetVersion, scope);
-      navigator.serviceWorker
-        .register(swUrl, { scope })
+      unregisterHostServiceWorkers()
+        .then(() => navigator.serviceWorker.register(swUrl, { scope }))
         .then((registration) => {
           console.log('App SW registered:', registration.scope);
+          logInstallContext();
         })
         .catch((err) => {
           console.warn('App SW registration failed:', err);
@@ -71,6 +130,7 @@ export default function InstallButton({ appId, assetVersion = '1' }: InstallButt
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
       deferredPrompt.current = e as BeforeInstallPromptEvent;
+      logInstallContext();
       setIsLoading(false);
     };
 

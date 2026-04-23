@@ -1,5 +1,6 @@
 import { setRequestLocale } from 'next-intl/server';
 import { getTranslations } from 'next-intl/server';
+import type { Metadata } from 'next';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { redirect } from 'next/navigation';
@@ -8,6 +9,28 @@ import { LayoutDashboard, PlusCircle, Settings, Shield, LayoutTemplate } from 'l
 import SignOutButton from '@/components/SignOutButton';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 import Logo from '@/components/Logo';
+import ServiceWorkerRegistration from '@/components/ServiceWorkerRegistration';
+import { brand } from '@/config/brand';
+
+export const metadata: Metadata = {
+  applicationName: brand.name,
+  manifest: '/manifest.json',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: brand.name,
+  },
+  icons: {
+    icon: [
+      { url: brand.logo.favicon, sizes: '32x32', type: 'image/x-icon' },
+      { url: brand.logo.icon192, sizes: '192x192', type: 'image/png' },
+      { url: brand.logo.icon512, sizes: '512x512', type: 'image/png' },
+    ],
+    apple: [
+      { url: brand.logo.appleTouchIcon, sizes: '192x192', type: 'image/png' },
+    ],
+  },
+};
 
 export default async function DashboardLayout({
   children,
@@ -36,6 +59,7 @@ export default async function DashboardLayout({
 
   return (
     <div className="flex min-h-screen flex-col bg-slate-50 md:flex-row dark:bg-black">
+      <ServiceWorkerRegistration />
       {/* Sidebar */}
       <aside className="border-r border-gray-200/60 bg-white md:w-64 md:flex-shrink-0 dark:border-gray-800 dark:bg-gray-900">
         <div className="flex h-full flex-col">
