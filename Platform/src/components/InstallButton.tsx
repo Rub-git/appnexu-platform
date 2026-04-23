@@ -14,10 +14,18 @@ interface InstallButtonProps {
   targetUrl?: string;
 }
 
+function isStandaloneMode(): boolean {
+  if (typeof window === 'undefined') return false;
+  return (
+    window.matchMedia('(display-mode: standalone)').matches ||
+    (window.navigator as Navigator & { standalone?: boolean }).standalone === true
+  );
+}
+
 export default function InstallButton({ appId, targetUrl }: InstallButtonProps) {
   const [isInstallable, setIsInstallable] = useState(false);
-  const [isInstalled, setIsInstalled] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isInstalled, setIsInstalled] = useState(isStandaloneMode);
+  const [isLoading, setIsLoading] = useState(() => !isStandaloneMode());
   const [showHelp, setShowHelp] = useState(false);
   const [copied, setCopied] = useState(false);
   const deferredPrompt = useRef<BeforeInstallPromptEvent | null>(null);
@@ -26,14 +34,8 @@ export default function InstallButton({ appId, targetUrl }: InstallButtonProps) 
   const isMobileDevice = isIOS || isAndroid;
 
   useEffect(() => {
-    // If this page is already running in standalone/app mode, treat it as installed.
-    const isStandalone =
-      window.matchMedia('(display-mode: standalone)').matches ||
-      (window.navigator as Navigator & { standalone?: boolean }).standalone === true;
-
-    if (isStandalone) {
-      setIsInstalled(true);
-      setIsLoading(false);
+    // When already in standalone mode, no prompt is needed.
+    if (isStandaloneMode()) {
       return;
     }
 
@@ -51,10 +53,11 @@ export default function InstallButton({ appId, targetUrl }: InstallButtonProps) 
       document.head.appendChild(manifestLink);
     }
 
-    // Register app-specific service worker
+    // Register app-specific service worker with root scope so current public routes
+    // are controlled and install criteria can be satisfied.
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker
-        .register(`/pwa/${appId}/sw.js`, { scope: `/pwa/${appId}/` })
+        .register(`/pwa/${appId}/sw.js`, { scope: '/' })
         .then((registration) => {
           console.log('App SW registered:', registration.scope);
         })

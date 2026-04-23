@@ -4,18 +4,16 @@ import { notFound, redirect } from 'next/navigation';
 import { headers } from 'next/headers';
 import InstallButton from '@/components/InstallButton';
 import AnalyticsTracker from '@/components/AnalyticsTracker';
-import { Smartphone, Globe } from 'lucide-react';
+import { Globe } from 'lucide-react';
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string; slug: string }> }): Promise<Metadata> {
-  const { locale, slug } = await params;
+  const { slug } = await params;
   const app = await prisma.appProject.findUnique({ where: { slug } });
   if (!app) return {};
 
-  const pathname = `/${locale}/app/${slug}`;
-  const scope = `/${locale}/app/`;
   return {
     title: app.appName,
-    manifest: `/pwa/${app.id}/manifest.json?start_url=${encodeURIComponent(pathname)}&scope=${encodeURIComponent(scope)}`,
+    manifest: `/pwa/${app.id}/manifest.json`,
     appleWebApp: {
       capable: true,
       title: app.appName,
@@ -79,11 +77,13 @@ export default async function PublicAppPage({
 
       <div className="mx-auto max-w-lg px-4 py-16">
         <div className="text-center">
-          <div
-            className="mx-auto flex h-24 w-24 items-center justify-center rounded-3xl shadow-lg text-white"
-            style={{ backgroundColor: app.themeColor || '#178BFF' }}
-          >
-            <Smartphone size={48} />
+          <div className="mx-auto h-24 w-24 overflow-hidden rounded-3xl shadow-lg ring-1 ring-black/5">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={`/api/icon-proxy/${app.id}?size=192`}
+              alt={`${app.appName} icon`}
+              className="h-full w-full object-cover"
+            />
           </div>
 
           <h1 className="mt-6 text-3xl font-bold text-gray-900 dark:text-white">

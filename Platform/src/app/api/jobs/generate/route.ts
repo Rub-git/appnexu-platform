@@ -132,7 +132,7 @@ export async function POST(request: Request) {
       // Only update iconUrls if current ones are defaults and we found real ones
       if (
         analysisResult.icons.length > 0 &&
-        (!app.iconUrls || app.iconUrls === "/icons/icon-192.png")
+        (!app.iconUrls || app.iconUrls.trim().length === 0)
       ) {
         updateData.iconUrls = analysisResult.icons.join(",");
       }
@@ -148,12 +148,13 @@ export async function POST(request: Request) {
 
     // Validate icon availability (must have at least something)
     const finalIconUrls =
-      (updateData.iconUrls as string) || app.iconUrls || "/icons/icon-192.png";
+      (updateData.iconUrls as string) || app.iconUrls || "";
     if (!finalIconUrls || finalIconUrls.trim().length === 0) {
-      await markFailed(appId, "No icons available for the app", attempt);
-      return NextResponse.json({ status: "failed", error: "No icons" });
+      // Non-fatal: icon-proxy generates a branded fallback from app name/domain.
+      updateData.iconUrls = null;
+    } else {
+      updateData.iconUrls = finalIconUrls;
     }
-    updateData.iconUrls = finalIconUrls;
 
     // 7. Verify manifest generation endpoint works
     const baseUrl =
@@ -310,6 +311,50 @@ interface AnalysisResult {
   icons: string[];
 }
 
+interface WebsiteManifestIcon {
+  src?: string;
+}
+
+interface WebsiteManifest {
+  icons?: WebsiteManifestIcon[];
+}
+
+async function extractManifestIcons(url: string, $: cheerio.CheerioAPI): Promise<string[]> {
+  const manifestHref = $('link[rel="manifest"]').attr('href');
+  if (!manifestHref) return [];
+
+  try {
+    const manifestUrl = new URL(manifestHref, url).toString();
+    const manifestRes = await fetch(manifestUrl, {
+      headers: {
+        'User-Agent': 'Appnexu-Generator/1.0',
+        'Accept': 'application/manifest+json,application/json;q=0.9,*/*;q=0.8',
+      },
+      redirect: 'follow',
+      signal: AbortSignal.timeout(7000),
+    });
+
+    if (!manifestRes.ok) return [];
+
+    const manifest = (await manifestRes.json()) as WebsiteManifest;
+    if (!Array.isArray(manifest.icons)) return [];
+
+    return manifest.icons
+      .map((icon) => icon?.src)
+      .filter((src): src is string => Boolean(src))
+      .map((src) => {
+        try {
+          return new URL(src, manifestUrl).toString();
+        } catch {
+          return '';
+        }
+      })
+      .filter(Boolean);
+  } catch {
+    return [];
+  }
+}
+
 async function analyzeWebsite(url: string): Promise<AnalysisResult> {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 10000);
@@ -354,12 +399,20 @@ async function analyzeWebsite(url: string): Promise<AnalysisResult> {
       }
     });
 
+    const manifestIcons = await extractManifestIcons(url, $);
+    let faviconFallback = "";
+    try {
+      faviconFallback = new URL('/favicon.ico', url).toString();
+    } catch {
+      faviconFallback = "";
+    }
+
     return {
       title: rawTitle.trim() || new URL(url).hostname,
       description:
         rawDescription.trim() || `App generated for ${rawTitle.trim()}`,
       themeColor,
-      icons: [...new Set(icons)],
+      icons: [...new Set([...icons, ...manifestIcons, ...(faviconFallback ? [faviconFallback] : [])])],
     };
   } finally {
     clearTimeout(timeoutId);

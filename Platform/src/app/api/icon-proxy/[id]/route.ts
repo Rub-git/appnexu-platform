@@ -140,7 +140,7 @@ export async function GET(
   } catch (error) {
     console.error('Icon proxy error:', error);
     try {
-      const fallback = await getFallbackPng(size, 'Appnexu App', 'https://appnexu.com', '#178BFF', '#0F172A');
+      const fallback = await getFallbackPng(size, 'Generated App', requestUrl.origin, '#178BFF', '#0F172A');
       return new NextResponse(new Uint8Array(fallback), {
         headers: {
           'Content-Type': 'image/png',
