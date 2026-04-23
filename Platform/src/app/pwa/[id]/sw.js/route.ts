@@ -1,5 +1,23 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { getAppCacheName, getAppCachePrefix } from '@/lib/pwa-assets';
+
+function normalizeServiceWorkerScope(scope: string | null): string {
+    if (!scope) {
+        return '/';
+    }
+
+    try {
+        const decoded = decodeURIComponent(scope).trim();
+        if (!decoded.startsWith('/')) {
+            return '/';
+        }
+
+        return decoded;
+    } catch {
+        return '/';
+    }
+}
 
 export async function GET(
     request: Request,
@@ -16,13 +34,21 @@ export async function GET(
             return new NextResponse('App not found', { status: 404 });
         }
 
+        const requestUrl = new URL(request.url);
+        const version = requestUrl.searchParams.get('v') || String(app.updatedAt.getTime());
+        const serviceWorkerScope = normalizeServiceWorkerScope(requestUrl.searchParams.get('scope'));
+        const cachePrefix = getAppCachePrefix(id);
+        const cacheName = getAppCacheName(id, version);
+
         // Service worker is intentionally generic so generated PWAs do not depend on
         // appnexu-specific routes for start URL/scope.
         const swScript = `
 // Service Worker for ${app.appName}
 // Generated for app ID: ${id}
 
-const CACHE_NAME = 'generated-pwa-cache-v2-${id}';
+    const CACHE_NAME = '${cacheName}';
+    const CACHE_PREFIX = '${cachePrefix}';
+    const APP_SCOPE = '${serviceWorkerScope}';
 
 self.addEventListener('install', (event) => {
     console.log('[ServiceWorker] Install');
@@ -38,7 +64,7 @@ self.addEventListener('activate', (event) => {
             .then((cacheNames) => {
                 return Promise.all(
                     cacheNames.map((cacheName) => {
-                        if (cacheName !== CACHE_NAME && cacheName.startsWith('generated-pwa-cache-')) {
+                        if (cacheName !== CACHE_NAME && cacheName.startsWith(CACHE_PREFIX)) {
                             console.log('[ServiceWorker] Deleting old cache:', cacheName);
                             return caches.delete(cacheName);
                         }
@@ -57,6 +83,10 @@ self.addEventListener('fetch', (event) => {
     const url = new URL(request.url);
 
     if (request.method !== 'GET') {
+        return;
+    }
+
+    if (!url.pathname.startsWith(APP_SCOPE)) {
         return;
     }
 
@@ -167,7 +197,7 @@ console.log('[ServiceWorker] Loaded for ${app.appName}');
             headers: {
                 'Content-Type': 'application/javascript',
                 'Cache-Control': 'no-cache, no-store, must-revalidate',
-                'Service-Worker-Allowed': '/',
+                'Service-Worker-Allowed': serviceWorkerScope,
             },
         });
     } catch (error) {

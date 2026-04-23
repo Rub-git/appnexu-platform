@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef } from 'react';
 import Image from 'next/image';
 import { Download, Check, Loader2, ExternalLink, Copy } from 'lucide-react';
+import { getAppManifestUrl, getAppServiceWorkerUrl } from '@/lib/pwa-assets';
 
 interface BeforeInstallPromptEvent extends Event {
   prompt(): Promise<void>;
@@ -11,7 +12,7 @@ interface BeforeInstallPromptEvent extends Event {
 
 interface InstallButtonProps {
   appId: string;
-  targetUrl?: string;
+  assetVersion?: string;
 }
 
 function isStandaloneMode(): boolean {
@@ -22,8 +23,7 @@ function isStandaloneMode(): boolean {
   );
 }
 
-export default function InstallButton({ appId, targetUrl }: InstallButtonProps) {
-  const [isInstallable, setIsInstallable] = useState(false);
+export default function InstallButton({ appId, assetVersion = '1' }: InstallButtonProps) {
   const [isInstalled, setIsInstalled] = useState(isStandaloneMode);
   const [isLoading, setIsLoading] = useState(() => !isStandaloneMode());
   const [showHelp, setShowHelp] = useState(false);
@@ -40,7 +40,7 @@ export default function InstallButton({ appId, targetUrl }: InstallButtonProps) 
     }
 
     // Ensure app-specific manifest is linked once.
-    const manifestHref = `/pwa/${appId}/manifest.json`;
+    const manifestHref = getAppManifestUrl(appId, assetVersion);
     const existingManifest = document.querySelector('link[rel="manifest"]') as HTMLLinkElement | null;
     if (existingManifest) {
       existingManifest.href = manifestHref;
@@ -53,11 +53,12 @@ export default function InstallButton({ appId, targetUrl }: InstallButtonProps) 
       document.head.appendChild(manifestLink);
     }
 
-    // Register app-specific service worker with root scope so current public routes
-    // are controlled and install criteria can be satisfied.
+    // Register an app-specific service worker scoped to the current public app route.
     if ('serviceWorker' in navigator) {
+      const scope = window.location.pathname;
+      const swUrl = getAppServiceWorkerUrl(appId, assetVersion, scope);
       navigator.serviceWorker
-        .register(`/pwa/${appId}/sw.js`, { scope: '/' })
+        .register(swUrl, { scope })
         .then((registration) => {
           console.log('App SW registered:', registration.scope);
         })
@@ -70,13 +71,11 @@ export default function InstallButton({ appId, targetUrl }: InstallButtonProps) 
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
       deferredPrompt.current = e as BeforeInstallPromptEvent;
-      setIsInstallable(true);
       setIsLoading(false);
     };
 
     const handleAppInstalled = () => {
       setIsInstalled(true);
-      setIsInstallable(false);
       deferredPrompt.current = null;
     };
 
@@ -93,7 +92,7 @@ export default function InstallButton({ appId, targetUrl }: InstallButtonProps) 
       window.removeEventListener('appinstalled', handleAppInstalled);
       clearTimeout(timeout);
     };
-  }, [appId, isMobileDevice]);
+  }, [appId, assetVersion, isMobileDevice]);
 
   const handleInstall = async () => {
     // Track install click (fire and forget)
@@ -112,7 +111,6 @@ export default function InstallButton({ appId, targetUrl }: InstallButtonProps) 
         setIsInstalled(true);
       }
       deferredPrompt.current = null;
-      setIsInstallable(false);
       setShowHelp(false);
     } else {
       // Browsers block fully automatic install without a native prompt.

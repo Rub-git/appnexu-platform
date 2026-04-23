@@ -4,7 +4,7 @@ import { notFound, redirect } from 'next/navigation';
 import { headers } from 'next/headers';
 import InstallButton from '@/components/InstallButton';
 import AnalyticsTracker from '@/components/AnalyticsTracker';
-import { Smartphone } from 'lucide-react';
+import { getAppAssetVersion, getAppIconUrl, getAppManifestUrl } from '@/lib/pwa-assets';
 
 export const dynamic = 'force-dynamic';
 
@@ -12,19 +12,32 @@ export async function generateMetadata({ params }: { params: Promise<{ domain: s
   const { domain } = await params;
   const app = await prisma.appProject.findUnique({ where: { customDomain: domain } });
   if (!app) return {};
+  const assetVersion = getAppAssetVersion(app);
 
   return {
     title: app.appName,
-    manifest: `/pwa/${app.id}/manifest.json`,
+    manifest: getAppManifestUrl(app.id, assetVersion),
     appleWebApp: {
       capable: true,
       title: app.appName,
       statusBarStyle: 'default',
     },
     icons: {
+      icon: [
+        {
+          url: getAppIconUrl(app.id, 192, assetVersion),
+          sizes: '192x192',
+          type: 'image/png',
+        },
+        {
+          url: getAppIconUrl(app.id, 512, assetVersion),
+          sizes: '512x512',
+          type: 'image/png',
+        },
+      ],
       apple: [
         {
-          url: `/api/icon-proxy/${app.id}?size=180`,
+          url: getAppIconUrl(app.id, 180, assetVersion),
           sizes: '180x180',
           type: 'image/png',
         },
@@ -60,6 +73,8 @@ export default async function CustomDomainPage({
     redirect(app.targetUrl);
   }
 
+  const assetVersion = getAppAssetVersion(app);
+
   if (isPwa) {
     return (
       <div className="h-[100dvh] w-screen overflow-hidden bg-white dark:bg-black">
@@ -85,7 +100,7 @@ export default async function CustomDomainPage({
           <div className="mx-auto h-24 w-24 overflow-hidden rounded-3xl shadow-lg ring-1 ring-black/5">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src={`/api/icon-proxy/${app.id}?size=192`}
+              src={getAppIconUrl(app.id, 192, assetVersion)}
               alt={`${app.appName} icon`}
               className="h-full w-full object-cover"
             />
@@ -103,7 +118,7 @@ export default async function CustomDomainPage({
 
           {/* Install Button */}
           <div className="mt-8">
-            <InstallButton appId={app.id} targetUrl={app.targetUrl} />
+            <InstallButton appId={app.id} assetVersion={assetVersion} />
           </div>
 
           {/* Preview */}

@@ -1,30 +1,12 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { getAppAssetVersion, getAppIconUrl } from '@/lib/pwa-assets';
 
 interface ManifestIcon {
     src: string;
     sizes: string;
     type: string;
     purpose?: string;
-}
-
-function parseIconUrls(iconUrls: string | null | undefined): string[] {
-    if (!iconUrls) return [];
-    return iconUrls
-        .split(',')
-        .map((url) => url.trim())
-        .filter(Boolean);
-}
-
-function resolveAbsoluteIconUrl(rawUrl: string, targetUrl: string): string {
-    if (rawUrl.startsWith('//')) {
-        return `https:${rawUrl}`;
-    }
-    try {
-        return new URL(rawUrl, targetUrl).toString();
-    } catch {
-        return rawUrl;
-    }
 }
 
 function normalizeTargetInstallData(targetUrl: string) {
@@ -63,41 +45,22 @@ export async function GET(
             return new NextResponse('App not found', { status: 404 });
         }
 
-        const storedIconUrls = parseIconUrls(app.iconUrls);
-        const resolvedStoredIcons = storedIconUrls
-            .map((url) => resolveAbsoluteIconUrl(url, app.targetUrl))
-            .filter(Boolean);
-
         const installData = normalizeTargetInstallData(app.targetUrl);
-        const icons = resolvedStoredIcons.length > 0
-            ? [
-                {
-                    src: resolvedStoredIcons[0],
-                    sizes: '192x192',
-                    type: 'image/png',
-                    purpose: 'any maskable',
-                },
-                {
-                    src: resolvedStoredIcons[0],
-                    sizes: '512x512',
-                    type: 'image/png',
-                    purpose: 'any maskable',
-                },
-            ]
-            : [
-                {
-                    src: installData.fallbackIcon,
-                    sizes: '192x192',
-                    type: 'image/png',
-                    purpose: 'any maskable',
-                },
-                {
-                    src: installData.fallbackIcon,
-                    sizes: '512x512',
-                    type: 'image/png',
-                    purpose: 'any maskable',
-                },
-            ];
+        const version = getAppAssetVersion(app);
+        const icons: ManifestIcon[] = [
+            {
+                src: getAppIconUrl(app.id, 192, version),
+                sizes: '192x192',
+                type: 'image/png',
+                purpose: 'any maskable',
+            },
+            {
+                src: getAppIconUrl(app.id, 512, version),
+                sizes: '512x512',
+                type: 'image/png',
+                purpose: 'any maskable',
+            },
+        ];
 
         // Generate short_name - truncate to 12 characters if needed (PWA requirement)
         const shortName = (app.shortName || app.appName).substring(0, 12);
