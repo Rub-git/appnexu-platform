@@ -15,7 +15,7 @@ export async function generateMetadata({ params }: { params: Promise<{ domain: s
 
   return {
     title: app.appName,
-    manifest: `/pwa/${app.id}/manifest.json?start_url=${encodeURIComponent('/')}&scope=${encodeURIComponent('/')}`,
+    manifest: `/pwa/${app.id}/manifest.json`,
     appleWebApp: {
       capable: true,
       title: app.appName,
@@ -82,11 +82,13 @@ export default async function CustomDomainPage({
       <div className="mx-auto max-w-lg px-4 py-16">
         <div className="text-center">
           {/* App Icon */}
-          <div
-            className="mx-auto flex h-24 w-24 items-center justify-center rounded-3xl shadow-lg text-white"
-            style={{ backgroundColor: app.themeColor || '#178BFF' }}
-          >
-            <Smartphone size={48} />
+          <div className="mx-auto h-24 w-24 overflow-hidden rounded-3xl shadow-lg ring-1 ring-black/5">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={`/api/icon-proxy/${app.id}?size=192`}
+              alt={`${app.appName} icon`}
+              className="h-full w-full object-cover"
+            />
           </div>
 
           {/* App Name */}

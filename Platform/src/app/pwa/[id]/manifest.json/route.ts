@@ -8,88 +8,21 @@ interface ManifestIcon {
     purpose?: string;
 }
 
-// Helper function to parse iconUrls from comma-separated string
-function parseIconUrls(iconUrls: string | null | undefined): string[] {
-    if (!iconUrls || iconUrls.trim() === '') {
-        return [];
-    }
-    return iconUrls
-        .split(',')
-        .map(url => url.trim())
-        .filter(url => url.length > 0);
-}
-
-// Helper to determine image type from URL
-function getImageType(url: string): string {
-    const lowerUrl = url.toLowerCase();
-    if (lowerUrl.includes('.svg')) return 'image/svg+xml';
-    if (lowerUrl.includes('.webp')) return 'image/webp';
-    if (lowerUrl.includes('.ico')) return 'image/x-icon';
-    if (lowerUrl.includes('.jpg') || lowerUrl.includes('.jpeg')) return 'image/jpeg';
-    return 'image/png';
-}
-
-function isPreferredRasterIcon(url: string): boolean {
-    return /\.(png|jpg|jpeg|webp)(\?|#|$)/i.test(url);
-}
-
-// Generate icons array from parsed URLs or use defaults
-function generateIcons(iconUrls: string[]): ManifestIcon[] {
-    const defaultIcons: ManifestIcon[] = [
+function buildManifestIcons(appId: string): ManifestIcon[] {
+    return [
         {
-            src: '/icons/icon-192.png',
+            src: `/api/icon-proxy/${appId}?size=192`,
             sizes: '192x192',
             type: 'image/png',
             purpose: 'any maskable'
         },
         {
-            src: '/icons/icon-512.png',
+            src: `/api/icon-proxy/${appId}?size=512`,
             sizes: '512x512',
             type: 'image/png',
             purpose: 'any maskable'
         }
     ];
-
-    if (iconUrls.length === 0) {
-        return defaultIcons;
-    }
-
-    const icons: ManifestIcon[] = [...defaultIcons];
-    const preferredIcons = iconUrls.filter(isPreferredRasterIcon);
-    const orderedIcons = preferredIcons.length > 0 ? preferredIcons : iconUrls;
-    
-    // Add provided icons with appropriate sizes
-    orderedIcons.forEach((url, index) => {
-        const type = getImageType(url);
-        
-        // First icon gets 192x192, second gets 512x512, rest get both
-        if (index === 0) {
-            icons.push({
-                src: url,
-                sizes: '192x192',
-                type,
-                purpose: 'any maskable'
-            });
-        }
-        if (index === 1 || orderedIcons.length === 1) {
-            icons.push({
-                src: url,
-                sizes: '512x512',
-                type,
-                purpose: 'any maskable'
-            });
-        }
-        if (index > 1) {
-            icons.push({
-                src: url,
-                sizes: '512x512',
-                type,
-                purpose: 'any'
-            });
-        }
-    });
-
-    return icons;
 }
 
 export const dynamic = 'force-dynamic';
@@ -109,9 +42,7 @@ export async function GET(
             return new NextResponse('App not found', { status: 404 });
         }
 
-        // Parse iconUrls from comma-separated string
-        const parsedIconUrls = parseIconUrls(app.iconUrls);
-        const icons = generateIcons(parsedIconUrls);
+        const icons = buildManifestIcons(id);
 
         // Generate short_name - truncate to 12 characters if needed (PWA requirement)
         const shortName = (app.shortName || app.appName).substring(0, 12);

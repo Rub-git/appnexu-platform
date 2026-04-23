@@ -1,7 +1,5 @@
 import { NextResponse } from 'next/server';
 import sharp from 'sharp';
-import { readFile } from 'node:fs/promises';
-import path from 'node:path';
 import { prisma } from '@/lib/prisma';
 
 function parseIconUrls(iconUrls: string | null | undefined): string[] {
@@ -25,12 +23,51 @@ function normalizeIconUrl(rawUrl: string, targetUrl: string): string {
   }
 }
 
-async function getFallbackPng(size: number): Promise<Buffer> {
-  const fallbackPath = path.join(process.cwd(), 'public', 'icons', 'icon-512.png');
-  const fallbackBuffer = await readFile(fallbackPath);
-  return sharp(fallbackBuffer)
-    .resize(size, size, { fit: 'cover', position: 'centre' })
+function getInitials(appName: string, targetUrl: string): string {
+  const words = appName
+    .split(/\s+/)
+    .map((word) => word.trim())
+    .filter(Boolean);
+
+  if (words.length >= 2) {
+    return `${words[0][0] || ''}${words[1][0] || ''}`.toUpperCase();
+  }
+
+  if (words.length === 1 && words[0].length >= 2) {
+    return words[0].slice(0, 2).toUpperCase();
+  }
+
+  try {
+    const hostname = new URL(targetUrl).hostname.replace(/^www\./, '');
+    return hostname.replace(/[^a-z0-9]/gi, '').slice(0, 2).toUpperCase() || 'AP';
+  } catch {
+    return 'AP';
+  }
+}
+
+async function getFallbackPng(size: number, appName: string, targetUrl: string, themeColor?: string | null, backgroundColor?: string | null): Promise<Buffer> {
+  const initials = getInitials(appName, targetUrl);
+  const primary = themeColor || '#178BFF';
+  const secondary = backgroundColor || '#0F172A';
+  const svg = `
+    <svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="bg" x1="64" y1="48" x2="448" y2="464" gradientUnits="userSpaceOnUse">
+          <stop stop-color="${primary}"/>
+          <stop offset="1" stop-color="${secondary}"/>
+        </linearGradient>
+      </defs>
+      <rect width="512" height="512" rx="128" fill="url(#bg)"/>
+      <circle cx="402" cy="122" r="56" fill="rgba(255,255,255,0.18)"/>
+      <circle cx="132" cy="392" r="72" fill="rgba(255,255,255,0.12)"/>
+      <rect x="92" y="92" width="328" height="328" rx="96" fill="rgba(255,255,255,0.12)" stroke="rgba(255,255,255,0.22)" stroke-width="8"/>
+      <text x="256" y="290" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="160" font-weight="700" fill="#FFFFFF">${initials}</text>
+    </svg>
+  `;
+
+  return sharp(Buffer.from(svg))
     .png()
+    .resize(size, size)
     .toBuffer();
 }
 
@@ -55,7 +92,7 @@ export async function GET(
     const preferred = iconUrls.find(isRasterIcon) || iconUrls[0];
 
     if (!preferred) {
-      const fallback = await getFallbackPng(size);
+      const fallback = await getFallbackPng(size, app.appName, app.targetUrl, app.themeColor, app.backgroundColor);
       return new NextResponse(new Uint8Array(fallback), {
         headers: {
           'Content-Type': 'image/png',
@@ -103,7 +140,7 @@ export async function GET(
   } catch (error) {
     console.error('Icon proxy error:', error);
     try {
-      const fallback = await getFallbackPng(size);
+      const fallback = await getFallbackPng(size, 'Appnexu App', 'https://appnexu.com', '#178BFF', '#0F172A');
       return new NextResponse(new Uint8Array(fallback), {
         headers: {
           'Content-Type': 'image/png',
