@@ -151,7 +151,7 @@ export async function POST(request: Request) {
       (updateData.iconUrls as string) || app.iconUrls || "";
     if (!finalIconUrls || finalIconUrls.trim().length === 0) {
       // Non-fatal: icon-proxy generates a branded fallback from app name/domain.
-      updateData.iconUrls = null;
+      updateData.iconUrls = "";
     } else {
       updateData.iconUrls = finalIconUrls;
     }

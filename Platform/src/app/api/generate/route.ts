@@ -95,7 +95,7 @@ export async function POST(request: Request) {
           shortName,
           themeColor: data.themeColor || colorScheme?.primary || '#178BFF',
           backgroundColor: data.backgroundColor || colorScheme?.secondary || '#ffffff',
-          iconUrls: data.iconUrls || null,
+          iconUrls: data.iconUrls || '',
           userId: session.user!.id,
           templateId: templateId,
         },
