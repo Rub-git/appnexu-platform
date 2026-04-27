@@ -215,6 +215,15 @@ async function encodeIconOutput(
   };
 }
 
+function asBinaryStream(bytes: Uint8Array): ReadableStream<Uint8Array> {
+  return new ReadableStream<Uint8Array>({
+    start(controller) {
+      controller.enqueue(bytes);
+      controller.close();
+    },
+  });
+}
+
 async function fetchIconBuffer(url: string): Promise<Buffer | null> {
   // Handle upload: tokens — raw base64 PNG stored without data URI prefix
   if (url.startsWith('upload:')) {
@@ -344,7 +353,7 @@ export async function GET(
         const buffer = Buffer.from(base64Data, 'base64');
         const png = await renderLogoPng(buffer, size, variant, app.themeColor, app.backgroundColor);
         const encoded = await encodeIconOutput(png, size, format);
-        return new NextResponse(encoded.body, {
+        return new NextResponse(asBinaryStream(encoded.body), {
           headers: { 'Content-Type': encoded.contentType, 'Cache-Control': 'no-store' },
         });
       } catch {
@@ -362,7 +371,7 @@ export async function GET(
       if (sourceBuffer) {
         const pngBuffer = await renderLogoPng(sourceBuffer, size, variant, app.themeColor, app.backgroundColor);
         const encoded = await encodeIconOutput(pngBuffer, size, format);
-        return new NextResponse(encoded.body, {
+        return new NextResponse(asBinaryStream(encoded.body), {
           headers: {
             'Content-Type': encoded.contentType,
             'Cache-Control': 'no-store',
@@ -373,7 +382,7 @@ export async function GET(
 
     const fallback = await getFallbackPng(size, app.appName, app.targetUrl, app.themeColor, app.backgroundColor);
     const encodedFallback = await encodeIconOutput(fallback, size, format);
-    return new NextResponse(encodedFallback.body, {
+    return new NextResponse(asBinaryStream(encodedFallback.body), {
       headers: {
         'Content-Type': encodedFallback.contentType,
         'Cache-Control': 'no-store',
@@ -385,7 +394,7 @@ export async function GET(
       const fallback = await getFallbackPng(size, 'Generated App', requestUrl.origin, '#178BFF', '#0F172A');
       const format = parseFormat(requestUrl.searchParams.get('format'));
       const encodedFallback = await encodeIconOutput(fallback, size, format);
-      return new NextResponse(encodedFallback.body, {
+      return new NextResponse(asBinaryStream(encodedFallback.body), {
         headers: {
           'Content-Type': encodedFallback.contentType,
           'Cache-Control': 'no-store',
