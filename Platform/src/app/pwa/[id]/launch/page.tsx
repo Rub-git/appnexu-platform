@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/prisma';
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 
 export default async function AppLaunchPage({
   params,
@@ -12,6 +12,7 @@ export default async function AppLaunchPage({
     where: { id },
     select: {
       appName: true,
+      slug: true,
       targetUrl: true,
       status: true,
     },
@@ -21,20 +22,11 @@ export default async function AppLaunchPage({
     notFound();
   }
 
-  // Public apps should open directly into the target website when launched from installed PWA.
   if (app.status !== 'PUBLISHED') {
     notFound();
   }
 
-  return (
-    <main className="h-dvh w-screen overflow-hidden bg-white">
-      <iframe
-        src={app.targetUrl}
-        className="h-full w-full border-0"
-        title={`${app.appName} App`}
-        sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox"
-        referrerPolicy="strict-origin-when-cross-origin"
-      />
-    </main>
-  );
+  // Keep launch navigation inside the generated app route/scope so the installed
+  // app opens as standalone window mode instead of falling back to browser chrome.
+  return redirect(`/app/${app.slug}?pwa=true`);
 }

@@ -9,23 +9,69 @@ interface ManifestIcon {
     purpose?: string;
 }
 
-function normalizeTargetInstallData(targetUrl: string) {
-    try {
-        const target = new URL(targetUrl);
+function getInstallData(appId: string) {
+    const scope = `/pwa/${appId}/`;
+    return {
+        startUrl: `${scope}launch`,
+        scope,
+        id: scope,
+    };
+}
+
+function getInstallDataForMode(
+    app: { id: string; slug: string; customDomain: string | null },
+    mode: string | null,
+    value: string | null,
+) {
+    if (mode === 'slug' && value && value === app.slug) {
+        const scope = `/app/${app.slug}`;
         return {
-            startUrl: target.toString(),
-            scope: `${target.origin}/`,
-            id: target.toString(),
-            fallbackIcon: `${target.origin}/favicon.ico`,
-        };
-    } catch {
-        return {
-            startUrl: targetUrl,
-            scope: '/',
-            id: targetUrl,
-            fallbackIcon: '/favicon.ico',
+            startUrl: `${scope}?pwa=true`,
+            scope,
+            id: scope,
         };
     }
+
+    if (mode === 'domain' && value && app.customDomain && value === app.customDomain) {
+        const scope = `/app/_domain/${app.customDomain}`;
+        return {
+            startUrl: `${scope}?pwa=true`,
+            scope,
+            id: scope,
+        };
+    }
+
+    return getInstallData(app.id);
+}
+
+function getFallbackNameFromTarget(targetUrl: string): string {
+    try {
+        return new URL(targetUrl).hostname.replace(/^www\./i, '');
+    } catch {
+        return 'My App';
+    }
+}
+
+function normalizeManifestName(appName: string, targetUrl: string): string {
+    const trimmed = (appName || '').trim();
+    const fallback = getFallbackNameFromTarget(targetUrl);
+
+    if (!trimmed) return fallback;
+
+    const normalized = trimmed.toLowerCase().replace(/\s+/g, '');
+    const blockedNames = new Set(['appnexu', 'appnexu.com', 'www.appnexu.com']);
+
+    return blockedNames.has(normalized) ? fallback : trimmed;
+}
+
+function normalizeShortName(shortName: string | null, manifestName: string): string {
+    const candidate = (shortName || '').trim();
+    const source = candidate.length > 0 ? candidate : manifestName;
+    const cleaned = source.toLowerCase().replace(/\s+/g, '');
+    const blockedNames = new Set(['appnexu', 'appnexu.com', 'www.appnexu.com']);
+
+    const effective = blockedNames.has(cleaned) ? manifestName : source;
+    return effective.substring(0, 12);
 }
 
 export const dynamic = 'force-dynamic';
@@ -38,6 +84,7 @@ export async function GET(
 ) {
     try {
         const { id } = await params;
+        const requestUrl = new URL(request.url);
 
         const app = await prisma.appProject.findUnique({
             where: { id: id },
@@ -47,7 +94,12 @@ export async function GET(
             return new NextResponse('App not found', { status: 404 });
         }
 
-        const installData = normalizeTargetInstallData(app.targetUrl);
+        const installData = getInstallDataForMode(
+            { id: app.id, slug: app.slug, customDomain: app.customDomain },
+            requestUrl.searchParams.get('mode'),
+            requestUrl.searchParams.get('value'),
+        );
+        const manifestName = normalizeManifestName(app.appName, app.targetUrl);
         const version = getAppAssetVersion(app);
         const icons: ManifestIcon[] = [
             {
@@ -65,16 +117,17 @@ export async function GET(
         ];
 
         // Generate short_name - truncate to 12 characters if needed (PWA requirement)
-        const shortName = (app.shortName || app.appName).substring(0, 12);
+        const shortName = normalizeShortName(app.shortName, manifestName);
 
         const manifest = {
-            name: app.appName,
+            name: manifestName,
             short_name: shortName,
             id: installData.id,
-            description: `${app.appName} - Progressive Web App`,
+            description: `${manifestName} - Progressive Web App`,
             start_url: installData.startUrl,
             scope: installData.scope,
             display: 'standalone',
+            display_override: ['window-controls-overlay', 'standalone'],
             orientation: 'portrait-primary',
             theme_color: app.themeColor || '#178BFF',
             background_color: app.backgroundColor || '#ffffff',
@@ -85,9 +138,9 @@ export async function GET(
             prefer_related_applications: false,
             shortcuts: [
                 {
-                    name: `Open ${app.appName}`,
+                    name: `Open ${manifestName}`,
                     short_name: 'Open',
-                    description: `Open ${app.appName}`,
+                    description: `Open ${manifestName}`,
                     url: installData.startUrl,
                     icons: icons.length > 0 ? [icons[0]] : []
                 }
