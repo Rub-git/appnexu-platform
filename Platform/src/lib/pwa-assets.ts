@@ -1,6 +1,7 @@
 type AppAssetVersionSource = {
   updatedAt?: Date | string | null;
   lastGeneratedAt?: Date | string | null;
+  iconUrls?: string | null;
 };
 
 function toTimestamp(value?: Date | string | null): number {
@@ -17,7 +18,15 @@ export function getAppAssetVersion(app: AppAssetVersionSource): string {
     toTimestamp(app.updatedAt),
   );
 
-  return String(timestamp || Date.now());
+  // Keep icon URLs deterministic and short while ensuring a changed uploaded logo
+  // invalidates icon/manifest asset URLs even when timestamps are close.
+  const iconSource = app.iconUrls || '';
+  let iconFingerprint = 0;
+  for (let i = 0; i < iconSource.length; i += 1) {
+    iconFingerprint = (iconFingerprint * 31 + iconSource.charCodeAt(i)) % 1000000007;
+  }
+
+  return `${String(timestamp || Date.now())}-${iconFingerprint}`;
 }
 
 export function getAppManifestUrl(appId: string, version: string): string {
