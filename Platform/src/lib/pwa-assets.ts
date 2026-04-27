@@ -24,8 +24,36 @@ export function getAppManifestUrl(appId: string, version: string): string {
   return `/pwa/${appId}/manifest.json?v=${encodeURIComponent(version)}`;
 }
 
+type ManifestInstallMode = 'slug' | 'domain' | 'pwa';
+
+export function getAppManifestUrlForMode(
+  appId: string,
+  version: string,
+  mode: ManifestInstallMode,
+  value: string,
+): string {
+  const params = new URLSearchParams({
+    v: version,
+    mode,
+    value,
+  });
+
+  return `/pwa/${appId}/manifest.json?${params.toString()}`;
+}
+
 export function getAppIconUrl(appId: string, size: number, version: string): string {
   return `/api/icon-proxy/${appId}?size=${size}&v=${encodeURIComponent(version)}`;
+}
+
+export type AppNamedIconFile =
+  | 'favicon.ico'
+  | 'icon-192.png'
+  | 'icon-512.png'
+  | 'apple-touch-icon.png'
+  | 'maskable-icon.png';
+
+export function getAppNamedIconUrl(appId: string, file: AppNamedIconFile, version: string): string {
+  return `/pwa/${appId}/${file}?v=${encodeURIComponent(version)}`;
 }
 
 export function getAppServiceWorkerUrl(appId: string, version: string, scope: string): string {

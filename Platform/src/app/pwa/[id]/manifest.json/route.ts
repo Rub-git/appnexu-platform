@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { getAppAssetVersion, getAppIconUrl } from '@/lib/pwa-assets';
+import { getAppAssetVersion, getAppNamedIconUrl } from '@/lib/pwa-assets';
 
 interface ManifestIcon {
     src: string;
@@ -73,6 +73,19 @@ function normalizeShortName(shortName: string | null, manifestName: string): str
     const blockedNames = new Set(['appnexu', 'appnexu.com', 'www.appnexu.com']);
 
     const effective = blockedNames.has(cleaned) ? manifestName : source;
+    if (candidate.length > 0) {
+        return candidate.substring(0, 12);
+    }
+
+    const words = effective.split(/\s+/).map((word) => word.trim()).filter(Boolean);
+    if (words.length >= 2) {
+        const firstWord = words[0].substring(0, 12);
+        if (firstWord.length >= 4) return firstWord;
+
+        const acronym = words.map((word) => word[0] || '').join('').toUpperCase().substring(0, 10);
+        if (acronym.length >= 2) return acronym;
+    }
+
     return effective.substring(0, 12);
 }
 
@@ -105,16 +118,28 @@ export async function GET(
         const version = getAppAssetVersion(app);
         const icons: ManifestIcon[] = [
             {
-                src: getAppIconUrl(app.id, 192, version),
+                src: getAppNamedIconUrl(app.id, 'icon-192.png', version),
                 sizes: '192x192',
                 type: 'image/png',
-                purpose: 'any maskable',
+                purpose: 'any',
             },
             {
-                src: getAppIconUrl(app.id, 512, version),
+                src: getAppNamedIconUrl(app.id, 'icon-512.png', version),
                 sizes: '512x512',
                 type: 'image/png',
-                purpose: 'any maskable',
+                purpose: 'any',
+            },
+            {
+                src: getAppNamedIconUrl(app.id, 'maskable-icon.png', version),
+                sizes: '512x512',
+                type: 'image/png',
+                purpose: 'maskable',
+            },
+            {
+                src: getAppNamedIconUrl(app.id, 'icon-512.png', version),
+                sizes: '512x512',
+                type: 'image/png',
+                purpose: 'monochrome',
             },
         ];
 

@@ -10,6 +10,7 @@ import {
   getAppAssetVersion,
   getAppCachePrefix,
   getAppIconUrl,
+  getAppNamedIconUrl,
   getAppManifestUrlForMode,
 } from '@/lib/pwa-assets';
 
@@ -32,10 +33,11 @@ export async function generateMetadata({ params }: { params: Promise<{ domain: s
     appleWebApp: { capable: true, title: app.appName, statusBarStyle: 'default' },
     icons: {
       icon: [
-        { url: getAppIconUrl(app.id, 192, assetVersion), sizes: '192x192', type: 'image/png' },
-        { url: getAppIconUrl(app.id, 512, assetVersion), sizes: '512x512', type: 'image/png' },
+        { url: getAppNamedIconUrl(app.id, 'favicon.ico', assetVersion), type: 'image/x-icon' },
+        { url: getAppNamedIconUrl(app.id, 'icon-192.png', assetVersion), sizes: '192x192', type: 'image/png' },
+        { url: getAppNamedIconUrl(app.id, 'icon-512.png', assetVersion), sizes: '512x512', type: 'image/png' },
       ],
-      apple: [{ url: getAppIconUrl(app.id, 180, assetVersion), sizes: '180x180', type: 'image/png' }],
+      apple: [{ url: getAppNamedIconUrl(app.id, 'apple-touch-icon.png', assetVersion), sizes: '180x180', type: 'image/png' }],
     },
     openGraph: {
       title: app.appName,
