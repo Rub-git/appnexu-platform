@@ -196,17 +196,24 @@ async function encodeIconOutput(
   pngBuffer: Buffer,
   size: number,
   format: IconOutputFormat,
-): Promise<{ contentType: string; body: Buffer }> {
+): Promise<{ contentType: string; body: ArrayBuffer }> {
   if (format === 'ico') {
     const sizes = [16, 32, Math.min(64, size)].filter((value, index, list) => list.indexOf(value) === index);
     const frames = await Promise.all(
       sizes.map((iconSize) => sharp(pngBuffer).resize(iconSize, iconSize).png().toBuffer()),
     );
     const ico = await pngToIco(frames);
-    return { contentType: 'image/x-icon', body: Buffer.from(ico) };
+    const icoBuffer = Buffer.from(ico);
+    return {
+      contentType: 'image/x-icon',
+      body: icoBuffer.buffer.slice(icoBuffer.byteOffset, icoBuffer.byteOffset + icoBuffer.byteLength),
+    };
   }
 
-  return { contentType: 'image/png', body: pngBuffer };
+  return {
+    contentType: 'image/png',
+    body: pngBuffer.buffer.slice(pngBuffer.byteOffset, pngBuffer.byteOffset + pngBuffer.byteLength),
+  };
 }
 
 async function fetchIconBuffer(url: string): Promise<Buffer | null> {
