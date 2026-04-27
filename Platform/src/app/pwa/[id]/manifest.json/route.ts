@@ -33,11 +33,13 @@ function getInstallDataForMode(
     }
 
     if (mode === 'domain' && value && app.customDomain && value === app.customDomain) {
-        const scope = `/app/_domain/${app.customDomain}`;
+        // Custom domains are externally served at '/' and internally rewritten.
+        // Keep manifest scope at root so installability checks run in-scope.
+        const scope = '/';
         return {
-            startUrl: `${scope}?pwa=true`,
+            startUrl: '/?pwa=true',
             scope,
-            id: scope,
+            id: '/app/_domain/' + app.customDomain,
         };
     }
 
