@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/lib/logger";
 import { verifyJobRequest } from "@/lib/verify-job";
-import { MAX_RETRIES, enqueueGenerateJob } from "@/lib/queue";
+import { MAX_RETRIES, enqueueGenerateJob, resolveAppBaseUrl } from "@/lib/queue";
 import type { GenerateJobPayload } from "@/lib/queue";
 import { trackEvent } from "@/lib/analytics";
 import * as cheerio from "cheerio";
@@ -157,10 +157,7 @@ export async function POST(request: Request) {
     }
 
     // 7. Verify manifest generation endpoint works
-    const baseUrl =
-      process.env.NEXTAUTH_URL ||
-      process.env.AUTH_URL ||
-      "http://localhost:3000";
+    const baseUrl = resolveAppBaseUrl();
 
     let manifestValid = false;
     try {

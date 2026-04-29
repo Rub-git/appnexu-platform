@@ -20,6 +20,7 @@ import 'server-only';
  */
 
 import { logger } from './logger';
+import { resolveAppBaseUrl } from './queue';
 import * as fs from 'fs';
 import * as path from 'path';
 import { execSync } from 'child_process';
@@ -109,7 +110,7 @@ export async function buildApk(app: AppData): Promise<BuildResult> {
     }
 
     // 7. Store metadata for the download route
-    const baseUrl = process.env.NEXTAUTH_URL || process.env.AUTH_URL || 'http://localhost:3000';
+    const baseUrl = resolveAppBaseUrl();
     const downloadUrl = `${baseUrl}/api/apps/${app.id}/download-apk`;
 
     fs.writeFileSync(

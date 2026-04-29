@@ -36,6 +36,7 @@ export default function GeneratedAppRuntime({
 }: GeneratedAppRuntimeProps) {
   const [manifestData, setManifestData] = useState<ManifestShape | null>(null);
   const [controller, setController] = useState('none');
+  const [documentTitle, setDocumentTitle] = useState('n/a');
 
   useEffect(() => {
     const links = Array.from(document.querySelectorAll('link[rel="manifest"]')) as HTMLLinkElement[];
@@ -63,6 +64,8 @@ export default function GeneratedAppRuntime({
         setManifestData(null);
       }
     };
+
+    setDocumentTitle(document.title || 'n/a');
 
     const isolateRuntime = async () => {
       if (!('serviceWorker' in navigator)) return;
@@ -124,7 +127,7 @@ export default function GeneratedAppRuntime({
         <span>appId</span><span>{appId}</span>
         <span>slug</span><span>{slug}</span>
         <span>targetUrl</span><span>{targetUrl}</span>
-        <span>document.title</span><span>{typeof document !== 'undefined' ? document.title : 'n/a'}</span>
+        <span>document.title</span><span>{documentTitle}</span>
         <span>manifest href</span><span>{manifestHref}</span>
         <span>manifest.id</span><span>{manifestData?.id || 'n/a'}</span>
         <span>manifest.name</span><span>{manifestData?.name || 'n/a'}</span>

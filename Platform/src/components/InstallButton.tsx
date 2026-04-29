@@ -25,19 +25,31 @@ function isStandaloneMode(): boolean {
 }
 
 export default function InstallButton({ appId, assetVersion = '1', manifestHref }: InstallButtonProps) {
-  const [isInstalled, setIsInstalled] = useState(isStandaloneMode);
-  const [isLoading, setIsLoading] = useState(() => !isStandaloneMode());
+  const [isInstalled, setIsInstalled] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [showHelp, setShowHelp] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [deviceType, setDeviceType] = useState<'ios' | 'android' | 'desktop'>('desktop');
   const deferredPrompt = useRef<BeforeInstallPromptEvent | null>(null);
-  const isIOS = typeof navigator !== 'undefined' && /iPad|iPhone|iPod/.test(navigator.userAgent);
-  const isAndroid = typeof navigator !== 'undefined' && /Android/.test(navigator.userAgent);
+  const isIOS = deviceType === 'ios';
+  const isAndroid = deviceType === 'android';
   const isMobileDevice = isIOS || isAndroid;
   const isDesktop = !isMobileDevice;
 
   useEffect(() => {
+    const userAgent = navigator.userAgent;
+    if (/iPad|iPhone|iPod/.test(userAgent)) {
+      setDeviceType('ios');
+    } else if (/Android/.test(userAgent)) {
+      setDeviceType('android');
+    } else {
+      setDeviceType('desktop');
+    }
+
     // When already in standalone mode, no prompt is needed.
     if (isStandaloneMode()) {
+      setIsInstalled(true);
+      setIsLoading(false);
       return;
     }
 
@@ -154,7 +166,7 @@ export default function InstallButton({ appId, assetVersion = '1', manifestHref 
       window.removeEventListener('appinstalled', handleAppInstalled);
       clearTimeout(timeout);
     };
-  }, [appId, assetVersion, isMobileDevice, manifestHref]);
+  }, [appId, assetVersion, manifestHref]);
 
   const handleInstall = async () => {
     // Track install click (fire and forget)

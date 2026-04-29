@@ -16,6 +16,31 @@ import "server-only";
 import { Client } from "@upstash/qstash";
 import { logger } from "./logger";
 
+function isUsableBaseUrl(value: string | undefined): value is string {
+  if (!value) return false;
+
+  const trimmed = value.trim();
+  if (!trimmed) return false;
+
+  try {
+    const url = new URL(trimmed);
+    return !["your-domain.com", "example.com", "www.example.com"].includes(url.hostname);
+  } catch {
+    return false;
+  }
+}
+
+export function resolveAppBaseUrl(): string {
+  const candidates = [
+    process.env.NEXT_PUBLIC_APP_URL,
+    process.env.NEXTAUTH_URL,
+    process.env.AUTH_URL,
+  ];
+
+  const resolved = candidates.find(isUsableBaseUrl);
+  return resolved ?? "http://localhost:3000";
+}
+
 // ─── Types ───────────────────────────────────────────────────────────────────
 
 export interface GenerateJobPayload {
@@ -87,11 +112,7 @@ async function enqueueViaQStash(
   payload: GenerateJobPayload,
   deduplicationId?: string
 ): Promise<QueueResult> {
-  const baseUrl =
-    process.env.NEXTAUTH_URL ||
-    process.env.AUTH_URL ||
-    process.env.NEXT_PUBLIC_APP_URL ||
-    "http://localhost:3000";
+  const baseUrl = resolveAppBaseUrl();
 
   const destination = `${baseUrl}/api/jobs/generate`;
 
@@ -147,7 +168,7 @@ async function enqueueInline(
 
   // Fire-and-forget: call the job handler asynchronously
   // This runs in the same process but doesn't block the publish response
-  const baseUrl = process.env.NEXTAUTH_URL || process.env.AUTH_URL || "http://localhost:3000";
+  const baseUrl = resolveAppBaseUrl();
 
   // Use setTimeout to ensure we return before the job starts
   setTimeout(async () => {
