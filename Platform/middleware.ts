@@ -51,7 +51,7 @@ export default async function middleware(request: NextRequest) {
     }
 
     const url = request.nextUrl.clone();
-    url.pathname = `/app/_domain/${hostNoPort}${pathname === '/' ? '' : pathname}`;
+    url.pathname = `/app/domain/${hostNoPort}${pathname === '/' ? '' : pathname}`;
     return NextResponse.rewrite(url);
   }
 

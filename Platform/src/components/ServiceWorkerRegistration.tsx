@@ -11,7 +11,7 @@ export default function ServiceWorkerRegistration() {
         const isPublicAppRoute =
             /^\/app\//.test(path) ||
             /^\/[a-z]{2}\/app\//i.test(path) ||
-            /^\/app\/_domain\//.test(path);
+            /^\/app\/domain\//.test(path);
 
         if (isPublicAppRoute) {
             // Public generated app routes must be controlled only by their app-specific SW.
