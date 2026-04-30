@@ -42,6 +42,20 @@ export default async function DashboardPage({
     where: { id: session.user.id },
     include: {
       apps: {
+        select: {
+          id: true,
+          appName: true,
+          targetUrl: true,
+          themeColor: true,
+          status: true,
+          slug: true,
+          failureReason: true,
+          totalVisits: true,
+          uniqueVisitors: true,
+          totalInstalls: true,
+          createdAt: true,
+          customDomain: true,
+        },
         orderBy: { createdAt: 'desc' },
       },
       _count: { select: { apps: true } },
