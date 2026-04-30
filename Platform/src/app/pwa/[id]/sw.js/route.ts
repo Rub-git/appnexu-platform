@@ -6,20 +6,20 @@ export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 export const fetchCache = 'force-no-store';
 
-function normalizeServiceWorkerScope(scope: string | null): string {
+function normalizeServiceWorkerScope(scope: string | null, fallbackScope: string): string {
     if (!scope) {
-        return '/';
+        return fallbackScope;
     }
 
     try {
         const decoded = decodeURIComponent(scope).trim();
         if (!decoded.startsWith('/')) {
-            return '/';
+            return fallbackScope;
         }
 
         return decoded;
     } catch {
-        return '/';
+        return fallbackScope;
     }
 }
 
@@ -40,7 +40,8 @@ export async function GET(
 
         const requestUrl = new URL(request.url);
         const version = requestUrl.searchParams.get('v') || String(app.updatedAt.getTime());
-        const serviceWorkerScope = normalizeServiceWorkerScope(requestUrl.searchParams.get('scope'));
+        const defaultScope = `/pwa/${id}/`;
+        const serviceWorkerScope = normalizeServiceWorkerScope(requestUrl.searchParams.get('scope'), defaultScope);
         const cachePrefix = getAppCachePrefix(id);
         const cacheName = getAppCacheName(id, version);
 
@@ -201,7 +202,7 @@ console.log('[ServiceWorker] Loaded for ${app.appName}');
             headers: {
                 'Content-Type': 'application/javascript',
                 'Cache-Control': 'no-cache, no-store, must-revalidate',
-                'Service-Worker-Allowed': serviceWorkerScope,
+                'Service-Worker-Allowed': defaultScope,
             },
         });
     } catch (error) {

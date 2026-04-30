@@ -6,12 +6,11 @@ import InstallButton from '@/components/InstallButton';
 import AnalyticsTracker from '@/components/AnalyticsTracker';
 import { logger } from '@/lib/logger';
 import GeneratedAppRuntime from '@/components/GeneratedAppRuntime';
+import { normalizeCustomDomain } from '@/lib/custom-domain';
 import {
   getAppAssetVersion,
   getAppCachePrefix,
   getAppIconUrl,
-  getAppNamedIconUrl,
-  getAppManifestUrlForMode,
 } from '@/lib/pwa-assets';
 
 export const dynamic = 'force-dynamic';
@@ -20,10 +19,11 @@ export const fetchCache = 'force-no-store';
 
 export async function generateMetadata({ params }: { params: Promise<{ domain: string }> }): Promise<Metadata> {
   const { domain } = await params;
-  const app = await prisma.appProject.findUnique({ where: { customDomain: domain } });
+  const normalizedDomain = normalizeCustomDomain(domain);
+  const app = await prisma.appProject.findUnique({ where: { customDomain: normalizedDomain } });
   if (!app) return {};
   const assetVersion = getAppAssetVersion(app);
-  const manifestHref = getAppManifestUrlForMode(app.id, assetVersion, 'domain', domain);
+  const manifestHref = '/manifest.json';
 
   return {
     title: app.appName,
@@ -33,11 +33,11 @@ export async function generateMetadata({ params }: { params: Promise<{ domain: s
     appleWebApp: { capable: true, title: app.appName, statusBarStyle: 'default' },
     icons: {
       icon: [
-        { url: getAppNamedIconUrl(app.id, 'favicon.ico', assetVersion), type: 'image/x-icon' },
-        { url: getAppNamedIconUrl(app.id, 'icon-192.png', assetVersion), sizes: '192x192', type: 'image/png' },
-        { url: getAppNamedIconUrl(app.id, 'icon-512.png', assetVersion), sizes: '512x512', type: 'image/png' },
+        { url: `/favicon.ico?v=${encodeURIComponent(assetVersion)}`, type: 'image/x-icon' },
+        { url: `/icon-192.png?v=${encodeURIComponent(assetVersion)}`, sizes: '192x192', type: 'image/png' },
+        { url: `/icon-512.png?v=${encodeURIComponent(assetVersion)}`, sizes: '512x512', type: 'image/png' },
       ],
-      apple: [{ url: getAppNamedIconUrl(app.id, 'apple-touch-icon.png', assetVersion), sizes: '180x180', type: 'image/png' }],
+      apple: [{ url: `/apple-touch-icon.png?v=${encodeURIComponent(assetVersion)}`, sizes: '180x180', type: 'image/png' }],
     },
     openGraph: {
       title: app.appName,
@@ -63,17 +63,18 @@ export default async function CustomDomainPage({
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
   const { domain } = await params;
+  const normalizedDomain = normalizeCustomDomain(domain);
   const resolvedSearchParams = await searchParams;
   const isPwa = resolvedSearchParams?.pwa === 'true';
   const requestHeaders = await headers();
   const host = requestHeaders.get('host') || '';
-  const userAgent = requestHeaders.get('user-agent') || '';
 
-  const app = await prisma.appProject.findUnique({ where: { customDomain: domain } });
+  const app = await prisma.appProject.findUnique({ where: { customDomain: normalizedDomain } });
 
   if (!app || app.status !== 'PUBLISHED') {
     logger.warn('live.domain', 'Domain route not found or unpublished', {
       requestDomain: domain,
+      normalizedDomain,
       host,
       foundAppId: app?.id,
       foundStatus: app?.status,
@@ -83,6 +84,7 @@ export default async function CustomDomainPage({
 
   logger.info('live.domain', 'Resolved domain live route', {
     requestDomain: domain,
+    normalizedDomain,
     resolvedAppId: app.id,
     resolvedAppName: app.appName,
     resolvedDomain: app.customDomain,
@@ -99,7 +101,7 @@ export default async function CustomDomainPage({
   }
 
   const assetVersion = getAppAssetVersion(app);
-  const manifestHref = getAppManifestUrlForMode(app.id, assetVersion, 'domain', domain);
+  const manifestHref = '/manifest.json';
   const cachePrefix = getAppCachePrefix(app.id);
 
   return (
@@ -110,6 +112,7 @@ export default async function CustomDomainPage({
         targetUrl={app.targetUrl}
         manifestHref={manifestHref}
         cachePrefix={cachePrefix}
+        allowRootServiceWorker
       />
       <AnalyticsTracker appId={app.id} />
 

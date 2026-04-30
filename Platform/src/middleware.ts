@@ -15,6 +15,17 @@ const PLATFORM_HOSTS = [
   process.env.NEXT_PUBLIC_APP_DOMAIN || '',
 ].filter(Boolean);
 
+const CUSTOM_DOMAIN_ROOT_ASSETS = new Set([
+  '/manifest.json',
+  '/sw.js',
+  '/launch',
+  '/icon-192.png',
+  '/icon-512.png',
+  '/favicon.ico',
+  '/apple-touch-icon.png',
+  '/maskable-icon.png',
+]);
+
 function isPlatformHost(hostname: string): boolean {
   // Remove port from hostname
   const host = hostname.split(':')[0];
@@ -26,6 +37,25 @@ function isPlatformHost(hostname: string): boolean {
 export default async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
   const hostname = request.headers.get('host') || '';
+  const hostNoPort = hostname.split(':')[0].toLowerCase();
+
+  // Custom-domain routing: rewrite host-based app paths before locale/static handling.
+  // Keep API/_next untouched and only rewrite selected static endpoints required by PWA.
+  if (!isPlatformHost(hostname)) {
+    if (pathname.startsWith('/api') || pathname.startsWith('/_next')) {
+      return NextResponse.next();
+    }
+
+    const isWhitelistedStatic = CUSTOM_DOMAIN_ROOT_ASSETS.has(pathname);
+    const isGenericStatic = pathname.includes('.') && !isWhitelistedStatic;
+    if (isGenericStatic) {
+      return NextResponse.next();
+    }
+
+    const url = request.nextUrl.clone();
+    url.pathname = `/app/_domain/${hostNoPort}${pathname === '/' ? '' : pathname}`;
+    return NextResponse.rewrite(url);
+  }
 
   // Skip middleware for API routes, static files, and PWA routes
   if (
@@ -37,16 +67,6 @@ export default async function middleware(request: NextRequest) {
     pathname.includes('.') // Static files
   ) {
     return NextResponse.next();
-  }
-
-  // Custom domain detection
-  // If the hostname is NOT a known platform host, it might be a custom domain
-  if (!isPlatformHost(hostname)) {
-    // Rewrite to the custom domain handler
-    // The /app/_domain/[domain] route will look up the app by custom domain
-    const url = request.nextUrl.clone();
-    url.pathname = `/app/_domain/${hostname}${pathname === '/' ? '' : pathname}`;
-    return NextResponse.rewrite(url);
   }
 
   // Apply i18n middleware first
@@ -78,6 +98,6 @@ export default async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  // Match all pathnames except static files and API routes
-  matcher: ['/((?!api|_next|icons|.*\\..*).*)'],
+  // Match all pathnames except API and Next internals.
+  matcher: ['/((?!api|_next|icons).*)'],
 };

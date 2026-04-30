@@ -13,6 +13,8 @@ import {
   Users,
   Download,
   ExternalLink,
+  Trash2,
+  Link2Off,
 } from 'lucide-react';
 
 interface AppRow {
@@ -49,6 +51,9 @@ export default function AdminAppsPage() {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [ownerPlanFilter, setOwnerPlanFilter] = useState('');
+  const [actionBusyId, setActionBusyId] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [actionSuccess, setActionSuccess] = useState<string | null>(null);
 
   const fetchApps = useCallback(async (page = 1) => {
     setLoading(true);
@@ -69,6 +74,55 @@ export default function AdminAppsPage() {
   }, [search, statusFilter, ownerPlanFilter]);
 
   useEffect(() => { fetchApps(1); }, [fetchApps]);
+
+  const releaseDomain = async (app: AppRow) => {
+    if (!app.customDomain) return;
+
+    setActionBusyId(app.id);
+    setActionError(null);
+    setActionSuccess(null);
+
+    try {
+      const res = await fetch(`/api/admin/apps/${app.id}/domain`, { method: 'DELETE' });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to release custom domain');
+      }
+
+      setActionSuccess(`Dominio liberado: ${app.customDomain} de ${app.appName} (${app.id})`);
+      await fetchApps(pagination.page);
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : 'Failed to release custom domain');
+    } finally {
+      setActionBusyId(null);
+    }
+  };
+
+  const deleteApp = async (app: AppRow) => {
+    const confirmed = window.confirm(
+      `Eliminar app ${app.appName} (${app.id})? Esta accion es irreversible.`
+    );
+    if (!confirmed) return;
+
+    setActionBusyId(app.id);
+    setActionError(null);
+    setActionSuccess(null);
+
+    try {
+      const res = await fetch(`/api/admin/apps/${app.id}`, { method: 'DELETE' });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to delete app');
+      }
+
+      setActionSuccess(`App eliminada: ${app.appName} (${app.id})`);
+      await fetchApps(pagination.page);
+    } catch (err) {
+      setActionError(err instanceof Error ? err.message : 'Failed to delete app');
+    } finally {
+      setActionBusyId(null);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -115,6 +169,17 @@ export default function AdminAppsPage() {
 
       {/* Table */}
       <div className="rounded-2xl bg-white shadow-sm ring-1 ring-gray-200 dark:bg-gray-900 dark:ring-gray-800 overflow-x-auto">
+        {actionError && (
+          <div className="mx-4 mt-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-900/20 dark:text-red-400">
+            {actionError}
+          </div>
+        )}
+        {actionSuccess && (
+          <div className="mx-4 mt-4 rounded-lg bg-green-50 px-3 py-2 text-sm text-green-700 dark:bg-green-900/20 dark:text-green-400">
+            {actionSuccess}
+          </div>
+        )}
+
         {loading ? (
           <div className="flex items-center justify-center py-12">
             <Loader2 className="h-6 w-6 animate-spin text-primary" />
@@ -129,6 +194,7 @@ export default function AdminAppsPage() {
                 <th className="px-4 py-3 font-medium text-gray-500">{t('admin.apps.domain')}</th>
                 <th className="px-4 py-3 font-medium text-gray-500">{t('admin.apps.analytics')}</th>
                 <th className="px-4 py-3 font-medium text-gray-500">{t('admin.apps.created')}</th>
+                <th className="px-4 py-3 font-medium text-gray-500">Acciones</th>
               </tr>
             </thead>
             <tbody>
@@ -137,6 +203,7 @@ export default function AdminAppsPage() {
                   <td className="px-4 py-3">
                     <div>
                       <p className="font-medium text-gray-900 dark:text-white">{app.appName}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">ID: {app.id}</p>
                       <p className="text-xs text-gray-400 flex items-center gap-1">
                         {`/${locale}/app/${app.slug}`}
                         {app.status === 'PUBLISHED' && (
@@ -144,6 +211,9 @@ export default function AdminAppsPage() {
                             <ExternalLink size={10} />
                           </a>
                         )}
+                      </p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400 truncate" title={app.targetUrl}>
+                        {app.targetUrl}
                       </p>
                     </div>
                   </td>
@@ -154,9 +224,14 @@ export default function AdminAppsPage() {
                   <td className="px-4 py-3"><StatusBadge status={app.status} /></td>
                   <td className="px-4 py-3">
                     {app.customDomain ? (
-                      <span className="inline-flex items-center gap-1 text-xs text-green-600">
-                        <Globe size={10} /> {app.customDomain}
-                      </span>
+                      <div className="space-y-1">
+                        <span className="inline-flex items-center gap-1 text-xs text-green-600">
+                          <Globe size={10} /> {app.customDomain}
+                        </span>
+                        <p className="text-[11px] text-gray-500 dark:text-gray-400">
+                          Reservado por: {app.appName} ({app.id})
+                        </p>
+                      </div>
                     ) : (
                       <span className="text-xs text-gray-400">—</span>
                     )}
@@ -177,11 +252,35 @@ export default function AdminAppsPage() {
                   <td className="px-4 py-3 text-xs text-gray-400">
                     {new Date(app.createdAt).toLocaleDateString()}
                   </td>
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => releaseDomain(app)}
+                        disabled={!app.customDomain || actionBusyId === app.id}
+                        className="inline-flex items-center gap-1 rounded-md border border-amber-300 px-2 py-1 text-xs text-amber-700 disabled:opacity-40 dark:border-amber-900/60 dark:text-amber-300"
+                        title="Liberar customDomain sin borrar app"
+                      >
+                        {actionBusyId === app.id ? <Loader2 size={12} className="animate-spin" /> : <Link2Off size={12} />}
+                        Liberar dominio
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => deleteApp(app)}
+                        disabled={actionBusyId === app.id}
+                        className="inline-flex items-center gap-1 rounded-md border border-red-300 px-2 py-1 text-xs text-red-700 disabled:opacity-40 dark:border-red-900/60 dark:text-red-300"
+                        title="Eliminar app desde admin"
+                      >
+                        <Trash2 size={12} />
+                        Eliminar
+                      </button>
+                    </div>
+                  </td>
                 </tr>
               ))}
               {apps.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="px-4 py-8 text-center text-gray-400">{t('admin.noData')}</td>
+                  <td colSpan={7} className="px-4 py-8 text-center text-gray-400">{t('admin.noData')}</td>
                 </tr>
               )}
             </tbody>

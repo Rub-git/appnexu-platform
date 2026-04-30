@@ -3,6 +3,11 @@ import { auth } from '@/lib/auth';
 import { customDomainSchema, formatZodErrors } from '@/lib/validations';
 import { apiError, apiSuccess } from '@/lib/api-utils';
 import { logger } from '@/lib/logger';
+import {
+  getCustomDomainCandidates,
+  isValidCustomDomain,
+  normalizeCustomDomain,
+} from '@/lib/custom-domain';
 
 // PATCH - Set or update custom domain
 export async function PATCH(
@@ -32,7 +37,17 @@ export async function PATCH(
       return apiError('Validation failed', 400, 'VALIDATION_ERROR', formatZodErrors(parsed.error));
     }
 
-    const { customDomain } = parsed.data;
+    const normalizedCustomDomain = parsed.data.customDomain
+      ? normalizeCustomDomain(parsed.data.customDomain)
+      : null;
+
+    if (normalizedCustomDomain && !isValidCustomDomain(normalizedCustomDomain)) {
+      return apiError(
+        'Invalid domain format. Example: app.example.com',
+        400,
+        'INVALID_DOMAIN'
+      );
+    }
 
     // Verify ownership
     const app = await prisma.appProject.findUnique({
@@ -48,18 +63,36 @@ export async function PATCH(
     }
 
     // Check if domain is already taken by another app
-    if (customDomain) {
-      const existingApp = await prisma.appProject.findUnique({
-        where: { customDomain },
+    if (normalizedCustomDomain) {
+      const existingApp = await prisma.appProject.findFirst({
+        where: {
+          customDomain: {
+            in: getCustomDomainCandidates(normalizedCustomDomain),
+          },
+        },
+        select: {
+          id: true,
+          appName: true,
+          customDomain: true,
+        },
       });
 
       if (existingApp && existingApp.id !== id) {
-        return apiError('This domain is already in use by another app', 409, 'DOMAIN_TAKEN');
+        return apiError(
+          `Este dominio ya está asignado a la app: ${existingApp.appName} (${existingApp.id})`,
+          409,
+          'DOMAIN_TAKEN',
+          {
+            appId: existingApp.id,
+            appName: existingApp.appName,
+            domain: existingApp.customDomain,
+          }
+        );
       }
 
       // Prevent using platform domains
       const platformDomains = ['localhost', 'vercel.app', process.env.NEXT_PUBLIC_APP_DOMAIN].filter(Boolean);
-      if (platformDomains.some(d => d && customDomain.includes(d))) {
+      if (platformDomains.some(d => d && normalizedCustomDomain.includes(d))) {
         return apiError('Cannot use platform domain as custom domain', 400, 'INVALID_DOMAIN');
       }
     }
@@ -67,14 +100,14 @@ export async function PATCH(
     const updatedApp = await prisma.appProject.update({
       where: { id },
       data: {
-        customDomain: customDomain || null,
+        customDomain: normalizedCustomDomain,
       },
     });
 
     logger.info('domain', 'Custom domain updated', {
       userId: session.user.id,
       appId: id,
-      domain: customDomain || '(removed)',
+      domain: normalizedCustomDomain || '(removed)',
     });
 
     return apiSuccess({

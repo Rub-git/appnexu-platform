@@ -1,19 +1,19 @@
+import type { Metadata } from 'next';
 import { prisma } from '@/lib/prisma';
 import { notFound } from 'next/navigation';
-import type { Metadata } from 'next';
+import { normalizeCustomDomain } from '@/lib/custom-domain';
+import { headers } from 'next/headers';
 import AnalyticsTracker from '@/components/AnalyticsTracker';
-import PwaScopeIsolation from '@/components/PwaScopeIsolation';
-import { getAppAssetVersion } from '@/lib/pwa-assets';
 
 export async function generateMetadata({
   params,
 }: {
-  params: Promise<{ id: string }>;
+  params: Promise<{ domain: string }>;
 }): Promise<Metadata> {
-  const { id } = await params;
+  const { domain } = await params;
   const app = await prisma.appProject.findUnique({
-    where: { id },
-    select: { appName: true, targetUrl: true, status: true },
+    where: { customDomain: normalizeCustomDomain(domain) },
+    select: { appName: true, status: true },
   });
 
   if (!app || app.status !== 'PUBLISHED') {
@@ -27,42 +27,37 @@ export async function generateMetadata({
   };
 }
 
-export default async function AppLaunchPage({
+export default async function CustomDomainLaunchPage({
   params,
 }: {
-  params: Promise<{ id: string }>;
+  params: Promise<{ domain: string }>;
 }) {
-  const { id } = await params;
+  const { domain } = await params;
+  const requestHeaders = await headers();
+  const host = requestHeaders.get('host') || '';
 
   const app = await prisma.appProject.findUnique({
-    where: { id },
+    where: { customDomain: normalizeCustomDomain(domain) },
     select: {
+      id: true,
       appName: true,
-      slug: true,
       targetUrl: true,
       status: true,
-      updatedAt: true,
     },
   });
 
-  if (!app || !app.targetUrl) {
+  if (!app || !app.targetUrl || app.status !== 'PUBLISHED') {
     notFound();
   }
 
-  if (app.status !== 'PUBLISHED') {
+  if (!host.toLowerCase().includes(normalizeCustomDomain(domain))) {
+    // Route should be reached through host-based rewrite for the same domain.
     notFound();
   }
-
-  const assetVersion = getAppAssetVersion({
-    updatedAt: app.updatedAt,
-    lastGeneratedAt: null,
-    iconUrls: null,
-  });
 
   return (
     <main className="h-[100dvh] w-screen overflow-hidden bg-white dark:bg-black">
-      <PwaScopeIsolation appId={id} assetVersion={assetVersion} />
-      <AnalyticsTracker appId={id} />
+      <AnalyticsTracker appId={app.id} />
       <iframe
         src={app.targetUrl}
         className="h-full w-full border-0"

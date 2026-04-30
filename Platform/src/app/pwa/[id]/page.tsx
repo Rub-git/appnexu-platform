@@ -6,5 +6,5 @@ export default async function PwaAppEntryPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  redirect(`/pwa/${id}/launch`);
+  redirect(`/pwa/${id}/install`);
 }

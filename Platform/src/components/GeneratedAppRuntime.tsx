@@ -15,12 +15,14 @@ interface GeneratedAppRuntimeProps {
   targetUrl: string;
   manifestHref: string;
   cachePrefix: string;
+  allowRootServiceWorker?: boolean;
 }
 
-function hasHostScope(scriptUrl: string, appId: string): boolean {
+function hasHostScope(scriptUrl: string, appId: string, allowRootServiceWorker: boolean): boolean {
   try {
     const pathname = new URL(scriptUrl).pathname;
     if (pathname.includes(`/pwa/${appId}/sw.js`)) return false;
+    if (allowRootServiceWorker && pathname === '/sw.js') return false;
     return pathname === '/sw.js' || pathname.includes('/app/sw.js') || pathname.includes('/[locale]/app/sw.js');
   } catch {
     return false;
@@ -33,6 +35,7 @@ export default function GeneratedAppRuntime({
   targetUrl,
   manifestHref,
   cachePrefix,
+  allowRootServiceWorker = false,
 }: GeneratedAppRuntimeProps) {
   const [manifestData, setManifestData] = useState<ManifestShape | null>(null);
   const [controller, setController] = useState('none');
@@ -78,7 +81,7 @@ export default function GeneratedAppRuntime({
             registration.waiting?.scriptURL ||
             registration.installing?.scriptURL ||
             '';
-          return scriptUrl.length > 0 && hasHostScope(scriptUrl, appId);
+          return scriptUrl.length > 0 && hasHostScope(scriptUrl, appId, allowRootServiceWorker);
         })
         .map((registration) => registration.unregister());
 
@@ -89,7 +92,7 @@ export default function GeneratedAppRuntime({
       const activeController = navigator.serviceWorker.controller?.scriptURL || 'none';
       setController(activeController);
 
-      if (activeController !== 'none' && hasHostScope(activeController, appId)) {
+      if (activeController !== 'none' && hasHostScope(activeController, appId, allowRootServiceWorker)) {
         const key = `generated-runtime-reload-${appId}`;
         if (sessionStorage.getItem(key) !== '1') {
           sessionStorage.setItem(key, '1');
@@ -114,7 +117,7 @@ export default function GeneratedAppRuntime({
 
     loadManifest();
     isolateRuntime().catch(() => {});
-  }, [appId, manifestHref, cachePrefix]);
+  }, [appId, manifestHref, cachePrefix, allowRootServiceWorker]);
 
   if (process.env.NODE_ENV !== 'development') {
     return null;

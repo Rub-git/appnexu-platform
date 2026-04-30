@@ -9,8 +9,7 @@ import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { apiError } from '@/lib/api-utils';
 import { NextResponse } from 'next/server';
-import * as fs from 'fs';
-import * as path from 'path';
+import { logger } from '@/lib/logger';
 
 export async function GET(
   _request: Request,
@@ -22,6 +21,17 @@ export async function GET(
       return apiError('Unauthorized', 401, 'UNAUTHORIZED');
     }
 
+    const requester = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { id: true, email: true, role: true },
+    });
+    if (!requester) {
+      return apiError('Unauthorized', 401, 'UNAUTHORIZED');
+    }
+
+    const sessionRole = requester.role;
+    const isAdmin = sessionRole === 'ADMIN';
+
     const { id } = await params;
     const app = await prisma.appProject.findUnique({
       where: { id },
@@ -31,37 +41,40 @@ export async function GET(
         apkBuildUrl: true,
         appName: true,
         slug: true,
+        status: true,
       },
     });
 
     if (!app) return apiError('App not found', 404, 'NOT_FOUND');
-    if (app.userId !== session.user.id) return apiError('Forbidden', 403, 'FORBIDDEN');
+
+    logger.info('apk-download', 'APK download authorization check', {
+      sessionUserId: session.user.id,
+      sessionEmail: session.user.email || requester.email,
+      sessionRole,
+      appId: id,
+      appOwnerUserId: app.userId,
+      appStatus: app.status,
+    });
+
+    if (!isAdmin && app.userId !== session.user.id) {
+      logger.warn('apk-download', 'Forbidden: user does not own app', {
+        reason: 'OWNERSHIP_REQUIRED',
+        forbiddenReason: 'OWNERSHIP_REQUIRED',
+        appId: id,
+        sessionUserId: session.user.id,
+        sessionEmail: session.user.email || requester.email,
+        sessionRole,
+        appOwnerUserId: app.userId,
+        appStatus: app.status,
+      });
+      return apiError('Forbidden: you can only download APK for your own apps', 403, 'FORBIDDEN');
+    }
 
     if (app.apkBuildStatus !== 'READY') {
       return apiError('APK not available for download', 400, 'NOT_READY');
     }
 
-    // Serve the file directly from /tmp if it exists
-    const metaPath = path.join('/tmp', 'apk-output', `${id}.meta.json`);
-    if (fs.existsSync(metaPath)) {
-      try {
-        const meta = JSON.parse(fs.readFileSync(metaPath, 'utf-8'));
-        if (meta.outputPath && fs.existsSync(meta.outputPath)) {
-          const fileBuffer = fs.readFileSync(meta.outputPath);
-          const safeName = (app.slug || 'app').replace(/[^a-zA-Z0-9_-]/g, '');
-          return new NextResponse(fileBuffer, {
-            status: 200,
-            headers: {
-              'Content-Type': 'application/zip',
-              'Content-Disposition': `attachment; filename="${safeName}-capacitor-project.zip"`,
-              'Content-Length': String(fileBuffer.length),
-            },
-          });
-        }
-      } catch { /* fall through */ }
-    }
-
-    // If Vercel Blob URL is stored, redirect to it
+    // Redirect to Vercel Blob URL (set by /api/apk-callback after GitHub Actions build)
     if (app.apkBuildUrl && app.apkBuildUrl.startsWith('https://')) {
       return NextResponse.redirect(app.apkBuildUrl);
     }

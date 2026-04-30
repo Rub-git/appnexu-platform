@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef } from 'react';
 import Image from 'next/image';
 import { Download, Check, Loader2, ExternalLink, Copy } from 'lucide-react';
-import { getAppManifestUrl, getAppServiceWorkerUrl } from '@/lib/pwa-assets';
+import { getAppManifestUrl } from '@/lib/pwa-assets';
 
 interface BeforeInstallPromptEvent extends Event {
   prompt(): Promise<void>;
@@ -24,6 +24,16 @@ function isStandaloneMode(): boolean {
   );
 }
 
+function isPlatformHost(hostname: string): boolean {
+  const cleanHost = hostname.toLowerCase();
+  const configuredHost = (process.env.NEXT_PUBLIC_APP_DOMAIN || '').toLowerCase();
+
+  if (cleanHost === 'localhost' || cleanHost === '127.0.0.1') return true;
+  if (configuredHost && (cleanHost === configuredHost || cleanHost.endsWith(`.${configuredHost}`))) return true;
+  if (cleanHost.endsWith('.vercel.app')) return true;
+  return false;
+}
+
 export default function InstallButton({ appId, assetVersion = '1', manifestHref }: InstallButtonProps) {
   const [isInstalled, setIsInstalled] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -35,6 +45,7 @@ export default function InstallButton({ appId, assetVersion = '1', manifestHref 
   const isAndroid = deviceType === 'android';
   const isMobileDevice = isIOS || isAndroid;
   const isDesktop = !isMobileDevice;
+  const [isCustomHost, setIsCustomHost] = useState(false);
 
   useEffect(() => {
     const userAgent = navigator.userAgent;
@@ -45,6 +56,9 @@ export default function InstallButton({ appId, assetVersion = '1', manifestHref 
     } else {
       setDeviceType('desktop');
     }
+
+    const customHost = !isPlatformHost(window.location.hostname);
+    setIsCustomHost(customHost);
 
     // When already in standalone mode, no prompt is needed.
     if (isStandaloneMode()) {
@@ -69,19 +83,29 @@ export default function InstallButton({ appId, assetVersion = '1', manifestHref 
       hostNameMeta.setAttribute('content', '');
     }
 
-    const unregisterHostServiceWorkers = async () => {
+    const unregisterHostServiceWorkers = async (expectedScriptPath: string) => {
       if (!('serviceWorker' in navigator)) return;
 
       const currentController = navigator.serviceWorker.controller?.scriptURL || '';
-      const isHostController = currentController.includes('/sw.js') && !currentController.includes(`/pwa/${appId}/sw.js`);
+      const isUnexpectedController = (() => {
+        try {
+          if (!currentController) return false;
+          const currentPath = new URL(currentController).pathname;
+          return currentPath !== expectedScriptPath;
+        } catch {
+          return false;
+        }
+      })();
       const registrations = await navigator.serviceWorker.getRegistrations();
       const shouldRemove = (scriptUrl: string) => {
         try {
           const pathname = new URL(scriptUrl).pathname;
-          if (pathname.includes(`/pwa/${appId}/sw.js`)) {
-            return false;
-          }
-          return pathname === '/sw.js' || pathname.includes('/app/sw.js') || pathname.includes('/[locale]/app/sw.js');
+          return pathname !== expectedScriptPath && (
+            pathname === '/sw.js' ||
+            pathname.includes('/app/sw.js') ||
+            pathname.includes('/[locale]/app/sw.js') ||
+            pathname.includes(`/pwa/${appId}/sw.js`)
+          );
         } catch {
           return false;
         }
@@ -102,7 +126,7 @@ export default function InstallButton({ appId, assetVersion = '1', manifestHref 
         await Promise.allSettled(unregisterTasks);
       }
 
-      if (isHostController) {
+      if (isUnexpectedController) {
         const reloadKey = `generated-sw-reset-${appId}`;
         if (sessionStorage.getItem(reloadKey) !== '1') {
           sessionStorage.setItem(reloadKey, '1');
@@ -114,10 +138,25 @@ export default function InstallButton({ appId, assetVersion = '1', manifestHref 
       sessionStorage.removeItem(`generated-sw-reset-${appId}`);
     };
 
-    const logInstallContext = () => {
+    const logInstallContext = async (reason: string) => {
       const controllerScript = navigator.serviceWorker.controller?.scriptURL || 'none';
       const activeManifest = (document.querySelector('link[rel="manifest"]') as HTMLLinkElement | null)?.href || 'none';
+      const registrations = 'serviceWorker' in navigator
+        ? await navigator.serviceWorker.getRegistrations()
+        : [];
+
+      console.log('[PWA-Debug] document.querySelector(manifest)?.href', activeManifest);
+      console.log('[PWA-Debug] navigator.serviceWorker.getRegistrations()', registrations.map((registration) => ({
+        scope: registration.scope,
+        active: registration.active?.scriptURL || null,
+        waiting: registration.waiting?.scriptURL || null,
+        installing: registration.installing?.scriptURL || null,
+      })));
+      console.log('[PWA-Debug] location.href', window.location.href);
+      console.log('[PWA-Debug] display-mode standalone', isStandaloneMode());
+
       console.log('[InstallContext]', {
+        reason,
         href: window.location.href,
         origin: window.location.origin,
         manifestHref: activeManifest,
@@ -125,15 +164,16 @@ export default function InstallButton({ appId, assetVersion = '1', manifestHref 
       });
     };
 
-    // Register an app-specific service worker scoped to the current public app route.
+    // Register app-specific SW under canonical /pwa/[id]/ scope.
     if ('serviceWorker' in navigator) {
-      const scope = window.location.pathname;
-      const swUrl = getAppServiceWorkerUrl(appId, assetVersion, scope);
-      unregisterHostServiceWorkers()
+      const scope = customHost ? '/' : `/pwa/${appId}/`;
+      const swUrl = customHost ? '/sw.js' : `/pwa/${appId}/sw.js`;
+      const expectedScriptPath = customHost ? '/sw.js' : `/pwa/${appId}/sw.js`;
+      unregisterHostServiceWorkers(expectedScriptPath)
         .then(() => navigator.serviceWorker.register(swUrl, { scope }))
         .then((registration) => {
           console.log('App SW registered:', registration.scope);
-          logInstallContext();
+          void logInstallContext('service-worker-registered');
         })
         .catch((err) => {
           console.warn('App SW registration failed:', err);
@@ -144,7 +184,8 @@ export default function InstallButton({ appId, assetVersion = '1', manifestHref 
     const handleBeforeInstallPrompt = (e: Event) => {
       e.preventDefault();
       deferredPrompt.current = e as BeforeInstallPromptEvent;
-      logInstallContext();
+      console.log('[PWA-Debug] beforeinstallprompt fired');
+      void logInstallContext('beforeinstallprompt');
       setIsLoading(false);
     };
 
@@ -169,6 +210,18 @@ export default function InstallButton({ appId, assetVersion = '1', manifestHref 
   }, [appId, assetVersion, manifestHref]);
 
   const handleInstall = async () => {
+    const expectedInstallScope = isCustomHost ? '/' : `/pwa/${appId}/`;
+    const targetInstallPath = `/pwa/${appId}/install`;
+
+    if (!isCustomHost && !window.location.pathname.startsWith(expectedInstallScope)) {
+      console.log('[PWA-Debug] redirecting install flow to scoped page', {
+        from: window.location.pathname,
+        to: targetInstallPath,
+      });
+      window.location.href = targetInstallPath;
+      return;
+    }
+
     // Track install click (fire and forget)
     try {
       fetch('/api/analytics/track', {

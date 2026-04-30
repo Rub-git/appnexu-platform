@@ -114,6 +114,7 @@ enum AiAnalysisStatus {
 // APK build status enumeration
 enum ApkBuildStatus {
   NOT_BUILT
+  QUEUED
   BUILDING
   READY
   FAILED
@@ -186,9 +187,13 @@ model AppProject {
   aiAnalysisStatus      AiAnalysisStatus @default(NOT_ANALYZED) @map("ai_analysis_status")
 
   // APK export fields
-  apkBuildStatus  ApkBuildStatus @default(NOT_BUILT) @map("apk_build_status")
-  apkBuildUrl     String?        @map("apk_build_url")
-  apkLastBuiltAt  DateTime?      @map("apk_last_built_at")
+  apkBuildStatus   ApkBuildStatus @default(NOT_BUILT) @map("apk_build_status")
+  apkBuildUrl      String?        @map("apk_build_url")
+  apkLastBuiltAt   DateTime?      @map("apk_last_built_at")
+  apkBuildSize     Int?           @map("apk_build_size")
+  apkBuildLog      String?        @map("apk_build_log")
+  apkErrorMessage  String?        @map("apk_error_message")
+  apkGithubRunId   String?        @map("apk_github_run_id")
 
   // Template reference
   templateId String? @map("template_id")

@@ -12,7 +12,7 @@ import {
   getAppCachePrefix,
   getAppIconUrl,
   getAppNamedIconUrl,
-  getAppManifestUrlForMode,
+  getAppManifestUrl,
 } from '@/lib/pwa-assets';
 
 export const dynamic = 'force-dynamic';
@@ -24,7 +24,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const app = await prisma.appProject.findUnique({ where: { slug } });
   if (!app) return {};
   const assetVersion = getAppAssetVersion(app);
-  const manifestHref = getAppManifestUrlForMode(app.id, assetVersion, 'slug', app.slug);
+  const manifestHref = getAppManifestUrl(app.id, assetVersion);
 
   return {
     title: app.appName,
@@ -134,7 +134,7 @@ export default async function PublicAppPage({
   }
 
   const assetVersion = getAppAssetVersion(app);
-  const manifestHref = getAppManifestUrlForMode(app.id, assetVersion, 'slug', app.slug);
+  const manifestHref = getAppManifestUrl(app.id, assetVersion);
   const cachePrefix = getAppCachePrefix(app.id);
 
   return (

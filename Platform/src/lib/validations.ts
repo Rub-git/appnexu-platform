@@ -96,10 +96,6 @@ export const updateAppSchema = z.object({
 
 export const customDomainSchema = z.object({
   customDomain: z.string()
-    .regex(
-      /^(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$/,
-      'Invalid domain format. Example: app.example.com'
-    )
     .max(253)
     .optional()
     .nullable(),
