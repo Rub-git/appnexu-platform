@@ -12,6 +12,7 @@ const protectedRoutes = ['/dashboard', '/settings', '/admin'];
 const PLATFORM_HOSTS = [
   'localhost',
   '127.0.0.1',
+  'appnexu.com',
   process.env.NEXT_PUBLIC_APP_DOMAIN || '',
 ].filter(Boolean);
 
