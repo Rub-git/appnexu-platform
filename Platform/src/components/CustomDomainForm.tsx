@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from '@/i18n/routing';
 import { useTranslations } from 'next-intl';
 import { Globe, Loader2, Check, X, Info } from 'lucide-react';
@@ -18,16 +18,41 @@ export default function CustomDomainForm({ appId, currentDomain }: CustomDomainF
   const router = useRouter();
   const t = useTranslations();
 
+  useEffect(() => {
+    setDomain(currentDomain || '');
+  }, [currentDomain]);
+
+  const normalizeDomain = (value: string): string => {
+    return value
+      .trim()
+      .toLowerCase()
+      .replace(/^https?:\/\//, '')
+      .replace(/\/.*$/, '')
+      .replace(/\.+$/, '');
+  };
+
+  const isValidDomain = (value: string): boolean => {
+    return /^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,}$/i.test(value);
+  };
+
   const handleSave = async () => {
     setIsLoading(true);
     setError(null);
     setSuccess(null);
 
+    const normalizedDomain = normalizeDomain(domain);
+
+    if (normalizedDomain.length > 0 && !isValidDomain(normalizedDomain)) {
+      setError('Invalid domain format. Example: app.example.com');
+      setIsLoading(false);
+      return;
+    }
+
     try {
       const response = await fetch(`/api/apps/${appId}/domain`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ customDomain: domain.trim() || null }),
+        body: JSON.stringify({ customDomain: normalizedDomain || null }),
       });
 
       const data = await response.json();
@@ -36,6 +61,7 @@ export default function CustomDomainForm({ appId, currentDomain }: CustomDomainF
         throw new Error(data.error || 'Failed to update domain');
       }
 
+      setDomain(normalizedDomain);
       setSuccess(t('customDomain.saved'));
       router.refresh();
     } catch (err) {
@@ -97,7 +123,7 @@ export default function CustomDomainForm({ appId, currentDomain }: CustomDomainF
         <input
           type="text"
           value={domain}
-          onChange={(e) => setDomain(e.target.value)}
+          onChange={(e) => setDomain(normalizeDomain(e.target.value))}
           placeholder="app.yourdomain.com"
           className="w-full xl:flex-1 min-w-0 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary dark:border-gray-600 dark:bg-gray-800 dark:text-white"
         />
@@ -132,9 +158,8 @@ export default function CustomDomainForm({ appId, currentDomain }: CustomDomainF
             <p className="font-medium">{t('customDomain.dnsTitle')}</p>
             <p className="mt-1">{t('customDomain.dnsInstructions')}</p>
             <div className="mt-2 rounded bg-blue-100 p-2 font-mono text-xs dark:bg-blue-900/40">
-              <p>Type: CNAME</p>
-              <p>Name: {domain || 'app.yourdomain.com'}</p>
-              <p>Value: cname.vercel-dns.com</p>
+              <p>Root/apex domain (example.com): Type A or ALIAS - Value 76.76.21.21</p>
+              <p>www subdomain (www.example.com): Type CNAME - Value cname.vercel-dns.com</p>
             </div>
           </div>
         </div>

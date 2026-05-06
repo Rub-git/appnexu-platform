@@ -85,6 +85,18 @@ export async function GET(
                 type: 'image/png',
                 purpose: 'any',
             },
+            {
+                src: `/pwa/${app.id}/icons/maskable-192x192.png?v=${encodeURIComponent(version)}`,
+                sizes: '192x192',
+                type: 'image/png',
+                purpose: 'any maskable',
+            },
+            {
+                src: `/pwa/${app.id}/icons/maskable-512x512.png?v=${encodeURIComponent(version)}`,
+                sizes: '512x512',
+                type: 'image/png',
+                purpose: 'any maskable',
+            },
         ];
 
         const shortName = normalizeShortName(app.shortName, manifestName);

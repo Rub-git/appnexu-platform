@@ -154,7 +154,7 @@
     "saved": "¡Dominio personalizado guardado exitosamente!",
     "removed": "Dominio personalizado eliminado.",
     "dnsTitle": "Configuración DNS",
-    "dnsInstructions": "Apunta tu dominio a nuestros servidores agregando un registro CNAME en tu proveedor DNS."
+    "dnsInstructions": "Para dominio raíz usa registro A/ALIAS. Para subdominio www usa CNAME hacia Vercel."
   },
   "install": {
     "button": "Instalar App",

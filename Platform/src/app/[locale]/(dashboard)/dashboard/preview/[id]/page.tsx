@@ -1,10 +1,11 @@
 import { setRequestLocale } from 'next-intl/server';
 import { getTranslations } from 'next-intl/server';
 import { Link } from '@/i18n/routing';
-import { ArrowLeft, Check, ExternalLink, Settings2, BarChart3 } from 'lucide-react';
+import { ArrowLeft, Check, ExternalLink, Settings2, BarChart3, Globe, Smartphone } from 'lucide-react';
 import { prisma } from '@/lib/prisma';
 import { auth } from '@/lib/auth';
 import { notFound, redirect } from 'next/navigation';
+import { getAppIconUrl, getAppAssetVersion } from '@/lib/pwa-assets';
 import PublishButton from '@/components/PublishButton';
 import CustomDomainForm from '@/components/CustomDomainForm';
 import AiSuggestionsPanel from '@/components/AiSuggestionsPanel';
@@ -54,7 +55,12 @@ export default async function AppPreviewPage({
   };
 
   try {
-    const icons = app.iconUrls ? app.iconUrls.split(',').map((s: string) => s.trim()).filter(Boolean) : [];
+    const assetVersion = getAppAssetVersion(app);
+    const publicUrl = app.customDomain
+      ? `https://${app.customDomain}`
+      : `/app/${app.slug}`;
+    // Never render upload:/data: tokens as img src — use icon-proxy which handles them server-side
+    const icons: string[] = []; // icon display is handled via icon-proxy below
 
     return (
       <div className="mx-auto max-w-5xl space-y-8">
@@ -178,22 +184,25 @@ export default async function AppPreviewPage({
                     {t('preview.config.appIcons')}
                   </dt>
                   <dd className="mt-2 flex flex-wrap gap-4">
-                    {icons.length > 0 ? (
-                      icons.map((icon: string, i: number) => (
-                        <div key={i} className="flex flex-col items-center gap-1">
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img 
-                            src={icon} 
-                            alt={`Icon ${i + 1}`} 
-                            className="h-12 w-12 rounded-xl border border-gray-200 object-cover shadow-sm bg-gray-50 dark:border-gray-700 dark:bg-gray-800" 
-                          />
-                        </div>
-                      ))
-                    ) : (
-                      <span className="text-sm italic text-gray-400">
-                        {t('preview.config.noIcons')}
-                      </span>
-                    )}
+                    {/* Always use icon-proxy — it handles upload:/data: tokens server-side */}
+                    <div className="flex flex-col items-center gap-1">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={getAppIconUrl(app.id, 192, assetVersion)}
+                        alt="Icon 512"
+                        className="h-16 w-16 rounded-2xl border border-gray-200 object-cover shadow-sm bg-gray-50 dark:border-gray-700 dark:bg-gray-800"
+                      />
+                      <span className="text-[10px] text-gray-400">512×512</span>
+                    </div>
+                    <div className="flex flex-col items-center gap-1">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={getAppIconUrl(app.id, 96, assetVersion)}
+                        alt="Icon 192"
+                        className="h-12 w-12 rounded-xl border border-gray-200 object-cover shadow-sm bg-gray-50 dark:border-gray-700 dark:bg-gray-800"
+                      />
+                      <span className="text-[10px] text-gray-400">192×192</span>
+                    </div>
                   </dd>
                 </div>
               </dl>
@@ -264,9 +273,40 @@ export default async function AppPreviewPage({
                 failureReason={app.failureReason}
               />
               {app.status === 'PUBLISHED' && (
-                <p className="mt-3 text-sm text-gray-500 dark:text-gray-400">
-                  {t('publish.publicUrl')}: <a href={`/${locale}/app/${app.slug}`} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">{`/${locale}/app/${app.slug}`}</a>
-                </p>
+                <div className="mt-4 space-y-4 rounded-xl border border-green-200 bg-green-50/50 p-4 dark:border-green-900 dark:bg-green-900/10">
+                  <p className="text-sm text-gray-700 dark:text-gray-300">
+                    {t('publish.publicUrl')}: <a href={publicUrl} target="_blank" rel="noopener noreferrer" className="font-medium text-primary hover:underline">{publicUrl}</a>
+                  </p>
+                  <a
+                    href={publicUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700"
+                  >
+                    <Globe className="h-4 w-4" />
+                    Abrir app
+                  </a>
+
+                  <div className="space-y-3 rounded-lg bg-white p-3 ring-1 ring-green-100 dark:bg-gray-900 dark:ring-green-900/40">
+                    <p className="text-sm font-semibold text-gray-900 dark:text-white">Instalación PWA</p>
+                    <div className="text-xs text-gray-600 dark:text-gray-300">
+                      <p className="font-medium">Chrome Desktop</p>
+                      <p>1) Abrir la URL pública 2) Clic en icono instalar de la barra 3) Confirmar "Instalar".</p>
+                    </div>
+                    <div className="text-xs text-gray-600 dark:text-gray-300">
+                      <p className="font-medium">Android (Chrome)</p>
+                      <p>1) Abrir la URL pública 2) Menú de Chrome 3) "Instalar app" o "Agregar a pantalla de inicio".</p>
+                    </div>
+                    <div className="text-xs text-gray-600 dark:text-gray-300">
+                      <p className="font-medium">iPhone (Safari)</p>
+                      <p>1) Abrir la URL pública en Safari 2) Compartir 3) "Añadir a pantalla de inicio".</p>
+                    </div>
+                    <p className="inline-flex items-center gap-1 text-[11px] text-gray-500 dark:text-gray-400">
+                      <Smartphone className="h-3.5 w-3.5" />
+                      Si instaló con icono viejo, elimina la app instalada y vuelve a instalar tras refrescar.
+                    </p>
+                  </div>
+                </div>
               )}
             </div>
           </div>

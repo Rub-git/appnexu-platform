@@ -154,7 +154,7 @@
     "saved": "Custom domain saved successfully!",
     "removed": "Custom domain removed.",
     "dnsTitle": "DNS Configuration",
-    "dnsInstructions": "Point your domain to our servers by adding a CNAME record in your DNS provider."
+    "dnsInstructions": "Use an A/ALIAS record for apex domains and a CNAME record for the www subdomain."
   },
   "install": {
     "button": "Install App",

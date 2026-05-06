@@ -63,16 +63,28 @@ export async function GET(
 
     const icons: ManifestIcon[] = [
       {
-        src: `/icon-192.png?v=${encodeURIComponent(version)}`,
+        src: `/icons/icon-192x192.png?v=${encodeURIComponent(version)}`,
         sizes: '192x192',
         type: 'image/png',
         purpose: 'any',
       },
       {
-        src: `/icon-512.png?v=${encodeURIComponent(version)}`,
+        src: `/icons/icon-512x512.png?v=${encodeURIComponent(version)}`,
         sizes: '512x512',
         type: 'image/png',
         purpose: 'any',
+      },
+      {
+        src: `/icons/maskable-192x192.png?v=${encodeURIComponent(version)}`,
+        sizes: '192x192',
+        type: 'image/png',
+        purpose: 'any maskable',
+      },
+      {
+        src: `/icons/maskable-512x512.png?v=${encodeURIComponent(version)}`,
+        sizes: '512x512',
+        type: 'image/png',
+        purpose: 'any maskable',
       },
     ];
 
