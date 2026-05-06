@@ -13,6 +13,32 @@ interface WebsiteManifest {
   icons?: WebsiteManifestIcon[];
 }
 
+function getAlternateHostUrl(rawUrl: string): string | null {
+  try {
+    const parsed = new URL(rawUrl);
+    if (parsed.hostname.startsWith('www.')) {
+      parsed.hostname = parsed.hostname.slice(4);
+      return parsed.toString();
+    }
+    parsed.hostname = `www.${parsed.hostname}`;
+    return parsed.toString();
+  } catch {
+    return null;
+  }
+}
+
+function isTlsAltNameMismatch(error: unknown): boolean {
+  if (!(error instanceof Error)) return false;
+  const msg = error.message || '';
+  const cause = (error as Error & { cause?: { code?: string; message?: string } }).cause;
+  return (
+    msg.includes('ERR_TLS_CERT_ALTNAME_INVALID') ||
+    msg.includes('altnames') ||
+    cause?.code === 'ERR_TLS_CERT_ALTNAME_INVALID' ||
+    (cause?.message || '').includes('altnames')
+  );
+}
+
 async function extractManifestIcons(targetUrl: string, $: cheerio.CheerioAPI): Promise<string[]> {
   const manifestHref = $('link[rel="manifest"]').attr('href');
   if (!manifestHref) return [];
@@ -76,6 +102,7 @@ export async function POST(request: Request) {
     }
 
     const { url } = parsed.data;
+    let effectiveUrl = url;
 
     // AbortController for timeout (10 seconds)
     const controller = new AbortController();
@@ -113,7 +140,42 @@ export async function POST(request: Request) {
     clearTimeout(timeoutId);
 
     if (!response.ok) {
-      return apiError(`Target URL returned HTTP ${response.status}`, 502, 'UPSTREAM_ERROR');
+      const alternateUrl = getAlternateHostUrl(url);
+      if (response.status === 404 && alternateUrl && alternateUrl !== url) {
+        try {
+          const altResponse = await fetch(alternateUrl, {
+            headers: {
+              'User-Agent': 'Mozilla/5.0 (compatible; Appnexu-Analyzer/1.0)',
+              'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+              'Accept-Language': 'es,en;q=0.9',
+            },
+            redirect: 'follow',
+          });
+
+          if (altResponse.ok) {
+            response = altResponse;
+            effectiveUrl = alternateUrl;
+          } else if (altResponse.status === 404) {
+            return apiError(
+              'El sitio devolvió HTTP 404 en el dominio principal y en la variante con/sin www. Verifica que la home pública exista.',
+              502,
+              'UPSTREAM_404_BOTH_HOSTS',
+            );
+          }
+        } catch (altError) {
+          if (isTlsAltNameMismatch(altError)) {
+            return apiError(
+              'El subdominio www tiene un certificado SSL inválido para ese host. Configura el certificado para incluir la variante www o usa el dominio canónico.',
+              502,
+              'SSL_WWW_HOSTNAME_MISMATCH',
+            );
+          }
+        }
+      }
+
+      if (!response.ok) {
+        return apiError(`Target URL returned HTTP ${response.status}`, 502, 'UPSTREAM_ERROR');
+      }
     }
 
     const html = await response.text();
@@ -130,7 +192,7 @@ export async function POST(request: Request) {
       const href = $(el).attr('href');
       if (href) {
         try {
-          const resolvedUrl = new URL(href, url).href;
+          const resolvedUrl = new URL(href, effectiveUrl).href;
           icons.push(resolvedUrl);
         } catch {
           // Ignore invalid URLs
@@ -139,12 +201,12 @@ export async function POST(request: Request) {
     });
 
     // Extract icons from target manifest when available.
-    const manifestIcons = await extractManifestIcons(url, $);
+    const manifestIcons = await extractManifestIcons(effectiveUrl, $);
 
     // Always include favicon fallback from target domain.
     let faviconFallback = '';
     try {
-      faviconFallback = new URL('/favicon.ico', url).toString();
+      faviconFallback = new URL('/favicon.ico', effectiveUrl).toString();
     } catch {
       faviconFallback = '';
     }
@@ -152,10 +214,10 @@ export async function POST(request: Request) {
     const finalTitle = rawTitle.trim() || new URL(url).hostname;
     const finalDescription = rawDescription.trim() || `App generated for ${finalTitle}`;
 
-    logger.info('analyze', 'URL analyzed', { userId: session.user.id, url });
+    logger.info('analyze', 'URL analyzed', { userId: session.user.id, url, effectiveUrl });
 
     return apiSuccess({
-      url,
+      url: effectiveUrl,
       title: finalTitle,
       description: finalDescription,
       themeColor,
