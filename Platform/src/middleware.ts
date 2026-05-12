@@ -72,13 +72,39 @@ export default async function middleware(request: NextRequest) {
       return NextResponse.next();
     }
 
-    const isWhitelistedStatic = CUSTOM_DOMAIN_ROOT_ASSETS.has(pathname);
-    const isGenericStatic = pathname.includes('.') && !isWhitelistedStatic;
+    const hostNoPort = hostname.split(':')[0];
+
+    if (pathname.startsWith('/icons/')) {
+      const url = request.nextUrl.clone();
+      url.pathname = `/app/domain/${hostNoPort}${pathname}`;
+      logger.info('middleware.rewrite', 'Custom domain icons rewrite', {
+        host: hostname,
+        pathname,
+        redirectDestination: url.pathname,
+        search: url.search,
+      });
+      return NextResponse.rewrite(url);
+    }
+
+    // Keep custom-domain PWA URLs at host root, but resolve them through
+    // the domain-specific handlers to avoid leaking platform-level assets.
+    if (CUSTOM_DOMAIN_ROOT_ASSETS.has(pathname)) {
+      const url = request.nextUrl.clone();
+      url.pathname = `/app/domain/${hostNoPort}${pathname}`;
+      logger.info('middleware.rewrite', 'Custom domain root asset rewrite', {
+        host: hostname,
+        pathname,
+        redirectDestination: url.pathname,
+        search: url.search,
+      });
+      return NextResponse.rewrite(url);
+    }
+
+    const isGenericStatic = pathname.includes('.');
     if (isGenericStatic) {
       return NextResponse.next();
     }
 
-    const hostNoPort = hostname.split(':')[0];
     const url = request.nextUrl.clone();
     url.pathname = `/app/domain/${hostNoPort}${pathname === '/' ? '' : pathname}`;
     logger.info('middleware.rewrite', 'Custom domain rewrite', {
