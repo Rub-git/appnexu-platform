@@ -1,17 +1,9 @@
-import * as cheerio from 'cheerio';
 import { analyzeSchema, formatZodErrors } from '@/lib/validations';
 import { apiError, apiSuccess } from '@/lib/api-utils';
 import { logger } from '@/lib/logger';
 import { checkRateLimit, getClientIp } from '@/lib/rate-limit';
 import { auth } from '@/lib/auth';
-
-interface WebsiteManifestIcon {
-  src?: string;
-}
-
-interface WebsiteManifest {
-  icons?: WebsiteManifestIcon[];
-}
+import { scanPwaAssets } from '@/lib/pwa-discovery';
 
 function getAlternateHostUrl(rawUrl: string): string | null {
   try {
@@ -37,41 +29,6 @@ function isTlsAltNameMismatch(error: unknown): boolean {
     cause?.code === 'ERR_TLS_CERT_ALTNAME_INVALID' ||
     (cause?.message || '').includes('altnames')
   );
-}
-
-async function extractManifestIcons(targetUrl: string, $: cheerio.CheerioAPI): Promise<string[]> {
-  const manifestHref = $('link[rel="manifest"]').attr('href');
-  if (!manifestHref) return [];
-
-  try {
-    const manifestUrl = new URL(manifestHref, targetUrl).toString();
-    const manifestRes = await fetch(manifestUrl, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (compatible; Appnexu-Analyzer/1.0)',
-        'Accept': 'application/manifest+json,application/json;q=0.9,*/*;q=0.8',
-      },
-      redirect: 'follow',
-    });
-
-    if (!manifestRes.ok) return [];
-
-    const manifest = (await manifestRes.json()) as WebsiteManifest;
-    if (!Array.isArray(manifest.icons)) return [];
-
-    return manifest.icons
-      .map((icon) => icon?.src)
-      .filter((src): src is string => Boolean(src))
-      .map((src) => {
-        try {
-          return new URL(src, manifestUrl).toString();
-        } catch {
-          return '';
-        }
-      })
-      .filter(Boolean);
-  } catch {
-    return [];
-  }
 }
 
 export async function POST(request: Request) {
@@ -178,50 +135,17 @@ export async function POST(request: Request) {
       }
     }
 
-    const html = await response.text();
-    const $ = cheerio.load(html);
-
-    // Extract Metadata
-    const rawTitle = $('title').text() || $('meta[property="og:title"]').attr('content') || '';
-    const rawDescription = $('meta[name="description"]').attr('content') || $('meta[property="og:description"]').attr('content') || '';
-    const themeColor = $('meta[name="theme-color"]').attr('content') || '#ffffff';
-
-    // Attempt to find icons in link tags
-    const icons: string[] = [];
-    $('link[rel="icon"], link[rel="apple-touch-icon"], link[rel="shortcut icon"]').each((_, el) => {
-      const href = $(el).attr('href');
-      if (href) {
-        try {
-          const resolvedUrl = new URL(href, effectiveUrl).href;
-          icons.push(resolvedUrl);
-        } catch {
-          // Ignore invalid URLs
-        }
-      }
-    });
-
-    // Extract icons from target manifest when available.
-    const manifestIcons = await extractManifestIcons(effectiveUrl, $);
-
-    // Always include favicon fallback from target domain.
-    let faviconFallback = '';
-    try {
-      faviconFallback = new URL('/favicon.ico', effectiveUrl).toString();
-    } catch {
-      faviconFallback = '';
-    }
-
-    const finalTitle = rawTitle.trim() || new URL(url).hostname;
-    const finalDescription = rawDescription.trim() || `App generated for ${finalTitle}`;
+    const scanned = await scanPwaAssets(effectiveUrl);
 
     logger.info('analyze', 'URL analyzed', { userId: session.user.id, url, effectiveUrl });
 
     return apiSuccess({
       url: effectiveUrl,
-      title: finalTitle,
-      description: finalDescription,
-      themeColor,
-      icons: [...new Set([...icons, ...manifestIcons, ...(faviconFallback ? [faviconFallback] : [])])],
+      title: scanned.title,
+      description: scanned.description,
+      themeColor: scanned.themeColor,
+      manifestHref: scanned.manifestHref,
+      icons: scanned.icons,
     });
   } catch (error) {
     logger.error('analyze', 'Analysis failed', { error: error instanceof Error ? error.message : 'Unknown' });

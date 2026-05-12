@@ -5,7 +5,7 @@ import { verifyJobRequest } from "@/lib/verify-job";
 import { MAX_RETRIES, enqueueGenerateJob, resolveAppBaseUrl } from "@/lib/queue";
 import type { GenerateJobPayload } from "@/lib/queue";
 import { trackEvent } from "@/lib/analytics";
-import * as cheerio from "cheerio";
+import { scanPwaAssets, type PwaAssetScanResult } from "@/lib/pwa-discovery";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 30; // Allow up to 30s for generation
@@ -113,10 +113,22 @@ export async function POST(request: Request) {
       return NextResponse.json({ status: "failed", errors: validationErrors });
     }
 
+    // Mark as PUBLISHED before the slower enrichment checks so users do not
+    // stay stuck in the generating state while optional metadata is fetched.
+    await prisma.appProject.update({
+      where: { id: appId },
+      data: {
+        status: "PUBLISHED",
+        failureReason: null,
+        lastGeneratedAt: new Date(),
+        retryCount: attempt,
+      },
+    });
+
     // 5. Analyze target website (re-scrape for freshest metadata)
-    let analysisResult: AnalysisResult | null = null;
+    let analysisResult: PwaAssetScanResult | null = null;
     try {
-      analysisResult = await analyzeWebsite(app.targetUrl);
+      analysisResult = await scanPwaAssets(app.targetUrl);
     } catch (error) {
       const msg =
         error instanceof Error ? error.message : "Website analysis failed";
@@ -202,17 +214,12 @@ export async function POST(request: Request) {
       });
     }
 
-    // 9. Mark as PUBLISHED
-    await prisma.appProject.update({
-      where: { id: appId },
-      data: {
-        ...updateData,
-        status: "PUBLISHED",
-        failureReason: null,
-        lastGeneratedAt: new Date(),
-        retryCount: attempt,
-      },
-    });
+    if (Object.keys(updateData).length > 0) {
+      await prisma.appProject.update({
+        where: { id: appId },
+        data: updateData,
+      });
+    }
 
     // Track PUBLISHED analytics event
     await trackEvent({
@@ -299,119 +306,3 @@ async function markFailed(
   }
 }
 
-// ─── Helper: Analyze website ────────────────────────────────────────────────
-
-interface AnalysisResult {
-  title: string;
-  description: string;
-  themeColor: string;
-  icons: string[];
-}
-
-interface WebsiteManifestIcon {
-  src?: string;
-}
-
-interface WebsiteManifest {
-  icons?: WebsiteManifestIcon[];
-}
-
-async function extractManifestIcons(url: string, $: cheerio.CheerioAPI): Promise<string[]> {
-  const manifestHref = $('link[rel="manifest"]').attr('href');
-  if (!manifestHref) return [];
-
-  try {
-    const manifestUrl = new URL(manifestHref, url).toString();
-    const manifestRes = await fetch(manifestUrl, {
-      headers: {
-        'User-Agent': 'Appnexu-Generator/1.0',
-        'Accept': 'application/manifest+json,application/json;q=0.9,*/*;q=0.8',
-      },
-      redirect: 'follow',
-      signal: AbortSignal.timeout(7000),
-    });
-
-    if (!manifestRes.ok) return [];
-
-    const manifest = (await manifestRes.json()) as WebsiteManifest;
-    if (!Array.isArray(manifest.icons)) return [];
-
-    return manifest.icons
-      .map((icon) => icon?.src)
-      .filter((src): src is string => Boolean(src))
-      .map((src) => {
-        try {
-          return new URL(src, manifestUrl).toString();
-        } catch {
-          return '';
-        }
-      })
-      .filter(Boolean);
-  } catch {
-    return [];
-  }
-}
-
-async function analyzeWebsite(url: string): Promise<AnalysisResult> {
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 10000);
-
-  try {
-    const response = await fetch(url, {
-      signal: controller.signal,
-      headers: { "User-Agent": "Appnexu-Generator/1.0" },
-    });
-
-    clearTimeout(timeoutId);
-
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}`);
-    }
-
-    const html = await response.text();
-    const $ = cheerio.load(html);
-
-    const rawTitle =
-      $("title").text() ||
-      $('meta[property="og:title"]').attr("content") ||
-      "";
-    const rawDescription =
-      $('meta[name="description"]').attr("content") ||
-      $('meta[property="og:description"]').attr("content") ||
-      "";
-    const themeColor =
-      $('meta[name="theme-color"]').attr("content") || "#ffffff";
-
-    const icons: string[] = [];
-    $(
-      'link[rel="icon"], link[rel="apple-touch-icon"], link[rel="shortcut icon"]'
-    ).each((_, el) => {
-      const href = $(el).attr("href");
-      if (href) {
-        try {
-          icons.push(new URL(href, url).href);
-        } catch {
-          // Ignore invalid URLs
-        }
-      }
-    });
-
-    const manifestIcons = await extractManifestIcons(url, $);
-    let faviconFallback = "";
-    try {
-      faviconFallback = new URL('/favicon.ico', url).toString();
-    } catch {
-      faviconFallback = "";
-    }
-
-    return {
-      title: rawTitle.trim() || new URL(url).hostname,
-      description:
-        rawDescription.trim() || `App generated for ${rawTitle.trim()}`,
-      themeColor,
-      icons: [...new Set([...icons, ...manifestIcons, ...(faviconFallback ? [faviconFallback] : [])])],
-    };
-  } finally {
-    clearTimeout(timeoutId);
-  }
-}

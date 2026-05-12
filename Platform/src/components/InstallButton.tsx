@@ -200,6 +200,9 @@ export default function InstallButton({ appId, assetVersion = '1', manifestHref 
     // Set loading to false after a timeout if no prompt received
     const timeout = setTimeout(() => {
       setIsLoading(false);
+      if (!deferredPrompt.current && !isInstalled) {
+        setShowHelp(true);
+      }
     }, 3000);
 
     return () => {

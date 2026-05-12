@@ -5,7 +5,7 @@ import { ArrowLeft, Check, ExternalLink, Settings2, BarChart3, Globe, Smartphone
 import { prisma } from '@/lib/prisma';
 import { auth } from '@/lib/auth';
 import { notFound, redirect } from 'next/navigation';
-import { getAppIconUrl, getAppAssetVersion } from '@/lib/pwa-assets';
+import { getAppIconUrl, getAppAssetVersion, getAppManifestUrl } from '@/lib/pwa-assets';
 import PublishButton from '@/components/PublishButton';
 import CustomDomainForm from '@/components/CustomDomainForm';
 import AiSuggestionsPanel from '@/components/AiSuggestionsPanel';
@@ -59,6 +59,7 @@ export default async function AppPreviewPage({
     const publicUrl = app.customDomain
       ? `https://${app.customDomain}`
       : `/app/${app.slug}`;
+    const manifestHref = getAppManifestUrl(app.id, assetVersion);
     // Never render upload:/data: tokens as img src — use icon-proxy which handles them server-side
     const icons: string[] = []; // icon display is handled via icon-proxy below
 
@@ -126,6 +127,68 @@ export default async function AppPreviewPage({
               revalidatePath('/[locale]/(dashboard)/dashboard/preview/[id]', 'page');
             }}
           />
+
+          <div className="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-gray-200 dark:bg-gray-900 dark:ring-gray-800">
+            <div className="border-b border-gray-200 px-6 py-5 dark:border-gray-800">
+              <h3 className="text-lg font-medium leading-6 text-gray-900 dark:text-white">
+                PWA Preview
+              </h3>
+              <p className="mt-1 max-w-2xl text-sm text-gray-500 dark:text-gray-400">
+                Vista previa del paquete instalable antes de publicar.
+              </p>
+            </div>
+            <div className="px-6 py-5">
+              <div className="grid gap-4 md:grid-cols-[96px_1fr]">
+                <div className="flex items-start justify-center md:justify-start">
+                  <div className="h-24 w-24 overflow-hidden rounded-2xl border border-gray-200 bg-gray-50 shadow-sm dark:border-gray-800 dark:bg-gray-950">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={getAppIconUrl(app.id, 192, assetVersion)}
+                      alt={`${app.appName} icon preview`}
+                      className="h-full w-full object-cover"
+                    />
+                  </div>
+                </div>
+                <div className="space-y-3">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="rounded-full bg-emerald-100 px-2.5 py-1 text-[11px] font-semibold text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300">
+                      standalone
+                    </span>
+                    <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-700 dark:bg-slate-800 dark:text-slate-300">
+                      manifest-first
+                    </span>
+                  </div>
+
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <div className="rounded-xl border border-gray-200 bg-gray-50 p-3 dark:border-gray-800 dark:bg-gray-950/60">
+                      <p className="text-xs text-gray-500 dark:text-gray-400">Nombre</p>
+                      <p className="mt-1 text-sm font-semibold text-gray-900 dark:text-white">{app.appName}</p>
+                    </div>
+                    <div className="rounded-xl border border-gray-200 bg-gray-50 p-3 dark:border-gray-800 dark:bg-gray-950/60">
+                      <p className="text-xs text-gray-500 dark:text-gray-400">Manifest</p>
+                      <a href={manifestHref} className="mt-1 block break-all text-sm font-semibold text-primary hover:underline">
+                        {manifestHref}
+                      </a>
+                    </div>
+                    <div className="rounded-xl border border-gray-200 bg-gray-50 p-3 dark:border-gray-800 dark:bg-gray-950/60">
+                      <p className="text-xs text-gray-500 dark:text-gray-400">Theme color</p>
+                      <div className="mt-1 flex items-center gap-2">
+                        <span className="h-4 w-4 rounded-full border border-gray-200" style={{ backgroundColor: parsedConfig?.theme?.color || app.themeColor || '#ffffff' }} />
+                        <span className="text-sm font-semibold text-gray-900 dark:text-white">{parsedConfig?.theme?.color || app.themeColor || '#ffffff'}</span>
+                      </div>
+                    </div>
+                    <div className="rounded-xl border border-gray-200 bg-gray-50 p-3 dark:border-gray-800 dark:bg-gray-950/60">
+                      <p className="text-xs text-gray-500 dark:text-gray-400">Background</p>
+                      <div className="mt-1 flex items-center gap-2">
+                        <span className="h-4 w-4 rounded-full border border-gray-200" style={{ backgroundColor: parsedConfig?.theme?.backgroundColor || app.backgroundColor || '#ffffff' }} />
+                        <span className="text-sm font-semibold text-gray-900 dark:text-white">{parsedConfig?.theme?.backgroundColor || app.backgroundColor || '#ffffff'}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
 
           {/* Details Card */}
           <div className="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-gray-200 dark:bg-gray-900 dark:ring-gray-800">

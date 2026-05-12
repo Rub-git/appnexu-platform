@@ -65,7 +65,9 @@ function getQStashClient(): Client | null {
   if (_qstashClient) return _qstashClient;
 
   const token = process.env.QSTASH_TOKEN;
-  if (!token) return null;
+  const currentKey = process.env.QSTASH_CURRENT_SIGNING_KEY;
+  const nextKey = process.env.QSTASH_NEXT_SIGNING_KEY;
+  if (!token || !currentKey || !nextKey) return null;
 
   _qstashClient = new Client({ token });
   return _qstashClient;
@@ -73,7 +75,11 @@ function getQStashClient(): Client | null {
 
 /** Check whether QStash is available */
 export function isQStashConfigured(): boolean {
-  return !!process.env.QSTASH_TOKEN;
+  return !!(
+    process.env.QSTASH_TOKEN &&
+    process.env.QSTASH_CURRENT_SIGNING_KEY &&
+    process.env.QSTASH_NEXT_SIGNING_KEY
+  );
 }
 
 // ─── Max retry configuration ────────────────────────────────────────────────
