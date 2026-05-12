@@ -91,10 +91,8 @@ async function getPageDerivedIconCandidates(targetUrl: string): Promise<string[]
       if (href) discovered.push(href);
     });
 
-    const ogImage = $('meta[property="og:image"]').attr('content');
-    const twitterImage = $('meta[name="twitter:image"]').attr('content');
-    if (ogImage) discovered.push(ogImage);
-    if (twitterImage) discovered.push(twitterImage);
+    // og:image / twitter:image are intentionally excluded — they are social-sharing
+    // preview images (often banners or hero photos), not app icons.
 
     return discovered
       .map((value) => normalizeIconUrl(value, targetUrl))
@@ -368,7 +366,8 @@ export async function GET(
 
     for (const candidate of iconCandidates) {
       const sourceBuffer = await fetchIconBuffer(candidate);
-      if (sourceBuffer) {
+      if (!sourceBuffer) continue;
+      try {
         const pngBuffer = await renderLogoPng(sourceBuffer, size, variant, app.themeColor, app.backgroundColor);
         const encoded = await encodeIconOutput(pngBuffer, size, format);
         return new NextResponse(asBinaryStream(encoded.body), {
@@ -377,6 +376,10 @@ export async function GET(
             'Cache-Control': 'no-store',
           },
         });
+      } catch {
+        // Candidate could not be processed (e.g. SVG without librsvg, corrupt ICO).
+        // Continue to the next candidate instead of aborting the whole loop.
+        continue;
       }
     }
 
