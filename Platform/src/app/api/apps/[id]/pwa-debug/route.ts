@@ -1,5 +1,7 @@
 import { prisma } from '@/lib/prisma';
 import { apiError, apiSuccess } from '@/lib/api-utils';
+import { auth } from '@/lib/auth';
+import { normalizeCustomDomain } from '@/lib/custom-domain';
 
 function findHeader(headers: Headers, key: string): string | null {
   return headers.get(key) || headers.get(key.toLowerCase());
@@ -26,33 +28,101 @@ async function checkUrl(url: string): Promise<{ url: string; status: number | nu
   }
 }
 
+async function inspectDomainVariant(url: string): Promise<{
+  url: string;
+  ok: boolean;
+  status: number | null;
+  finalUrl: string | null;
+  finalHost: string | null;
+  error?: string;
+}> {
+  try {
+    const response = await fetch(url, { cache: 'no-store', redirect: 'follow' });
+    const finalUrl = response.url || null;
+    const finalHost = finalUrl ? new URL(finalUrl).hostname : null;
+
+    return {
+      url,
+      ok: response.ok,
+      status: response.status,
+      finalUrl,
+      finalHost,
+    };
+  } catch (error) {
+    return {
+      url,
+      ok: false,
+      status: null,
+      finalUrl: null,
+      finalHost: null,
+      error: error instanceof Error ? error.message : 'Unknown error',
+    };
+  }
+}
+
 // GET /api/apps/[id]/pwa-debug
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const session = await auth();
+    if (!session?.user?.id) {
+      return apiError('Unauthorized', 401, 'UNAUTHORIZED');
+    }
+
     const { id } = await params;
 
     const app = await prisma.appProject.findUnique({
       where: { id },
-      select: { id: true, appName: true, status: true },
+      select: {
+        id: true,
+        appName: true,
+        status: true,
+        pwaMode: true,
+        pwaModeManual: true,
+        importedManifestUrl: true,
+        importedSwUrl: true,
+        importedIconsValid: true,
+        customDomain: true,
+        targetUrl: true,
+        userId: true,
+      },
     });
 
     if (!app) {
       return apiError('App not found', 404, 'NOT_FOUND');
     }
 
+    if (app.userId !== session.user.id) {
+      return apiError('Forbidden', 403, 'FORBIDDEN');
+    }
+
     const requestUrl = new URL(request.url);
-    const auditOrigin = normalizeAuditOrigin(
-      requestUrl.origin,
-      requestUrl.searchParams.get('host')
+    const requestedHost = requestUrl.searchParams.get('host');
+    const normalizedRequestedHost = requestedHost ? normalizeCustomDomain(requestedHost) : null;
+    const normalizedAppDomain = app.customDomain ? normalizeCustomDomain(app.customDomain) : null;
+    const useRootDomainAudit = Boolean(
+      normalizedRequestedHost &&
+      normalizedAppDomain &&
+      normalizedRequestedHost === normalizedAppDomain
     );
 
-    const installUrl = `${auditOrigin}/pwa/${id}/install`;
-    const launchUrl = `${auditOrigin}/pwa/${id}/launch`;
-    const swUrl = `${auditOrigin}/pwa/${id}/sw.js`;
-    const manifestUrl = `${auditOrigin}/pwa/${id}/manifest.json`;
+    const auditOrigin = normalizeAuditOrigin(
+      requestUrl.origin,
+      requestedHost
+    );
+
+    const installUrl = useRootDomainAudit
+      ? `${auditOrigin}/`
+      : `${auditOrigin}/pwa/${id}/install`;
+    const launchUrl = installUrl;
+    const swUrl = useRootDomainAudit
+      ? `${auditOrigin}/sw.js`
+      : `${auditOrigin}/pwa/${id}/sw.js`;
+    const manifestUrl = useRootDomainAudit
+      ? `${auditOrigin}/manifest.json`
+      : `${auditOrigin}/pwa/${id}/manifest.json`;
 
     const installStatus = await checkUrl(installUrl);
     const manifestStatus = await checkUrl(manifestUrl);
@@ -112,7 +182,7 @@ export async function GET(
       }
     }
 
-    const serviceWorkerScopeExpected = `/pwa/${id}/`;
+    const serviceWorkerScopeExpected = useRootDomainAudit ? '/' : `/pwa/${id}/`;
     const swAllowedHeader = swStatus.ok ? await (async () => {
       const response = await fetch(swUrl, { cache: 'no-store' });
       return findHeader(response.headers, 'Service-Worker-Allowed');
@@ -164,10 +234,61 @@ export async function GET(
       installabilityErrors.push(`start_url is outside expected scope (${startUrlStatus.url})`);
     }
 
+    const hasServiceWorkerAllowedMismatch = swAllowedHeader !== serviceWorkerScopeExpected;
+    const hasStartUrlOutsideScope = Boolean(
+      startUrlStatus &&
+      startUrlStatus.url &&
+      !startUrlStatus.url.includes(serviceWorkerScopeExpected)
+    );
+    const hasStartUrlFetchError = !startUrlStatus || !startUrlStatus.ok;
+    const hasManifestFetchError = !manifestStatus.ok;
+    const hasServiceWorkerFetchError = !swStatus.ok;
+    const hasMissingOrInvalidIcons =
+      !icon192Status ||
+      !icon512Status ||
+      !icon192Status.ok ||
+      !icon512Status.ok;
+
+    let domainVariantApex: Awaited<ReturnType<typeof inspectDomainVariant>> | null = null;
+    let domainVariantWww: Awaited<ReturnType<typeof inspectDomainVariant>> | null = null;
+    let wwwRedirectConflict = false;
+
+    if (normalizedAppDomain) {
+      const apex = normalizedAppDomain.replace(/^www\./i, '');
+      const www = `www.${apex}`;
+
+      domainVariantApex = await inspectDomainVariant(`https://${apex}`);
+      domainVariantWww = await inspectDomainVariant(`https://${www}`);
+
+      if (domainVariantApex.ok && domainVariantWww.ok) {
+        const apexHost = domainVariantApex.finalHost || apex;
+        const wwwHost = domainVariantWww.finalHost || www;
+        wwwRedirectConflict = apexHost !== wwwHost;
+        if (wwwRedirectConflict) {
+          installabilityErrors.push(
+            `www/non-www mismatch (${apexHost} vs ${wwwHost})`
+          );
+        }
+      }
+    }
+
+    const importCandidateDetected =
+      manifestStatus.ok &&
+      swStatus.ok &&
+      Boolean(icon192Status?.ok) &&
+      Boolean(icon512Status?.ok);
+
     return apiSuccess({
       appId: app.id,
       appName: app.appName,
       appStatus: app.status,
+      pwaMode: app.pwaMode,
+      pwaModeManual: app.pwaModeManual,
+      importedManifestUrl: app.importedManifestUrl,
+      importedSwUrl: app.importedSwUrl,
+      importedIconsValid: app.importedIconsValid,
+      importCandidateDetected,
+      useRootDomainAudit,
       auditOrigin,
       installUrl,
       manifestUrl,
@@ -197,6 +318,17 @@ export async function GET(
       beforeinstallprompt: null,
       display_mode: null,
       installability_errors: installabilityErrors,
+      diagnostics: {
+        hasServiceWorkerAllowedMismatch,
+        hasStartUrlOutsideScope,
+        hasStartUrlFetchError,
+        hasManifestFetchError,
+        hasServiceWorkerFetchError,
+        hasMissingOrInvalidIcons,
+      },
+      domainVariantApex,
+      domainVariantWww,
+      wwwRedirectConflict,
     });
   } catch (error) {
     return apiError('Failed to build PWA debug payload', 500, 'INTERNAL_ERROR', {

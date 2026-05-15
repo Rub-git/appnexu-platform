@@ -57,6 +57,10 @@ export async function GET(
       return new NextResponse('App not found', { status: 404 });
     }
 
+    if (app.pwaMode === 'IMPORT' && app.importedManifestUrl) {
+      return NextResponse.redirect(app.importedManifestUrl, 307);
+    }
+
     const manifestName = normalizeManifestName(app.appName, app.targetUrl);
     const shortName = normalizeShortName(app.shortName, manifestName);
     const version = getAppAssetVersion(app);
@@ -93,7 +97,7 @@ export async function GET(
       short_name: shortName,
       id: '/',
       description: `${manifestName} - Progressive Web App`,
-      start_url: '/launch',
+      start_url: '/',
       scope: '/',
       display: 'standalone',
       display_override: ['standalone'],
@@ -110,7 +114,7 @@ export async function GET(
           name: `Open ${manifestName}`,
           short_name: 'Open',
           description: `Open ${manifestName}`,
-          url: '/launch',
+          url: '/',
           icons: icons.length > 0 ? [icons[0]] : [],
         },
       ],

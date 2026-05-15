@@ -120,6 +120,12 @@ enum ApkBuildStatus {
   FAILED
 }
 
+// PWA operation mode
+enum PwaMode {
+  GENERATOR
+  IMPORT
+}
+
 // Template category enumeration
 enum TemplateCategory {
   BUSINESS
@@ -169,6 +175,16 @@ model AppProject {
   backgroundColor String?   @default("#ffffff")
   iconUrls        String    // Kept as comma-separated string as required
   status          AppStatus @default(DRAFT)
+  pwaMode         PwaMode   @default(GENERATOR) @map("pwa_mode")
+  pwaModeManual   Boolean   @default(false) @map("pwa_mode_manual")
+
+  // Imported PWA metadata (only for IMPORT mode)
+  importedManifestUrl String?   @map("imported_manifest_url")
+  importedSwUrl       String?   @map("imported_sw_url")
+  importedStartUrl    String?   @map("imported_start_url")
+  importedScope       String?   @map("imported_scope")
+  importedIconsValid  Boolean?  @map("imported_icons_valid")
+  pwaAuditedAt        DateTime? @map("pwa_audited_at")
 
   // Custom domain support
   customDomain String? @unique @map("custom_domain")
@@ -221,6 +237,7 @@ model AppProject {
   @@index([slug])
   @@index([customDomain])
   @@index([status])
+  @@index([pwaMode])
   @@index([createdAt])
   @@index([aiAnalysisStatus])
   @@index([apkBuildStatus])

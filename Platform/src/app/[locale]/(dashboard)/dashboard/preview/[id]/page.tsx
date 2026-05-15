@@ -1,16 +1,26 @@
 import { setRequestLocale } from 'next-intl/server';
 import { getTranslations } from 'next-intl/server';
 import { Link } from '@/i18n/routing';
-import { ArrowLeft, Check, ExternalLink, Settings2, BarChart3, Globe, Smartphone } from 'lucide-react';
+import { ArrowLeft, ExternalLink, Settings2, BarChart3, Globe, Smartphone } from 'lucide-react';
 import { prisma } from '@/lib/prisma';
 import { auth } from '@/lib/auth';
 import { notFound, redirect } from 'next/navigation';
 import { getAppIconUrl, getAppAssetVersion, getAppManifestUrl } from '@/lib/pwa-assets';
+import { getNormalizedHostnameFromUrl, normalizeCustomDomain } from '@/lib/custom-domain';
 import PublishButton from '@/components/PublishButton';
 import CustomDomainForm from '@/components/CustomDomainForm';
 import AiSuggestionsPanel from '@/components/AiSuggestionsPanel';
 import ApkExportButton from '@/components/ApkExportButton';
 import PhoneMockupIframe from '@/components/PhoneMockupIframe';
+import PwaModeSelector from '@/components/PwaModeSelector';
+import PwaAuditChecklist from '@/components/PwaAuditChecklist';
+
+type PreviewThemeConfig = {
+  theme: {
+    color: string;
+    backgroundColor: string;
+  };
+};
 
 export default async function AppPreviewPage({ 
   params 
@@ -48,7 +58,7 @@ export default async function AppPreviewPage({
   }
 
   // Build a parsedConfig-like object from the actual DB fields
-  const parsedConfig: Record<string, any> = {
+  const parsedConfig: PreviewThemeConfig = {
     theme: {
       color: app.themeColor || '#178BFF',
       backgroundColor: app.backgroundColor || '#ffffff',
@@ -57,13 +67,25 @@ export default async function AppPreviewPage({
 
   try {
     const assetVersion = getAppAssetVersion(app);
+    const normalizedCustomDomain = app.customDomain ? normalizeCustomDomain(app.customDomain) : null;
+    const targetHost = getNormalizedHostnameFromUrl(app.targetUrl);
+    const isSelfReferentialDomain = Boolean(
+      normalizedCustomDomain && targetHost && normalizedCustomDomain === targetHost,
+    );
+    const shouldUseCustomDomainRoot =
+      Boolean(normalizedCustomDomain) &&
+      app.status === 'PUBLISHED' &&
+      !isSelfReferentialDomain;
+
+    const mockPreviewUrl = isSelfReferentialDomain
+      ? `/app/${app.slug}`
+      : shouldUseCustomDomainRoot
+        ? `https://${normalizedCustomDomain}`
+        : app.targetUrl;
     const publicUrl = app.customDomain
       ? `https://${app.customDomain}`
       : `/app/${app.slug}`;
     const manifestHref = getAppManifestUrl(app.id, assetVersion);
-    // Never render upload:/data: tokens as img src — use icon-proxy which handles them server-side
-    const icons: string[] = []; // icon display is handled via icon-proxy below
-
     return (
       <div className="mx-auto max-w-5xl space-y-8">
       {/* Header */}
@@ -156,7 +178,7 @@ export default async function AppPreviewPage({
                       standalone
                     </span>
                     <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-700 dark:bg-slate-800 dark:text-slate-300">
-                      manifest-first
+                      {app.pwaMode === 'IMPORT' ? 'import-mode' : 'generator-mode'}
                     </span>
                   </div>
 
@@ -170,6 +192,25 @@ export default async function AppPreviewPage({
                       <a href={manifestHref} className="mt-1 block break-all text-sm font-semibold text-primary hover:underline">
                         {manifestHref}
                       </a>
+                    </div>
+                    <div className="rounded-xl border border-gray-200 bg-gray-50 p-3 dark:border-gray-800 dark:bg-gray-950/60">
+                      <p className="text-xs text-gray-500 dark:text-gray-400">Modo PWA</p>
+                      <p className="mt-1 text-sm font-semibold text-gray-900 dark:text-white">
+                        {app.pwaMode === 'IMPORT' ? 'Import' : 'Generator'}
+                      </p>
+                    </div>
+                    <div className="rounded-xl border border-gray-200 bg-gray-50 p-3 dark:border-gray-800 dark:bg-gray-950/60">
+                      <p className="text-xs text-gray-500 dark:text-gray-400">SW importado</p>
+                      <p className="mt-1 break-all text-xs font-semibold text-gray-900 dark:text-white">
+                        {app.importedSwUrl || 'No detectado'}
+                      </p>
+                    </div>
+                    <div className="sm:col-span-2">
+                      <PwaModeSelector
+                        appId={app.id}
+                        currentMode={app.pwaMode}
+                        manualOverride={app.pwaModeManual}
+                      />
                     </div>
                     <div className="rounded-xl border border-gray-200 bg-gray-50 p-3 dark:border-gray-800 dark:bg-gray-950/60">
                       <p className="text-xs text-gray-500 dark:text-gray-400">Theme color</p>
@@ -273,48 +314,7 @@ export default async function AppPreviewPage({
             </div>
           </div>
 
-          {/* Checklist Card */}
-          <div className="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-gray-200 dark:bg-gray-900 dark:ring-gray-800">
-            <div className="border-b border-gray-200 px-6 py-5 dark:border-gray-800">
-              <h3 className="text-lg font-medium leading-6 text-gray-900 dark:text-white">
-                {t('preview.readiness.title')}
-              </h3>
-            </div>
-            <ul className="divide-y divide-gray-200 dark:divide-gray-800">
-              <li className="flex items-center justify-between px-6 py-4">
-                <div className="flex items-center">
-                  <Check className="mr-3 h-5 w-5 text-green-500" />
-                  <span className="text-sm font-medium text-gray-900 dark:text-white">
-                    {t('preview.readiness.https')}
-                  </span>
-                </div>
-              </li>
-              <li className="flex items-center justify-between px-6 py-4">
-                <div className="flex items-center">
-                  <Check className="mr-3 h-5 w-5 text-green-500" />
-                  <span className="text-sm font-medium text-gray-900 dark:text-white">
-                    {t('preview.readiness.manifest')}
-                  </span>
-                </div>
-              </li>
-              <li className="flex items-center justify-between px-6 py-4">
-                <div className="flex items-center">
-                  <Check className="mr-3 h-5 w-5 text-green-500" />
-                  <span className="text-sm font-medium text-gray-900 dark:text-white">
-                    {t('preview.readiness.serviceWorker')}
-                  </span>
-                </div>
-              </li>
-              <li className="flex items-center justify-between px-6 py-4">
-                <div className="flex items-center">
-                  <Check className="mr-3 h-5 w-5 text-green-500" />
-                  <span className="text-sm font-medium text-gray-900 dark:text-white">
-                    {t('preview.readiness.icons')}
-                  </span>
-                </div>
-              </li>
-            </ul>
-          </div>
+          <PwaAuditChecklist appId={app.id} customDomain={app.customDomain} />
         </div>
 
           {/* Publishing Card */}
@@ -355,15 +355,15 @@ export default async function AppPreviewPage({
                     <p className="text-sm font-semibold text-gray-900 dark:text-white">Instalación PWA</p>
                     <div className="text-xs text-gray-600 dark:text-gray-300">
                       <p className="font-medium">Chrome Desktop</p>
-                      <p>1) Abrir la URL pública 2) Clic en icono instalar de la barra 3) Confirmar "Instalar".</p>
+                      <p>1) Abrir la URL pública 2) Clic en icono instalar de la barra 3) Confirmar &quot;Instalar&quot;.</p>
                     </div>
                     <div className="text-xs text-gray-600 dark:text-gray-300">
                       <p className="font-medium">Android (Chrome)</p>
-                      <p>1) Abrir la URL pública 2) Menú de Chrome 3) "Instalar app" o "Agregar a pantalla de inicio".</p>
+                      <p>1) Abrir la URL pública 2) Menú de Chrome 3) &quot;Instalar app&quot; o &quot;Agregar a pantalla de inicio&quot;.</p>
                     </div>
                     <div className="text-xs text-gray-600 dark:text-gray-300">
                       <p className="font-medium">iPhone (Safari)</p>
-                      <p>1) Abrir la URL pública en Safari 2) Compartir 3) "Añadir a pantalla de inicio".</p>
+                      <p>1) Abrir la URL pública en Safari 2) Compartir 3) &quot;Añadir a pantalla de inicio&quot;.</p>
                     </div>
                     <p className="inline-flex items-center gap-1 text-[11px] text-gray-500 dark:text-gray-400">
                       <Smartphone className="h-3.5 w-3.5" />
@@ -396,7 +396,7 @@ export default async function AppPreviewPage({
             <div className="absolute left-1/2 top-0 z-20 h-[24px] w-[120px] -translate-x-1/2 rounded-b-2xl bg-gray-900 dark:bg-gray-800" />
             <div className="relative h-full w-full overflow-hidden rounded-[2.25rem] bg-white dark:bg-black">
               <PhoneMockupIframe
-                src={app.targetUrl}
+                src={mockPreviewUrl}
                 title={`${app.appName} Preview`}
                 themeColor={app.themeColor || '#178BFF'}
                 appName={app.appName}

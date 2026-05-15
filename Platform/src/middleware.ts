@@ -46,7 +46,6 @@ const PLATFORM_HOSTS = Array.from(
 const CUSTOM_DOMAIN_ROOT_ASSETS = new Set([
   '/manifest.json',
   '/sw.js',
-  '/launch',
   '/icon-192.png',
   '/icon-512.png',
   '/favicon.ico',

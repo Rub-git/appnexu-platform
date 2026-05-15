@@ -1,9 +1,8 @@
 import type { Metadata } from 'next';
 import { prisma } from '@/lib/prisma';
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import { normalizeCustomDomain } from '@/lib/custom-domain';
 import { headers } from 'next/headers';
-import AnalyticsTracker from '@/components/AnalyticsTracker';
 
 export async function generateMetadata({
   params,
@@ -39,14 +38,11 @@ export default async function CustomDomainLaunchPage({
   const app = await prisma.appProject.findUnique({
     where: { customDomain: normalizeCustomDomain(domain) },
     select: {
-      id: true,
-      appName: true,
-      targetUrl: true,
       status: true,
     },
   });
 
-  if (!app || !app.targetUrl || app.status !== 'PUBLISHED') {
+  if (!app || app.status !== 'PUBLISHED') {
     notFound();
   }
 
@@ -55,15 +51,6 @@ export default async function CustomDomainLaunchPage({
     notFound();
   }
 
-  return (
-    <main className="h-[100dvh] w-screen overflow-hidden bg-white dark:bg-black">
-      <AnalyticsTracker appId={app.id} />
-      <iframe
-        src={app.targetUrl}
-        className="h-full w-full border-0"
-        title={app.appName}
-        sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
-      />
-    </main>
-  );
+  // Legacy /launch path: keep compatibility without iframe wrappers.
+  redirect('/');
 }

@@ -141,6 +141,8 @@ export async function POST(request: Request) {
     const updateData: Record<string, unknown> = {};
 
     if (analysisResult) {
+      updateData.pwaAuditedAt = new Date();
+
       // Only update iconUrls if current ones are defaults and we found real ones
       if (
         analysisResult.icons.length > 0 &&
@@ -148,6 +150,33 @@ export async function POST(request: Request) {
       ) {
         updateData.iconUrls = analysisResult.icons.join(",");
       }
+
+      // Decide PWA mode from target website capabilities unless user forced manual mode.
+      if (!app.pwaModeManual) {
+        if (analysisResult.isImportablePwa) {
+          updateData.pwaMode = "IMPORT";
+          updateData.importedManifestUrl = analysisResult.manifestUrl;
+          updateData.importedSwUrl = analysisResult.serviceWorkerUrl;
+          updateData.importedStartUrl = analysisResult.manifestStartUrl;
+          updateData.importedScope = analysisResult.manifestScope;
+          updateData.importedIconsValid = analysisResult.has192Icon && analysisResult.has512Icon;
+        } else {
+          updateData.pwaMode = "GENERATOR";
+          updateData.importedManifestUrl = null;
+          updateData.importedSwUrl = null;
+          updateData.importedStartUrl = null;
+          updateData.importedScope = null;
+          updateData.importedIconsValid = null;
+        }
+      } else if (app.pwaMode === "IMPORT") {
+        // Manual IMPORT mode can still refresh audit metadata when detected.
+        updateData.importedManifestUrl = analysisResult.manifestUrl || app.importedManifestUrl;
+        updateData.importedSwUrl = analysisResult.serviceWorkerUrl || app.importedSwUrl;
+        updateData.importedStartUrl = analysisResult.manifestStartUrl || app.importedStartUrl;
+        updateData.importedScope = analysisResult.manifestScope || app.importedScope;
+        updateData.importedIconsValid = analysisResult.has192Icon && analysisResult.has512Icon;
+      }
+
       // Update theme color if we found one and the app has default
       if (
         analysisResult.themeColor &&

@@ -1,29 +1,10 @@
-import { prisma } from '@/lib/prisma';
-import { notFound } from 'next/navigation';
+import { redirect } from 'next/navigation';
 import type { Metadata } from 'next';
-import AnalyticsTracker from '@/components/AnalyticsTracker';
-import PwaScopeIsolation from '@/components/PwaScopeIsolation';
-import { getAppAssetVersion } from '@/lib/pwa-assets';
 
-export async function generateMetadata({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}): Promise<Metadata> {
-  const { id } = await params;
-  const app = await prisma.appProject.findUnique({
-    where: { id },
-    select: { appName: true, targetUrl: true, status: true },
-  });
-
-  if (!app || app.status !== 'PUBLISHED') {
-    return {};
-  }
-
+export async function generateMetadata(): Promise<Metadata> {
   return {
-    title: app.appName,
-    applicationName: app.appName,
-    description: `${app.appName} - Launch`,
+    title: 'Redirecting',
+    description: 'Redirecting to install entry',
   };
 }
 
@@ -33,42 +14,5 @@ export default async function AppLaunchPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-
-  const app = await prisma.appProject.findUnique({
-    where: { id },
-    select: {
-      appName: true,
-      slug: true,
-      targetUrl: true,
-      status: true,
-      updatedAt: true,
-    },
-  });
-
-  if (!app || !app.targetUrl) {
-    notFound();
-  }
-
-  if (app.status !== 'PUBLISHED') {
-    notFound();
-  }
-
-  const assetVersion = getAppAssetVersion({
-    updatedAt: app.updatedAt,
-    lastGeneratedAt: null,
-    iconUrls: null,
-  });
-
-  return (
-    <main className="h-[100dvh] w-screen overflow-hidden bg-white dark:bg-black">
-      <PwaScopeIsolation appId={id} assetVersion={assetVersion} />
-      <AnalyticsTracker appId={id} />
-      <iframe
-        src={app.targetUrl}
-        className="h-full w-full border-0"
-        title={app.appName}
-        sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
-      />
-    </main>
-  );
+  redirect(`/pwa/${id}/install`);
 }

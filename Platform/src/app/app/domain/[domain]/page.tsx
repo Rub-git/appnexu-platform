@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { prisma } from '@/lib/prisma';
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import { headers } from 'next/headers';
 import InstallButton from '@/components/InstallButton';
 import AnalyticsTracker from '@/components/AnalyticsTracker';
@@ -24,6 +24,14 @@ export async function generateMetadata({ params }: { params: Promise<{ domain: s
   if (!app) return {};
   const assetVersion = getAppAssetVersion(app);
   const manifestHref = '/manifest.json';
+
+  if (app.pwaMode === 'IMPORT') {
+    return {
+      title: app.appName,
+      description: `${app.appName} - Existing PWA managed by Appnexu`,
+      applicationName: app.appName,
+    };
+  }
 
   return {
     title: app.appName,
@@ -91,7 +99,13 @@ export default async function CustomDomainPage({
     targetUrl: app.targetUrl,
     host,
     isPwa,
+    pwaMode: app.pwaMode,
   });
+
+  if (app.pwaMode === 'IMPORT') {
+    // IMPORT mode: use the site's own existing PWA implementation directly.
+    redirect(app.targetUrl);
+  }
 
   if (isPwa) {
     logger.info('live.domain', 'pwa=true staying inside generated app route', {

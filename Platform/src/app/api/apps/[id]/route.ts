@@ -80,6 +80,9 @@ export async function PATCH(
     }
 
     const data = parsed.data;
+    const nextPwaMode = data.pwaMode ?? app.pwaMode;
+    const nextPwaModeManual = data.pwaModeManual ?? app.pwaModeManual;
+
     const updatedApp = await prisma.appProject.update({
       where: { id },
       data: {
@@ -88,6 +91,8 @@ export async function PATCH(
         themeColor: data.themeColor ?? app.themeColor,
         backgroundColor: data.backgroundColor ?? app.backgroundColor,
         iconUrls: data.iconUrls ?? app.iconUrls,
+        pwaMode: nextPwaMode,
+        pwaModeManual: nextPwaModeManual,
       },
     });
 

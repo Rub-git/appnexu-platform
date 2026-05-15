@@ -1,7 +1,6 @@
 import type { Metadata } from 'next';
 import { prisma } from '@/lib/prisma';
 import { notFound, redirect } from 'next/navigation';
-import { headers } from 'next/headers';
 import InstallButton from '@/components/InstallButton';
 import AnalyticsTracker from '@/components/AnalyticsTracker';
 import { Globe } from 'lucide-react';
@@ -16,6 +15,14 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
   const app = await prisma.appProject.findUnique({ where: { slug } });
   if (!app) return {};
   const assetVersion = getAppAssetVersion(app);
+
+  if (app.pwaMode === 'IMPORT') {
+    return {
+      title: app.appName,
+      description: `${app.appName} - Existing PWA managed by Appnexu`,
+      applicationName: app.appName,
+    };
+  }
 
   return {
     title: app.appName,
@@ -70,17 +77,10 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
 
 export default async function PublicAppPage({
   params,
-  searchParams,
 }: {
   params: Promise<{ locale: string; slug: string }>;
-  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
   const { slug } = await params;
-  const resolvedSearchParams = await searchParams;
-  const isPwa = resolvedSearchParams?.pwa === 'true';
-  const requestHeaders = await headers();
-  const userAgent = requestHeaders.get('user-agent') || '';
-  const isMobileDevice = /Android|iPhone|iPad|iPod|Mobile/i.test(userAgent);
 
   const app = await prisma.appProject.findUnique({
     where: { slug },
@@ -90,25 +90,11 @@ export default async function PublicAppPage({
     notFound();
   }
 
-  if (isPwa && !isMobileDevice) {
+  if (app.pwaMode === 'IMPORT') {
     redirect(app.targetUrl);
   }
 
   const assetVersion = getAppAssetVersion(app);
-
-  if (isPwa) {
-    return (
-      <div className="h-[100dvh] w-screen overflow-hidden bg-white dark:bg-black">
-        <AnalyticsTracker appId={app.id} />
-        <iframe
-          src={app.targetUrl}
-          className="h-full w-full border-0"
-          title={app.appName}
-          sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
-        />
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-black">
@@ -147,13 +133,43 @@ export default async function PublicAppPage({
           <div className="mt-12">
             <div className="relative mx-auto h-[500px] w-[280px] rounded-[2.5rem] border-[6px] border-gray-900 bg-gray-900 shadow-xl dark:border-gray-700">
               <div className="absolute left-1/2 top-0 z-20 h-[20px] w-[100px] -translate-x-1/2 rounded-b-xl bg-gray-900 dark:bg-gray-700" />
-              <div className="relative h-full w-full overflow-hidden rounded-[2rem] bg-white dark:bg-black">
-                <iframe
-                  src={app.targetUrl}
-                  className="h-full w-full border-0"
-                  title={app.appName}
-                  sandbox="allow-scripts allow-same-origin"
-                />
+              <div className="relative h-full w-full overflow-hidden rounded-[2rem] bg-gradient-to-b from-white to-gray-100 p-4 dark:from-gray-900 dark:to-black">
+                <div className="mb-4 flex items-center gap-2 rounded-xl bg-white/90 p-2 shadow-sm ring-1 ring-gray-200 dark:bg-gray-900/80 dark:ring-gray-700">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={getAppIconUrl(app.id, 64, assetVersion)}
+                    alt={`${app.appName} icon`}
+                    className="h-8 w-8 rounded-lg object-cover"
+                  />
+                  <div className="min-w-0">
+                    <p className="truncate text-xs font-semibold text-gray-900 dark:text-white">{app.appName}</p>
+                    <p className="truncate text-[10px] text-gray-500 dark:text-gray-400">{app.targetUrl.replace(/^https?:\/\//, '')}</p>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="rounded-xl bg-white p-3 shadow-sm ring-1 ring-gray-200 dark:bg-gray-900 dark:ring-gray-700">
+                    <p className="text-[10px] font-medium text-gray-500 dark:text-gray-400">Inicio</p>
+                    <p className="mt-1 text-xs font-semibold text-gray-900 dark:text-white">Pantalla principal</p>
+                  </div>
+                  <div className="rounded-xl bg-white p-3 shadow-sm ring-1 ring-gray-200 dark:bg-gray-900 dark:ring-gray-700">
+                    <p className="text-[10px] font-medium text-gray-500 dark:text-gray-400">Estado</p>
+                    <p className="mt-1 text-xs font-semibold text-emerald-600">Lista para instalar</p>
+                  </div>
+                  <div className="col-span-2 rounded-xl bg-white p-3 shadow-sm ring-1 ring-gray-200 dark:bg-gray-900 dark:ring-gray-700">
+                    <p className="text-[10px] font-medium text-gray-500 dark:text-gray-400">Enlace</p>
+                    <p className="mt-1 truncate text-xs text-gray-900 dark:text-white">{app.targetUrl}</p>
+                  </div>
+                </div>
+
+                <a
+                  href={app.targetUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-4 inline-flex items-center justify-center rounded-xl bg-primary px-3 py-2 text-xs font-semibold text-white"
+                >
+                  Abrir sitio web
+                </a>
               </div>
             </div>
           </div>

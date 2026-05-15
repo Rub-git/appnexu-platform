@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ExternalLink } from 'lucide-react';
 
 interface PhoneMockupIframeProps {
@@ -20,6 +20,25 @@ export default function PhoneMockupIframe({
 }: PhoneMockupIframeProps) {
   const [failed, setFailed] = useState(false);
   const [loaded, setLoaded] = useState(false);
+
+  useEffect(() => {
+    setFailed(false);
+    setLoaded(false);
+  }, [src]);
+
+  useEffect(() => {
+    if (loaded || failed) {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setFailed(true);
+    }, 12000);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [src, loaded, failed]);
 
   return (
     <>

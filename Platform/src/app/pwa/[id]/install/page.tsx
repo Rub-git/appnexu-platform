@@ -35,6 +35,11 @@ export default async function PwaInstallPage({
       appName: true,
       targetUrl: true,
       status: true,
+      pwaMode: true,
+      importedManifestUrl: true,
+      importedSwUrl: true,
+      importedStartUrl: true,
+      importedScope: true,
       updatedAt: true,
       lastGeneratedAt: true,
       iconUrls: true,
@@ -100,7 +105,30 @@ export default async function PwaInstallPage({
         </div>
 
         <div className="mt-6">
-          <InstallButton appId={app.id} assetVersion={assetVersion} manifestHref={manifestHref} />
+          {app.pwaMode === 'IMPORT' ? (
+            <div className="rounded-xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900 dark:border-blue-800 dark:bg-blue-950/20 dark:text-blue-200">
+              <p className="font-semibold">Modo Import detectado</p>
+              <p className="mt-2">
+                Esta app ya tiene PWA propia. Instala desde el sitio original para evitar una PWA duplicada.
+              </p>
+              <a
+                href={app.targetUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-3 inline-flex items-center rounded-lg bg-blue-600 px-3 py-2 text-xs font-semibold text-white hover:bg-blue-700"
+              >
+                Abrir sitio original
+              </a>
+              <div className="mt-3 space-y-1 text-xs text-blue-800 dark:text-blue-300">
+                <p>Manifest: {app.importedManifestUrl || 'No detectado'}</p>
+                <p>Service worker: {app.importedSwUrl || 'No detectado'}</p>
+                <p>start_url: {app.importedStartUrl || 'No detectado'}</p>
+                <p>scope: {app.importedScope || 'No detectado'}</p>
+              </div>
+            </div>
+          ) : (
+            <InstallButton appId={app.id} assetVersion={assetVersion} manifestHref={manifestHref} />
+          )}
         </div>
 
         <p className="mt-4 text-center text-xs text-gray-500 dark:text-gray-400">

@@ -4,6 +4,7 @@ import { customDomainSchema, formatZodErrors } from '@/lib/validations';
 import { apiError, apiSuccess } from '@/lib/api-utils';
 import { logger } from '@/lib/logger';
 import {
+  getNormalizedHostnameFromUrl,
   getCustomDomainCandidates,
   isValidCustomDomain,
   normalizeCustomDomain,
@@ -64,6 +65,19 @@ export async function PATCH(
 
     // Check if domain is already taken by another app
     if (normalizedCustomDomain) {
+      const targetHost = getNormalizedHostnameFromUrl(app.targetUrl);
+      if (targetHost && targetHost === normalizedCustomDomain) {
+        return apiError(
+          'El dominio personalizado no puede ser el mismo dominio del sitio objetivo. Usa el dominio original del sitio como target URL.',
+          400,
+          'SELF_REFERENTIAL_DOMAIN',
+          {
+            targetUrl: app.targetUrl,
+            customDomain: normalizedCustomDomain,
+          },
+        );
+      }
+
       const existingApp = await prisma.appProject.findFirst({
         where: {
           customDomain: {

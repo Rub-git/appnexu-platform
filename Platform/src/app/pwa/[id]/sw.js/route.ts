@@ -38,6 +38,16 @@ export async function GET(
             return new NextResponse('App not found', { status: 404 });
         }
 
+        if (app.pwaMode === 'IMPORT') {
+            return NextResponse.json(
+                {
+                    error: 'IMPORT mode uses original site service worker',
+                    serviceWorkerUrl: app.importedSwUrl,
+                },
+                { status: 409 }
+            );
+        }
+
         const requestUrl = new URL(request.url);
         const version = requestUrl.searchParams.get('v') || String(app.updatedAt.getTime());
         const defaultScope = `/pwa/${id}/`;

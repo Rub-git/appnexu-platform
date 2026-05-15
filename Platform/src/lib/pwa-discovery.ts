@@ -6,9 +6,19 @@ export interface PwaAssetScanResult {
   themeColor: string;
   manifestHref: string | null;
   icons: string[];
+  manifestUrl: string | null;
+  hasServiceWorker: boolean;
+  serviceWorkerUrl: string | null;
+  manifestStartUrl: string | null;
+  manifestScope: string | null;
+  has192Icon: boolean;
+  has512Icon: boolean;
+  isImportablePwa: boolean;
 }
 
 interface WebsiteManifest {
+  start_url?: string;
+  scope?: string;
   icons?: Array<{ src?: string }>;
 }
 
@@ -126,7 +136,17 @@ function addUnique(list: string[], value: string | null): void {
   if (!list.includes(value)) list.push(value);
 }
 
-async function extractManifestIcons(manifestHref: string, baseUrl: string): Promise<string[]> {
+async function extractManifestData(
+  manifestHref: string,
+  baseUrl: string,
+): Promise<{
+  manifestUrl: string | null;
+  icons: string[];
+  startUrl: string | null;
+  scope: string | null;
+  has192Icon: boolean;
+  has512Icon: boolean;
+}> {
   try {
     const manifestUrl = new URL(manifestHref, baseUrl).toString();
     const manifestResponse = await fetch(manifestUrl, {
@@ -139,19 +159,90 @@ async function extractManifestIcons(manifestHref: string, baseUrl: string): Prom
       redirect: 'follow',
     });
 
-    if (!manifestResponse.ok) return [];
+    if (!manifestResponse.ok) {
+      return {
+        manifestUrl: null,
+        icons: [],
+        startUrl: null,
+        scope: null,
+        has192Icon: false,
+        has512Icon: false,
+      };
+    }
 
     const manifest = (await manifestResponse.json()) as WebsiteManifest;
-    if (!Array.isArray(manifest.icons)) return [];
+    if (!Array.isArray(manifest.icons)) {
+      return {
+        manifestUrl,
+        icons: [],
+        startUrl: manifest.start_url || null,
+        scope: manifest.scope || null,
+        has192Icon: false,
+        has512Icon: false,
+      };
+    }
 
-    return manifest.icons
+    const iconCandidates = manifest.icons
       .map((icon) => icon?.src)
       .filter((src): src is string => Boolean(src))
       .map((src) => resolveUrl(src, manifestUrl))
       .filter((src): src is string => src !== null && !isBlockedCandidate(src));
+
+    const has192Icon = manifest.icons.some((icon) => (icon?.src || '').includes('192'));
+    const has512Icon = manifest.icons.some((icon) => (icon?.src || '').includes('512'));
+
+    return {
+      manifestUrl,
+      icons: iconCandidates,
+      startUrl: manifest.start_url || null,
+      scope: manifest.scope || null,
+      has192Icon,
+      has512Icon,
+    };
   } catch {
-    return [];
+    return {
+      manifestUrl: null,
+      icons: [],
+      startUrl: null,
+      scope: null,
+      has192Icon: false,
+      has512Icon: false,
+    };
   }
+}
+
+async function detectServiceWorker(baseUrl: string): Promise<{ hasServiceWorker: boolean; serviceWorkerUrl: string | null }> {
+  const swPathCandidates = ['/sw.js', '/service-worker.js'];
+
+  for (const path of swPathCandidates) {
+    try {
+      const swUrl = new URL(path, baseUrl).toString();
+      const response = await fetch(swUrl, {
+        method: 'GET',
+        cache: 'no-store',
+        redirect: 'follow',
+        signal: AbortSignal.timeout(MANIFEST_FETCH_TIMEOUT_MS),
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (compatible; Appnexu-Analyzer/1.0)',
+          'Accept': 'application/javascript,text/javascript,*/*;q=0.8',
+        },
+      });
+
+      if (response.ok) {
+        return {
+          hasServiceWorker: true,
+          serviceWorkerUrl: swUrl,
+        };
+      }
+    } catch {
+      // Ignore and continue with next candidate.
+    }
+  }
+
+  return {
+    hasServiceWorker: false,
+    serviceWorkerUrl: null,
+  };
 }
 
 function extractLinkIcons($: cheerio.CheerioAPI, baseUrl: string): string[] {
@@ -246,7 +337,17 @@ export async function scanPwaAssets(targetUrl: string): Promise<PwaAssetScanResu
   );
   const manifestHref = $('link[rel="manifest"]').attr('href') || null;
 
-  const manifestIcons = manifestHref ? await extractManifestIcons(manifestHref, effectiveUrl) : [];
+  const manifestData = manifestHref
+    ? await extractManifestData(manifestHref, effectiveUrl)
+    : {
+      manifestUrl: null,
+      icons: [],
+      startUrl: null,
+      scope: null,
+      has192Icon: false,
+      has512Icon: false,
+    };
+  const swData = await detectServiceWorker(effectiveUrl);
   const linkIcons = extractLinkIcons($, effectiveUrl);
   const logoIcons = extractHeaderLogos($, effectiveUrl);
   const socialImages = extractSocialImages($, effectiveUrl);
@@ -254,11 +355,17 @@ export async function scanPwaAssets(targetUrl: string): Promise<PwaAssetScanResu
   const faviconFallback = resolveUrl('/favicon.ico', effectiveUrl);
   const orderedIcons: string[] = [];
 
-  for (const icon of manifestIcons) addUnique(orderedIcons, icon);
+  for (const icon of manifestData.icons) addUnique(orderedIcons, icon);
   for (const icon of linkIcons) addUnique(orderedIcons, icon);
   for (const icon of logoIcons) addUnique(orderedIcons, icon);
   for (const icon of socialImages) addUnique(orderedIcons, icon);
   addUnique(orderedIcons, faviconFallback);
+
+  const isImportablePwa =
+    Boolean(manifestData.manifestUrl) &&
+    swData.hasServiceWorker &&
+    manifestData.has192Icon &&
+    manifestData.has512Icon;
 
   return {
     title,
@@ -266,5 +373,13 @@ export async function scanPwaAssets(targetUrl: string): Promise<PwaAssetScanResu
     themeColor,
     manifestHref,
     icons: orderedIcons,
+    manifestUrl: manifestData.manifestUrl,
+    hasServiceWorker: swData.hasServiceWorker,
+    serviceWorkerUrl: swData.serviceWorkerUrl,
+    manifestStartUrl: manifestData.startUrl,
+    manifestScope: manifestData.scope,
+    has192Icon: manifestData.has192Icon,
+    has512Icon: manifestData.has512Icon,
+    isImportablePwa,
   };
 }

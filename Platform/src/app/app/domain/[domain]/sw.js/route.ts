@@ -23,6 +23,10 @@ export async function GET(
       return new NextResponse('App not found', { status: 404 });
     }
 
+    if (app.pwaMode === 'IMPORT' && app.importedSwUrl) {
+      return NextResponse.redirect(app.importedSwUrl, 307);
+    }
+
     const version = getAppAssetVersion(app);
     const cachePrefix = getAppCachePrefix(app.id);
     const cacheName = getAppCacheName(app.id, version);

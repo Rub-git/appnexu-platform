@@ -12,7 +12,7 @@ interface ManifestIcon {
 function getInstallData(appId: string) {
     const scope = `/pwa/${appId}/`;
     return {
-        startUrl: `${scope}launch`,
+        startUrl: `${scope}install`,
         scope,
         id: `/pwa/${appId}`,
     };
@@ -67,6 +67,17 @@ export async function GET(
 
         if (!app) {
             return new NextResponse('App not found', { status: 404 });
+        }
+
+        if (app.pwaMode === 'IMPORT') {
+            return NextResponse.json(
+                {
+                    error: 'IMPORT mode uses original site PWA assets',
+                    manifestUrl: app.importedManifestUrl,
+                    serviceWorkerUrl: app.importedSwUrl,
+                },
+                { status: 409 }
+            );
         }
 
         const installData = getInstallData(app.id);

@@ -48,6 +48,8 @@ export default async function DashboardPage({
           targetUrl: true,
           themeColor: true,
           status: true,
+          pwaMode: true,
+          pwaModeManual: true,
           slug: true,
           failureReason: true,
           totalVisits: true,
@@ -227,6 +229,9 @@ export default async function DashboardPage({
                     <span className="break-all">{app.customDomain}</span>
                   </div>
                 )}
+                <div className="mt-1 text-[11px] text-gray-400">
+                  Modo PWA: {app.pwaMode === 'IMPORT' ? 'Import' : 'Generator'} ({app.pwaModeManual ? 'manual' : 'auto'})
+                </div>
               </div>
             </div>
           ))}
