@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation';
 import { headers } from 'next/headers';
 import InstallButton from '@/components/InstallButton';
 import AnalyticsTracker from '@/components/AnalyticsTracker';
+import PhoneMockupIframe from '@/components/PhoneMockupIframe';
 import { Globe } from 'lucide-react';
 import { logger } from '@/lib/logger';
 import GeneratedAppRuntime from '@/components/GeneratedAppRuntime';
@@ -174,46 +175,15 @@ export default async function PublicAppPage({
           <div className="relative w-[300px] h-[580px] rounded-[40px] bg-gray-900 shadow-2xl ring-1 ring-gray-700 overflow-hidden">
             {/* Speaker notch */}
             <div className="absolute top-0 left-1/2 -translate-x-1/2 w-24 h-6 bg-gray-900 rounded-b-2xl z-10" />
-            {/* Screen - stable preview (no external iframe) */}
-            <div className="absolute inset-[10px] rounded-[32px] overflow-hidden bg-gradient-to-b from-white to-gray-100 dark:from-gray-900 dark:to-gray-950">
-              <div className="flex h-full flex-col p-4">
-                <div className="mb-4 flex items-center gap-2 rounded-xl bg-white/90 p-2 shadow-sm ring-1 ring-gray-200 dark:bg-gray-900/80 dark:ring-gray-700">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={getAppIconUrl(app.id, 64, assetVersion)}
-                    alt={`${app.appName} icon`}
-                    className="h-8 w-8 rounded-lg object-cover"
-                  />
-                  <div className="min-w-0">
-                    <p className="truncate text-xs font-semibold text-gray-900 dark:text-white">{app.appName}</p>
-                    <p className="truncate text-[10px] text-gray-500 dark:text-gray-400">{app.targetUrl.replace(/^https?:\/\//, '')}</p>
-                  </div>
-                </div>
-
-                <div className="grid flex-1 grid-cols-2 gap-2">
-                  <div className="rounded-xl bg-white p-3 shadow-sm ring-1 ring-gray-200 dark:bg-gray-900 dark:ring-gray-700">
-                    <p className="text-[10px] font-medium text-gray-500 dark:text-gray-400">Inicio</p>
-                    <p className="mt-1 text-xs font-semibold text-gray-900 dark:text-white">Pantalla principal</p>
-                  </div>
-                  <div className="rounded-xl bg-white p-3 shadow-sm ring-1 ring-gray-200 dark:bg-gray-900 dark:ring-gray-700">
-                    <p className="text-[10px] font-medium text-gray-500 dark:text-gray-400">Estado</p>
-                    <p className="mt-1 text-xs font-semibold text-emerald-600">Lista para instalar</p>
-                  </div>
-                  <div className="col-span-2 rounded-xl bg-white p-3 shadow-sm ring-1 ring-gray-200 dark:bg-gray-900 dark:ring-gray-700">
-                    <p className="text-[10px] font-medium text-gray-500 dark:text-gray-400">Enlace</p>
-                    <p className="mt-1 truncate text-xs text-gray-900 dark:text-white">{app.targetUrl}</p>
-                  </div>
-                </div>
-
-                <a
-                  href={app.targetUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="mt-4 inline-flex items-center justify-center rounded-xl bg-primary px-3 py-2 text-xs font-semibold text-white"
-                >
-                  Abrir sitio web
-                </a>
-              </div>
+            {/* Screen */}
+            <div className="absolute inset-[10px] rounded-[32px] overflow-hidden bg-white dark:bg-black">
+              <PhoneMockupIframe
+                src={app.targetUrl}
+                title={`${app.appName} Preview`}
+                themeColor={app.themeColor || '#178BFF'}
+                appName={app.appName}
+                iconUrl={getAppIconUrl(app.id, 64, assetVersion)}
+              />
             </div>
             {/* Home indicator */}
             <div className="absolute bottom-2 left-1/2 -translate-x-1/2 w-24 h-1 bg-gray-600 rounded-full" />

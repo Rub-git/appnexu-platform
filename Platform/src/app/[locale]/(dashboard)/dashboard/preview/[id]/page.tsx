@@ -10,6 +10,7 @@ import PublishButton from '@/components/PublishButton';
 import CustomDomainForm from '@/components/CustomDomainForm';
 import AiSuggestionsPanel from '@/components/AiSuggestionsPanel';
 import ApkExportButton from '@/components/ApkExportButton';
+import PhoneMockupIframe from '@/components/PhoneMockupIframe';
 
 export default async function AppPreviewPage({ 
   params 
@@ -394,20 +395,13 @@ export default async function AppPreviewPage({
           <div className="relative mx-auto h-[600px] w-[300px] rounded-[3rem] border-[8px] border-gray-900 bg-gray-900 shadow-xl dark:border-gray-800 dark:bg-gray-800">
             <div className="absolute left-1/2 top-0 z-20 h-[24px] w-[120px] -translate-x-1/2 rounded-b-2xl bg-gray-900 dark:bg-gray-800" />
             <div className="relative h-full w-full overflow-hidden rounded-[2.25rem] bg-white dark:bg-black">
-              <div
-                className="h-12 w-full pt-2 text-center text-[10px] font-medium text-white shadow-sm flex items-end justify-center pb-1"
-                style={{ backgroundColor: app.themeColor || '#178BFF' }}
-              >
-                <span className="opacity-80">9:41</span>
-              </div>
-              <div className="h-[calc(100%-3rem)] w-full bg-white dark:bg-black">
-                <iframe
-                  src={app.targetUrl}
-                  className="h-full w-full border-0"
-                  title={`${app.appName} Preview`}
-                  sandbox="allow-scripts allow-same-origin"
-                />
-              </div>
+              <PhoneMockupIframe
+                src={app.targetUrl}
+                title={`${app.appName} Preview`}
+                themeColor={app.themeColor || '#178BFF'}
+                appName={app.appName}
+                iconUrl={getAppIconUrl(app.id, 192, assetVersion)}
+              />
             </div>
           </div>
         </div>
