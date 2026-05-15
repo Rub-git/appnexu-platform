@@ -13,6 +13,50 @@ interface WebsiteManifest {
 }
 
 const TARGET_FETCH_TIMEOUT_MS = 8000;
+
+const HEX_COLOR_RE = /^#[0-9a-fA-F]{3,8}$/;
+
+/**
+ * Normalize any CSS color string to a 6-digit hex value (#rrggbb).
+ * Supports: #rgb, #rrggbb, rgb(), rgba(), hsl(), named colors.
+ * Returns the fallback if conversion is not possible.
+ */
+function normalizeToHexColor(raw: string, fallback = '#178BFF'): string {
+  if (!raw) return fallback;
+  const trimmed = raw.trim();
+
+  // Already valid hex
+  if (HEX_COLOR_RE.test(trimmed)) {
+    // Expand 3-digit shorthand to 6-digit
+    if (trimmed.length === 4) {
+      const r = trimmed[1];
+      const g = trimmed[2];
+      const b = trimmed[3];
+      return `#${r}${r}${g}${g}${b}${b}`;
+    }
+    return trimmed.substring(0, 7); // strip alpha channel if 8-digit
+  }
+
+  // rgb(r, g, b) or rgba(r, g, b, a)
+  const rgbMatch = trimmed.match(/^rgba?\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})/i);
+  if (rgbMatch) {
+    const r = Math.min(255, parseInt(rgbMatch[1], 10)).toString(16).padStart(2, '0');
+    const g = Math.min(255, parseInt(rgbMatch[2], 10)).toString(16).padStart(2, '0');
+    const b = Math.min(255, parseInt(rgbMatch[3], 10)).toString(16).padStart(2, '0');
+    return `#${r}${g}${b}`;
+  }
+
+  // Named colors mapping (most common ones)
+  const NAMED: Record<string, string> = {
+    black: '#000000', white: '#ffffff', red: '#ff0000', green: '#008000',
+    blue: '#0000ff', yellow: '#ffff00', orange: '#ffa500', purple: '#800080',
+    pink: '#ffc0cb', gray: '#808080', grey: '#808080', transparent: fallback,
+  };
+  const lower = trimmed.toLowerCase();
+  if (NAMED[lower]) return NAMED[lower];
+
+  return fallback;
+}
 const MANIFEST_FETCH_TIMEOUT_MS = 5000;
 
 const BLOCKED_HOST_PATTERNS = [
@@ -197,7 +241,9 @@ export async function scanPwaAssets(targetUrl: string): Promise<PwaAssetScanResu
     $('meta[property="og:description"]').attr('content')?.trim() ||
     `App generated for ${title}`;
 
-  const themeColor = $('meta[name="theme-color"]').attr('content')?.trim() || '#ffffff';
+  const themeColor = normalizeToHexColor(
+    $('meta[name="theme-color"]').attr('content')?.trim() || '',
+  );
   const manifestHref = $('link[rel="manifest"]').attr('href') || null;
 
   const manifestIcons = manifestHref ? await extractManifestIcons(manifestHref, effectiveUrl) : [];

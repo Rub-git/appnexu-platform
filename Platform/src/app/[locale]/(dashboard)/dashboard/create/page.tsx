@@ -106,13 +106,21 @@ export default function CreateAppPage() {
       // Map analyze response fields to generate API schema
       // analyze returns { url, title, description, themeColor, icons: string[] }
       // generate expects { url, title, themeColor, backgroundColor, iconUrls: string, templateSlug }
+      // Only forward themeColor if it's a valid hex color (e.g. not rgb(), hsl(), or named colors)
+      const rawThemeColor: unknown = analyzeData.themeColor;
+      const safeThemeColor =
+        typeof rawThemeColor === 'string' && /^#[0-9a-fA-F]{3,8}$/.test(rawThemeColor.trim())
+          ? rawThemeColor.trim()
+          : undefined;
+
       const generateData: Record<string, unknown> = {
         url: analyzeData.url,
         title: analyzeData.title,
-        themeColor: analyzeData.themeColor,
+        themeColor: safeThemeColor,
         // Convert icons array to comma-separated string for iconUrls field
+        // Cap at 4000 chars to stay within the 5000-char DB limit
         iconUrls: Array.isArray(analyzeData.icons) && analyzeData.icons.length > 0
-          ? analyzeData.icons.join(',')
+          ? analyzeData.icons.join(',').substring(0, 4000)
           : undefined,
       };
 
@@ -120,7 +128,7 @@ export default function CreateAppPage() {
       if (selectedTemplate) {
         generateData.themeColor = selectedTemplate.configJson.colorScheme.primary;
         generateData.backgroundColor = '#ffffff';
-        generateData.templateId = selectedTemplate.id;
+        generateData.templateSlug = selectedTemplate.slug;
       }
 
       // Call generate API to create the DB record
