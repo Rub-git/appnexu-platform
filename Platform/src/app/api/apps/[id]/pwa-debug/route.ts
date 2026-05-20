@@ -14,6 +14,14 @@ function normalizeAuditOrigin(requestOrigin: string, hostParam: string | null): 
   return `https://${host}`;
 }
 
+function toOrigin(url: string): string | null {
+  try {
+    return new URL(url).origin;
+  } catch {
+    return null;
+  }
+}
+
 async function checkUrl(url: string): Promise<{ url: string; status: number | null; ok: boolean; error?: string }> {
   try {
     const response = await fetch(url, { cache: 'no-store' });
@@ -105,24 +113,38 @@ export async function GET(
     const useRootDomainAudit = Boolean(
       normalizedRequestedHost &&
       normalizedAppDomain &&
-      normalizedRequestedHost === normalizedAppDomain
+      normalizedRequestedHost === normalizedAppDomain &&
+      app.status === 'PUBLISHED'
     );
 
     const auditOrigin = normalizeAuditOrigin(
       requestUrl.origin,
-      requestedHost
+      useRootDomainAudit ? requestedHost : null
     );
+    const isImportMode = app.pwaMode === 'IMPORT';
+    const targetOrigin = toOrigin(app.targetUrl);
 
-    const installUrl = useRootDomainAudit
+    const generatedInstallUrl = useRootDomainAudit
       ? `${auditOrigin}/`
       : `${auditOrigin}/pwa/${id}/install`;
-    const launchUrl = installUrl;
-    const swUrl = useRootDomainAudit
+    const generatedLaunchUrl = useRootDomainAudit
+      ? `${auditOrigin}/launch`
+      : `${auditOrigin}/pwa/${id}/launch`;
+    const generatedSwUrl = useRootDomainAudit
       ? `${auditOrigin}/sw.js`
       : `${auditOrigin}/pwa/${id}/sw.js`;
-    const manifestUrl = useRootDomainAudit
+    const generatedManifestUrl = useRootDomainAudit
       ? `${auditOrigin}/manifest.json`
       : `${auditOrigin}/pwa/${id}/manifest.json`;
+
+    const installUrl = isImportMode ? app.targetUrl : generatedInstallUrl;
+    const launchUrl = isImportMode ? app.targetUrl : generatedLaunchUrl;
+    const swUrl = isImportMode
+      ? (app.importedSwUrl || (targetOrigin ? `${targetOrigin}/sw.js` : generatedSwUrl))
+      : generatedSwUrl;
+    const manifestUrl = isImportMode
+      ? (app.importedManifestUrl || (targetOrigin ? `${targetOrigin}/manifest.json` : generatedManifestUrl))
+      : generatedManifestUrl;
 
     const installStatus = await checkUrl(installUrl);
     const manifestStatus = await checkUrl(manifestUrl);
@@ -171,6 +193,8 @@ export async function GET(
       }
     }
 
+    const enforceGeneratorScopeChecks = !isImportMode && useRootDomainAudit;
+
     let hasManifestLinkOnInstallPage = false;
     if (installStatus.ok) {
       try {
@@ -182,7 +206,7 @@ export async function GET(
       }
     }
 
-    const serviceWorkerScopeExpected = useRootDomainAudit ? '/' : `/pwa/${id}/`;
+    const serviceWorkerScopeExpected = '/';
     const swAllowedHeader = swStatus.ok ? await (async () => {
       const response = await fetch(swUrl, { cache: 'no-store' });
       return findHeader(response.headers, 'Service-Worker-Allowed');
@@ -204,8 +228,20 @@ export async function GET(
 
     const installabilityErrors: string[] = [];
     if (!installStatus.ok) installabilityErrors.push(`Install URL returned ${installStatus.status ?? 'network error'}`);
-    if (!manifestStatus.ok) installabilityErrors.push(`Manifest could not be fetched (${manifestStatus.status ?? 'network error'})`);
-    if (!manifestObj) installabilityErrors.push('Manifest JSON missing or invalid');
+    if (!manifestStatus.ok) {
+      if (isImportMode) {
+        installabilityErrors.push(
+          app.importedManifestUrl
+            ? `Imported manifest could not be fetched (${manifestStatus.status ?? 'network error'})`
+            : 'IMPORT mode missing importedManifestUrl'
+        );
+      } else {
+        installabilityErrors.push(`Manifest could not be fetched (${manifestStatus.status ?? 'network error'})`);
+      }
+    }
+    if (!manifestObj && manifestStatus.ok) {
+      installabilityErrors.push('Manifest JSON missing or invalid');
+    }
     if (manifestObj) {
       if (!manifestObj.id) installabilityErrors.push('Manifest missing id');
       if (!manifestObj.name) installabilityErrors.push('Manifest missing name');
@@ -221,25 +257,38 @@ export async function GET(
     }
     if (icon192Status && !icon192Status.ok) installabilityErrors.push(`Icon 192 returned ${icon192Status.status ?? 'network error'}`);
     if (icon512Status && !icon512Status.ok) installabilityErrors.push(`Icon 512 returned ${icon512Status.status ?? 'network error'}`);
-    if (!swStatus.ok) installabilityErrors.push(`Service worker script returned ${swStatus.status ?? 'network error'}`);
-    if (swAllowedHeader !== serviceWorkerScopeExpected) {
+    if (!swStatus.ok) {
+      if (isImportMode) {
+        installabilityErrors.push(
+          app.importedSwUrl
+            ? `Imported service worker returned ${swStatus.status ?? 'network error'}`
+            : 'IMPORT mode missing importedSwUrl'
+        );
+      } else {
+        installabilityErrors.push(`Service worker script returned ${swStatus.status ?? 'network error'}`);
+      }
+    }
+    if (enforceGeneratorScopeChecks && swAllowedHeader !== serviceWorkerScopeExpected) {
       installabilityErrors.push(
         `Service-Worker-Allowed mismatch (${swAllowedHeader ?? 'missing'}), expected ${serviceWorkerScopeExpected}`
       );
     }
-    if (!startUrlStatus || !startUrlStatus.ok) {
+    if (manifestStatus.ok && (!startUrlStatus || !startUrlStatus.ok)) {
       installabilityErrors.push(`start_url returned ${startUrlStatus?.status ?? 'missing'}`);
     }
-    if (startUrlStatus && startUrlStatus.url && !startUrlStatus.url.includes(serviceWorkerScopeExpected)) {
-      installabilityErrors.push(`start_url is outside expected scope (${startUrlStatus.url})`);
-    }
 
-    const hasServiceWorkerAllowedMismatch = swAllowedHeader !== serviceWorkerScopeExpected;
-    const hasStartUrlOutsideScope = Boolean(
+    const startUrlOutsideExpectedScope = Boolean(
       startUrlStatus &&
       startUrlStatus.url &&
       !startUrlStatus.url.includes(serviceWorkerScopeExpected)
     );
+
+    if (enforceGeneratorScopeChecks && startUrlOutsideExpectedScope) {
+      installabilityErrors.push(`start_url is outside expected scope (${startUrlStatus?.url ?? 'unknown'})`);
+    }
+
+    const hasServiceWorkerAllowedMismatch = enforceGeneratorScopeChecks && swAllowedHeader !== serviceWorkerScopeExpected;
+    const hasStartUrlOutsideScope = enforceGeneratorScopeChecks && startUrlOutsideExpectedScope;
     const hasStartUrlFetchError = !startUrlStatus || !startUrlStatus.ok;
     const hasManifestFetchError = !manifestStatus.ok;
     const hasServiceWorkerFetchError = !swStatus.ok;
@@ -289,6 +338,7 @@ export async function GET(
       importedIconsValid: app.importedIconsValid,
       importCandidateDetected,
       useRootDomainAudit,
+      enforceGeneratorScopeChecks,
       auditOrigin,
       installUrl,
       manifestUrl,
@@ -297,6 +347,7 @@ export async function GET(
       startUrlStatus,
       scope: manifestScope,
       launchUrlStatus: launchStatus,
+      launchUrl,
       swUrlStatus: swStatus,
       swUrl,
       swAllowedHeader,

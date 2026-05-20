@@ -1,4 +1,5 @@
 import { redirect } from 'next/navigation';
+import { prisma } from '@/lib/prisma';
 
 export default async function PwaAppEntryPage({
   params,
@@ -6,5 +7,25 @@ export default async function PwaAppEntryPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  redirect(`/pwa/${id}/install`);
+
+  const app = await prisma.appProject.findUnique({
+    where: { id },
+    select: {
+      status: true,
+      targetUrl: true,
+      customDomain: true,
+    },
+  });
+
+  if (app?.status === 'PUBLISHED') {
+    if (app.customDomain) {
+      redirect(`https://${app.customDomain}/`);
+    }
+
+    if (app.targetUrl) {
+      redirect(app.targetUrl);
+    }
+  }
+
+  redirect(`/pwa/${id}/install?admin=1`);
 }

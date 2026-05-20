@@ -14,6 +14,8 @@ type ManifestData = {
 interface PwaInstallDiagnosticsProps {
   appId: string;
   manifestHref: string;
+  expectedScope: string;
+  expectedStartUrl: string;
 }
 
 type SwRegistrationRow = {
@@ -29,7 +31,12 @@ function shouldShowPanel(): boolean {
   return new URLSearchParams(window.location.search).get('pwaDebug') === '1';
 }
 
-export default function PwaInstallDiagnostics({ appId, manifestHref }: PwaInstallDiagnosticsProps) {
+export default function PwaInstallDiagnostics({
+  appId,
+  manifestHref,
+  expectedScope,
+  expectedStartUrl,
+}: PwaInstallDiagnosticsProps) {
   const [beforeInstallPromptFired, setBeforeInstallPromptFired] = useState(false);
   const [displayModeStandalone, setDisplayModeStandalone] = useState(false);
   const [currentUrl, setCurrentUrl] = useState('');
@@ -39,8 +46,6 @@ export default function PwaInstallDiagnostics({ appId, manifestHref }: PwaInstal
   const [swRegs, setSwRegs] = useState<SwRegistrationRow[]>([]);
   const [icon192Status, setIcon192Status] = useState('pending');
   const [icon512Status, setIcon512Status] = useState('pending');
-
-  const expectedScope = `/pwa/${appId}/`;
 
   useEffect(() => {
     if (!shouldShowPanel()) return;
@@ -119,10 +124,10 @@ export default function PwaInstallDiagnostics({ appId, manifestHref }: PwaInstal
   const installabilityHint = useMemo(() => {
     if (!manifestJson) return 'manifest missing';
     if (manifestJson.scope !== expectedScope) return `scope mismatch (${manifestJson.scope || 'none'})`;
-    if ((manifestJson.start_url || '') !== `${expectedScope}launch`) return `start_url mismatch (${manifestJson.start_url || 'none'})`;
+    if ((manifestJson.start_url || '') !== expectedStartUrl) return `start_url mismatch (${manifestJson.start_url || 'none'})`;
     if (icon192Status !== '200' || icon512Status !== '200') return `icon status 192=${icon192Status} 512=${icon512Status}`;
     return 'manifest+scope checks passed';
-  }, [manifestJson, expectedScope, icon192Status, icon512Status]);
+  }, [manifestJson, expectedScope, expectedStartUrl, icon192Status, icon512Status]);
 
   if (!shouldShowPanel()) return null;
 

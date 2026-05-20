@@ -26,6 +26,7 @@ type PwaDebugResponseData = {
   importedIconsValid: boolean | null;
   importCandidateDetected: boolean;
   useRootDomainAudit: boolean;
+  enforceGeneratorScopeChecks?: boolean;
   installability_errors: string[];
   manifestStatus: UrlStatus;
   swUrlStatus: UrlStatus;
@@ -127,16 +128,20 @@ export default function PwaAuditChecklist({ appId, customDomain }: PwaAuditCheck
   const checks = useMemo<StatusCheck[]>(() => {
     if (!data) return [];
 
-    const hasScopeMismatch = data.installability_errors.some((item) =>
+    const isImportMode = data.pwaMode === 'IMPORT';
+
+    const hasScopeMismatch = !isImportMode && data.installability_errors.some((item) =>
       item.includes('Service-Worker-Allowed mismatch') || item.includes('outside expected scope')
     );
 
     const httpsCheck: StatusCheck = {
       label: 'HTTPS operativo',
       pass: Boolean(data.manifestStatus.ok && data.swUrlStatus.ok),
-      detail: data.useRootDomainAudit
+      detail: isImportMode
+        ? 'Validado en sitio objetivo/importado'
+        : data.useRootDomainAudit
         ? 'Validado en raíz del dominio custom'
-        : 'Validado en scope /pwa/{id}/',
+        : 'Validado en ruta de preview (no usada como start_url final)',
     };
 
     const manifestCheck: StatusCheck = {
@@ -181,8 +186,10 @@ export default function PwaAuditChecklist({ appId, customDomain }: PwaAuditCheck
 
     const scopeCheck: StatusCheck = {
       label: 'scope/start_url sin conflicto',
-      pass: !hasScopeMismatch,
-      detail: hasScopeMismatch
+      pass: isImportMode ? true : !hasScopeMismatch,
+      detail: isImportMode
+        ? 'No aplica en modo Import (usa PWA del sitio original)'
+        : hasScopeMismatch
         ? 'Hay conflicto de scope o Service-Worker-Allowed'
         : `Scope esperado: ${data.serviceWorkerScopeExpected}`,
     };
@@ -231,13 +238,16 @@ export default function PwaAuditChecklist({ appId, customDomain }: PwaAuditCheck
   }
 
   const canForceImport =
+    data.pwaMode !== 'IMPORT' &&
     data.importCandidateDetected ||
-    Boolean(data.importedManifestUrl && data.importedSwUrl);
+    (data.pwaMode !== 'IMPORT' && Boolean(data.importedManifestUrl && data.importedSwUrl));
 
   const needsGeneratorNormalization = Boolean(
-    data.diagnostics?.hasServiceWorkerAllowedMismatch ||
-    data.diagnostics?.hasStartUrlOutsideScope ||
-    data.diagnostics?.hasStartUrlFetchError
+    data.pwaMode !== 'IMPORT' && data.enforceGeneratorScopeChecks && (
+      data.diagnostics?.hasServiceWorkerAllowedMismatch ||
+      data.diagnostics?.hasStartUrlOutsideScope ||
+      data.diagnostics?.hasStartUrlFetchError
+    )
   );
 
   const needsAssetRegeneration = Boolean(

@@ -50,7 +50,7 @@ export async function GET(
 
         const requestUrl = new URL(request.url);
         const version = requestUrl.searchParams.get('v') || String(app.updatedAt.getTime());
-        const defaultScope = `/pwa/${id}/`;
+        const defaultScope = '/';
         const serviceWorkerScope = normalizeServiceWorkerScope(requestUrl.searchParams.get('scope'), defaultScope);
         const cachePrefix = getAppCachePrefix(id);
         const cacheName = getAppCacheName(id, version);
@@ -63,6 +63,7 @@ export async function GET(
 
     const CACHE_NAME = '${cacheName}';
     const CACHE_PREFIX = '${cachePrefix}';
+    const LEGACY_CACHE_PREFIXES = ['generated-pwa-cache-${id}', 'pwa-cache-v1-${id}', 'appnexu-v1'];
     const APP_SCOPE = '${serviceWorkerScope}';
 
 self.addEventListener('install', (event) => {
@@ -79,7 +80,12 @@ self.addEventListener('activate', (event) => {
             .then((cacheNames) => {
                 return Promise.all(
                     cacheNames.map((cacheName) => {
-                        if (cacheName !== CACHE_NAME && cacheName.startsWith(CACHE_PREFIX)) {
+                        const isCurrentNamespace = cacheName.startsWith(CACHE_PREFIX);
+                        const isLegacyNamespace = LEGACY_CACHE_PREFIXES.some((legacyPrefix) =>
+                            cacheName.startsWith(legacyPrefix)
+                        );
+
+                        if (cacheName !== CACHE_NAME && (isCurrentNamespace || isLegacyNamespace)) {
                             console.log('[ServiceWorker] Deleting old cache:', cacheName);
                             return caches.delete(cacheName);
                         }

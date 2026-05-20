@@ -75,7 +75,7 @@ export function getAppServiceWorkerUrl(appId: string, version: string, scope: st
 }
 
 export function getAppCachePrefix(appId: string): string {
-  return `generated-pwa-cache-${appId}`;
+  return `appnexu-pwa-v2-${appId}`;
 }
 
 export function getAppCacheName(appId: string, version: string): string {

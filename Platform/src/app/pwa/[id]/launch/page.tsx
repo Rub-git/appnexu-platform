@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation';
 import type { Metadata } from 'next';
+import { prisma } from '@/lib/prisma';
 
 export async function generateMetadata(): Promise<Metadata> {
   return {
@@ -14,5 +15,14 @@ export default async function AppLaunchPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  redirect(`/pwa/${id}/install`);
+  const app = await prisma.appProject.findUnique({
+    where: { id },
+    select: { targetUrl: true, status: true },
+  });
+
+  if (app?.targetUrl && app.status === 'PUBLISHED') {
+    redirect(app.targetUrl);
+  }
+
+  redirect(`/pwa/${id}/install?admin=1`);
 }

@@ -1,8 +1,7 @@
 import type { Metadata } from 'next';
 import { prisma } from '@/lib/prisma';
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import InstallButton from '@/components/InstallButton';
-import PwaScopeIsolation from '@/components/PwaScopeIsolation';
 import PwaInstallDiagnostics from '@/components/PwaInstallDiagnostics';
 import { getAppAssetVersion, getAppIconUrl, getAppManifestUrl } from '@/lib/pwa-assets';
 
@@ -17,16 +16,19 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
     title: app.appName,
     description: `${app.appName} - Installable app for ${app.targetUrl}`,
     applicationName: app.appName,
-    manifest: getAppManifestUrl(app.id, assetVersion),
   };
 }
 
 export default async function PwaInstallPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ admin?: string }>;
 }) {
   const { id } = await params;
+  const resolvedSearchParams = await searchParams;
+  const isAdminPreview = resolvedSearchParams.admin === '1';
 
   const app = await prisma.appProject.findUnique({
     where: { id },
@@ -34,6 +36,7 @@ export default async function PwaInstallPage({
       id: true,
       appName: true,
       targetUrl: true,
+      customDomain: true,
       status: true,
       pwaMode: true,
       importedManifestUrl: true,
@@ -54,10 +57,21 @@ export default async function PwaInstallPage({
 
   const assetVersion = getAppAssetVersion(app);
   const manifestHref = getAppManifestUrl(app.id, assetVersion);
+  const finalInstallUrl = app.customDomain ? `https://${app.customDomain}/` : app.targetUrl;
+
+  if (!isAdminPreview) {
+    redirect(finalInstallUrl);
+  }
+
+  let expectedScope = '/';
+  try {
+    expectedScope = `${new URL(app.targetUrl).origin}/`;
+  } catch {
+    expectedScope = '/';
+  }
 
   return (
     <main className="min-h-screen bg-gray-50 px-4 py-10 dark:bg-black">
-      <PwaScopeIsolation appId={app.id} assetVersion={assetVersion} />
       <div className="mx-auto max-w-lg rounded-2xl border border-gray-200 bg-white p-6 shadow-sm dark:border-gray-800 dark:bg-gray-900">
         <div className="mx-auto h-20 w-20 overflow-hidden rounded-2xl shadow ring-1 ring-black/10">
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -74,7 +88,7 @@ export default async function PwaInstallPage({
         <div className="mt-5 rounded-xl border border-gray-200 bg-gray-50 p-4 dark:border-gray-800 dark:bg-gray-950/60">
           <div className="flex items-center justify-between gap-3">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">PWA Preview</p>
+              <p className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Admin Preview</p>
               <p className="mt-1 text-sm font-medium text-gray-900 dark:text-white">{app.appName}</p>
             </div>
             <span className="rounded-full bg-emerald-100 px-2.5 py-1 text-[11px] font-semibold text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300">
@@ -127,15 +141,25 @@ export default async function PwaInstallPage({
               </div>
             </div>
           ) : (
-            <InstallButton appId={app.id} assetVersion={assetVersion} manifestHref={manifestHref} />
+            <InstallButton
+              appId={app.id}
+              assetVersion={assetVersion}
+              manifestHref={manifestHref}
+              finalInstallUrl={finalInstallUrl}
+            />
           )}
         </div>
 
         <p className="mt-4 text-center text-xs text-gray-500 dark:text-gray-400">
-          Instala desde esta ruta dedicada dentro del scope /pwa/{app.id}/.
+          Esta vista es solo de administracion. La app instalada se abre en el sitio real del cliente.
         </p>
       </div>
-      <PwaInstallDiagnostics appId={app.id} manifestHref={manifestHref} />
+      <PwaInstallDiagnostics
+        appId={app.id}
+        manifestHref={manifestHref}
+        expectedScope={expectedScope}
+        expectedStartUrl={app.targetUrl}
+      />
     </main>
   );
 }

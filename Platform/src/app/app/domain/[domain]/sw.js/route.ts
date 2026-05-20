@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { normalizeCustomDomain } from '@/lib/custom-domain';
+import { getCustomDomainCandidates, normalizeCustomDomain } from '@/lib/custom-domain';
 import { getAppAssetVersion, getAppCacheName, getAppCachePrefix } from '@/lib/pwa-assets';
 
 export const dynamic = 'force-dynamic';
@@ -14,9 +14,10 @@ export async function GET(
   try {
     const { domain } = await params;
     const normalizedDomain = normalizeCustomDomain(domain);
+    const domainCandidates = getCustomDomainCandidates(normalizedDomain);
 
-    const app = await prisma.appProject.findUnique({
-      where: { customDomain: normalizedDomain },
+    const app = await prisma.appProject.findFirst({
+      where: { customDomain: { in: domainCandidates } },
     });
 
     if (!app || app.status !== 'PUBLISHED') {
@@ -34,6 +35,7 @@ export async function GET(
     const swScript = `
 const CACHE_NAME = '${cacheName}';
 const CACHE_PREFIX = '${cachePrefix}';
+const LEGACY_CACHE_PREFIXES = ['generated-pwa-cache-${app.id}', 'pwa-cache-v1-${app.id}', 'appnexu-v1'];
 const APP_SCOPE = '/';
 
 self.addEventListener('install', (event) => {
@@ -45,7 +47,12 @@ self.addEventListener('activate', (event) => {
     caches.keys()
       .then((cacheNames) => Promise.all(
         cacheNames.map((name) => {
-          if (name !== CACHE_NAME && name.startsWith(CACHE_PREFIX)) {
+          const isCurrentNamespace = name.startsWith(CACHE_PREFIX);
+          const isLegacyNamespace = LEGACY_CACHE_PREFIXES.some((legacyPrefix) =>
+            name.startsWith(legacyPrefix)
+          );
+
+          if (name !== CACHE_NAME && (isCurrentNamespace || isLegacyNamespace)) {
             return caches.delete(name);
           }
           return Promise.resolve(false);

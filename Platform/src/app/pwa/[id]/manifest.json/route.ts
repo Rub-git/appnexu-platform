@@ -10,12 +10,26 @@ interface ManifestIcon {
 }
 
 function getInstallData(appId: string) {
-    const scope = `/pwa/${appId}/`;
+    const scope = '/';
     return {
-        startUrl: `${scope}install`,
+        startUrl: '/',
         scope,
-        id: `/pwa/${appId}`,
+        id: scope,
     };
+}
+
+function getInstallDataFromTargetUrl(appId: string, targetUrl: string) {
+    try {
+        const target = new URL(targetUrl);
+        const scope = `${target.origin}/`;
+        return {
+            startUrl: target.toString(),
+            scope,
+            id: scope,
+        };
+    } catch {
+        return getInstallData(appId);
+    }
 }
 
 function getFallbackNameFromTarget(targetUrl: string): string {
@@ -80,7 +94,7 @@ export async function GET(
             );
         }
 
-        const installData = getInstallData(app.id);
+        const installData = getInstallDataFromTargetUrl(app.id, app.targetUrl);
         const manifestName = normalizeManifestName(app.appName, app.targetUrl);
         const version = getAppAssetVersion(app);
         const icons: ManifestIcon[] = [
