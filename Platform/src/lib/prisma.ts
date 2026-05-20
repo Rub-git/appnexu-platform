@@ -3,11 +3,18 @@ import { PrismaPg } from '@prisma/adapter-pg';
 
 const connectionString = process.env.DATABASE_URL;
 
-if (!connectionString) {
-  throw new Error('DATABASE_URL is required');
-}
+function createUnavailablePrismaClient(): PrismaClient {
+  const errorMessage = 'DATABASE_URL is required for database operations';
 
-const adapter = new PrismaPg({ connectionString });
+  return new Proxy(
+    {},
+    {
+      get() {
+        throw new Error(errorMessage);
+      },
+    },
+  ) as PrismaClient;
+}
 
 const globalForPrisma = global as unknown as {
   prisma: PrismaClient | undefined;
@@ -15,9 +22,11 @@ const globalForPrisma = global as unknown as {
 
 export const prisma =
   globalForPrisma.prisma ??
-  new PrismaClient({
-    adapter,
-  });
+  (connectionString
+    ? new PrismaClient({
+        adapter: new PrismaPg({ connectionString }),
+      })
+    : createUnavailablePrismaClient());
 
 if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma;
 
