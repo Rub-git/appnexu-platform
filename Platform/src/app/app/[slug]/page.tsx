@@ -38,7 +38,6 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     title: app.appName,
     description: `${app.appName} - Installable app for ${app.targetUrl}`,
     applicationName: app.appName,
-    manifest: manifestHref,
     appleWebApp: {
       capable: true,
       title: app.appName,
@@ -148,6 +147,7 @@ export default async function PublicAppPage({
   const assetVersion = getAppAssetVersion(app);
   const manifestHref = getAppManifestUrl(app.id, assetVersion);
   const cachePrefix = getAppCachePrefix(app.id);
+  const finalInstallUrl = app.customDomain ? `https://${app.customDomain}/` : app.targetUrl;
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-950 dark:to-black">
@@ -173,7 +173,12 @@ export default async function PublicAppPage({
           <p className="text-xs text-gray-500 dark:text-gray-400 truncate">{app.targetUrl.replace(/^https?:\/\//, '')}</p>
         </div>
         <div className="ml-auto flex-shrink-0">
-          <InstallButton appId={app.id} assetVersion={assetVersion} manifestHref={manifestHref} />
+          <InstallButton
+            appId={app.id}
+            assetVersion={assetVersion}
+            manifestHref={manifestHref}
+            finalInstallUrl={finalInstallUrl}
+          />
         </div>
       </div>
 

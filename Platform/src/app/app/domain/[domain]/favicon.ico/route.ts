@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { normalizeCustomDomain } from '@/lib/custom-domain';
+import { getCustomDomainCandidates, normalizeCustomDomain } from '@/lib/custom-domain';
 import { getAppAssetVersion } from '@/lib/pwa-assets';
 
 export const dynamic = 'force-dynamic';
@@ -13,9 +13,10 @@ export async function GET(
 ) {
   const { domain } = await params;
   const normalizedDomain = normalizeCustomDomain(domain);
+  const domainCandidates = getCustomDomainCandidates(normalizedDomain);
 
-  const app = await prisma.appProject.findUnique({
-    where: { customDomain: normalizedDomain },
+  const app = await prisma.appProject.findFirst({
+    where: { customDomain: { in: domainCandidates } },
     select: { id: true, status: true, updatedAt: true, lastGeneratedAt: true, iconUrls: true },
   });
 

@@ -28,7 +28,6 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
     title: app.appName,
     description: `${app.appName} - Installable app for ${app.targetUrl}`,
     applicationName: app.appName,
-    manifest: getAppManifestUrl(app.id, assetVersion),
     appleWebApp: {
       capable: true,
       title: app.appName,
@@ -95,6 +94,7 @@ export default async function PublicAppPage({
   }
 
   const assetVersion = getAppAssetVersion(app);
+  const finalInstallUrl = app.customDomain ? `https://${app.customDomain}/` : app.targetUrl;
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-black">
@@ -127,7 +127,7 @@ export default async function PublicAppPage({
           )}
 
           <div className="mt-8">
-            <InstallButton appId={app.id} assetVersion={assetVersion} />
+            <InstallButton appId={app.id} assetVersion={assetVersion} finalInstallUrl={finalInstallUrl} />
           </div>
 
           <div className="mt-12">

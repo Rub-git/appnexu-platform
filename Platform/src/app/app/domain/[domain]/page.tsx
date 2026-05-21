@@ -6,7 +6,7 @@ import InstallButton from '@/components/InstallButton';
 import AnalyticsTracker from '@/components/AnalyticsTracker';
 import { logger } from '@/lib/logger';
 import GeneratedAppRuntime from '@/components/GeneratedAppRuntime';
-import { normalizeCustomDomain } from '@/lib/custom-domain';
+import { getCustomDomainCandidates, normalizeCustomDomain } from '@/lib/custom-domain';
 import {
   getAppAssetVersion,
   getAppCachePrefix,
@@ -20,7 +20,8 @@ export const fetchCache = 'force-no-store';
 export async function generateMetadata({ params }: { params: Promise<{ domain: string }> }): Promise<Metadata> {
   const { domain } = await params;
   const normalizedDomain = normalizeCustomDomain(domain);
-  const app = await prisma.appProject.findUnique({ where: { customDomain: normalizedDomain } });
+  const domainCandidates = getCustomDomainCandidates(normalizedDomain);
+  const app = await prisma.appProject.findFirst({ where: { customDomain: { in: domainCandidates } } });
   if (!app) return {};
   const assetVersion = getAppAssetVersion(app);
   const manifestHref = '/manifest.json';
@@ -72,12 +73,13 @@ export default async function CustomDomainPage({
 }) {
   const { domain } = await params;
   const normalizedDomain = normalizeCustomDomain(domain);
+  const domainCandidates = getCustomDomainCandidates(normalizedDomain);
   const resolvedSearchParams = await searchParams;
   const isPwa = resolvedSearchParams?.pwa === 'true';
   const requestHeaders = await headers();
   const host = requestHeaders.get('host') || '';
 
-  const app = await prisma.appProject.findUnique({ where: { customDomain: normalizedDomain } });
+  const app = await prisma.appProject.findFirst({ where: { customDomain: { in: domainCandidates } } });
 
   if (!app || app.status !== 'PUBLISHED') {
     logger.warn('live.domain', 'Domain route not found or unpublished', {

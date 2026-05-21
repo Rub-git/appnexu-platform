@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { normalizeCustomDomain } from '@/lib/custom-domain';
+import { getCustomDomainCandidates, normalizeCustomDomain } from '@/lib/custom-domain';
 import { getAppAssetVersion } from '@/lib/pwa-assets';
 
 interface ManifestIcon {
@@ -8,6 +8,24 @@ interface ManifestIcon {
   sizes: string;
   type: string;
   purpose?: string;
+}
+
+function getInstallDataFromRequestUrl(requestUrl: string) {
+  try {
+    const origin = new URL(requestUrl).origin;
+    const scope = `${origin}/`;
+    return {
+      startUrl: `${origin}/launch`,
+      scope,
+      id: scope,
+    };
+  } catch {
+    return {
+      startUrl: '/launch',
+      scope: '/',
+      id: '/',
+    };
+  }
 }
 
 function getFallbackNameFromTarget(targetUrl: string): string {
@@ -42,15 +60,16 @@ export const revalidate = 0;
 export const fetchCache = 'force-no-store';
 
 export async function GET(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ domain: string }> }
 ) {
   try {
     const { domain } = await params;
     const normalizedDomain = normalizeCustomDomain(domain);
+    const domainCandidates = getCustomDomainCandidates(normalizedDomain);
 
-    const app = await prisma.appProject.findUnique({
-      where: { customDomain: normalizedDomain },
+    const app = await prisma.appProject.findFirst({
+      where: { customDomain: { in: domainCandidates } },
     });
 
     if (!app || app.status !== 'PUBLISHED') {
@@ -92,13 +111,15 @@ export async function GET(
       },
     ];
 
+    const installData = getInstallDataFromRequestUrl(request.url);
+
     const manifest = {
       name: manifestName,
       short_name: shortName,
-      id: '/',
+      id: installData.id,
       description: `${manifestName} - Progressive Web App`,
-      start_url: '/',
-      scope: '/',
+      start_url: installData.startUrl,
+      scope: installData.scope,
       display: 'standalone',
       display_override: ['standalone'],
       orientation: 'portrait-primary',
@@ -114,7 +135,7 @@ export async function GET(
           name: `Open ${manifestName}`,
           short_name: 'Open',
           description: `Open ${manifestName}`,
-          url: '/',
+          url: installData.startUrl,
           icons: icons.length > 0 ? [icons[0]] : [],
         },
       ],

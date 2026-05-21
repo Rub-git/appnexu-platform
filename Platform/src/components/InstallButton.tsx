@@ -14,6 +14,7 @@ interface InstallButtonProps {
   appId: string;
   assetVersion?: string;
   manifestHref?: string;
+  finalInstallUrl?: string;
 }
 
 function isStandaloneMode(): boolean {
@@ -34,7 +35,7 @@ function isPlatformHost(hostname: string): boolean {
   return false;
 }
 
-export default function InstallButton({ appId, assetVersion = '1', manifestHref }: InstallButtonProps) {
+export default function InstallButton({ appId, assetVersion = '1', manifestHref, finalInstallUrl }: InstallButtonProps) {
   const [isInstalled, setIsInstalled] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [showHelp, setShowHelp] = useState(false);
@@ -67,16 +68,19 @@ export default function InstallButton({ appId, assetVersion = '1', manifestHref 
       return;
     }
 
-    // Ensure generated pages expose only the generated app manifest.
-    const resolvedManifestHref = manifestHref || getAppManifestUrl(appId, assetVersion);
     const existingManifestLinks = Array.from(document.querySelectorAll('link[rel="manifest"]')) as HTMLLinkElement[];
     existingManifestLinks.forEach((link) => link.remove());
 
-    const manifestLink = document.createElement('link');
-    manifestLink.rel = 'manifest';
-    manifestLink.href = resolvedManifestHref;
-    manifestLink.setAttribute('data-app-manifest', 'true');
-    document.head.appendChild(manifestLink);
+    // Preview hosts must not be installable. Installation should happen from
+    // the final same-origin domain where manifest and SW live at host root.
+    if (customHost) {
+      const resolvedManifestHref = manifestHref || getAppManifestUrl(appId, assetVersion);
+      const manifestLink = document.createElement('link');
+      manifestLink.rel = 'manifest';
+      manifestLink.href = resolvedManifestHref;
+      manifestLink.setAttribute('data-app-manifest', 'true');
+      document.head.appendChild(manifestLink);
+    }
 
     const hostNameMeta = document.querySelector('meta[name="application-name"]');
     if (hostNameMeta) {
@@ -164,11 +168,11 @@ export default function InstallButton({ appId, assetVersion = '1', manifestHref 
       });
     };
 
-    // Register app-specific SW under canonical /pwa/[id]/ scope.
-    if ('serviceWorker' in navigator) {
-      const scope = customHost ? '/' : `/pwa/${appId}/`;
-      const swUrl = customHost ? '/sw.js' : `/pwa/${appId}/sw.js`;
-      const expectedScriptPath = customHost ? '/sw.js' : `/pwa/${appId}/sw.js`;
+    // Register SW only on custom/final host root. Never register app SW on preview host.
+    if (customHost && 'serviceWorker' in navigator) {
+      const scope = '/';
+      const swUrl = '/sw.js';
+      const expectedScriptPath = '/sw.js';
       unregisterHostServiceWorkers(expectedScriptPath)
         .then(() => navigator.serviceWorker.register(swUrl, { scope }))
         .then((registration) => {
@@ -213,15 +217,10 @@ export default function InstallButton({ appId, assetVersion = '1', manifestHref 
   }, [appId, assetVersion, manifestHref]);
 
   const handleInstall = async () => {
-    const expectedInstallScope = isCustomHost ? '/' : `/pwa/${appId}/`;
-    const targetInstallPath = `/pwa/${appId}/install`;
-
-    if (!isCustomHost && !window.location.pathname.startsWith(expectedInstallScope)) {
-      console.log('[PWA-Debug] redirecting install flow to scoped page', {
-        from: window.location.pathname,
-        to: targetInstallPath,
-      });
-      window.location.href = targetInstallPath;
+    if (!isCustomHost) {
+      if (finalInstallUrl) {
+        window.location.href = finalInstallUrl;
+      }
       return;
     }
 
@@ -300,7 +299,13 @@ export default function InstallButton({ appId, assetVersion = '1', manifestHref 
         className="inline-flex w-full items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
       >
         <Download className="-ml-1 mr-2 h-4 w-4" />
-        {isDesktop ? 'Install App on Desktop' : isMobileDevice ? 'Install App' : 'Install'}
+        {!isCustomHost
+          ? 'Abrir dominio final para instalar'
+          : isDesktop
+            ? 'Install App on Desktop'
+            : isMobileDevice
+              ? 'Install App'
+              : 'Install'}
       </button>
 
       {showHelp && (

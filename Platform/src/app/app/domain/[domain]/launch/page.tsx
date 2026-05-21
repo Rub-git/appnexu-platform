@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { prisma } from '@/lib/prisma';
 import { notFound, redirect } from 'next/navigation';
-import { normalizeCustomDomain } from '@/lib/custom-domain';
+import { getCustomDomainCandidates, normalizeCustomDomain } from '@/lib/custom-domain';
 import { headers } from 'next/headers';
 
 export async function generateMetadata({
@@ -10,8 +10,10 @@ export async function generateMetadata({
   params: Promise<{ domain: string }>;
 }): Promise<Metadata> {
   const { domain } = await params;
-  const app = await prisma.appProject.findUnique({
-    where: { customDomain: normalizeCustomDomain(domain) },
+  const normalizedDomain = normalizeCustomDomain(domain);
+  const domainCandidates = getCustomDomainCandidates(normalizedDomain);
+  const app = await prisma.appProject.findFirst({
+    where: { customDomain: { in: domainCandidates } },
     select: { appName: true, status: true },
   });
 
@@ -32,13 +34,16 @@ export default async function CustomDomainLaunchPage({
   params: Promise<{ domain: string }>;
 }) {
   const { domain } = await params;
+  const normalizedDomain = normalizeCustomDomain(domain);
+  const domainCandidates = getCustomDomainCandidates(normalizedDomain);
   const requestHeaders = await headers();
   const host = requestHeaders.get('host') || '';
 
-  const app = await prisma.appProject.findUnique({
-    where: { customDomain: normalizeCustomDomain(domain) },
+  const app = await prisma.appProject.findFirst({
+    where: { customDomain: { in: domainCandidates } },
     select: {
       status: true,
+      targetUrl: true,
     },
   });
 
@@ -46,11 +51,11 @@ export default async function CustomDomainLaunchPage({
     notFound();
   }
 
-  if (!host.toLowerCase().includes(normalizeCustomDomain(domain))) {
+  if (!host.toLowerCase().includes(normalizedDomain)) {
     // Route should be reached through host-based rewrite for the same domain.
     notFound();
   }
 
-  // Legacy /launch path: keep compatibility without iframe wrappers.
-  redirect('/');
+  // Installed app entrypoint must go to the real converted website.
+  redirect(app.targetUrl);
 }
