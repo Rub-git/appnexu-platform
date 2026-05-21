@@ -23,11 +23,11 @@ type PwaStatusData = {
 interface AiSuggestionsPanelProps {
   appId: string;
   currentName: string;
-  onApplySuggestions: (suggestions: Partial<{
+  onApplySuggestions?: (suggestions: Partial<{
     appName: string;
     themeColor: string;
     backgroundColor: string;
-  }>) => void;
+  }>) => Promise<void> | void;
 }
 
 export default function AiSuggestionsPanel({ appId, currentName, onApplySuggestions }: AiSuggestionsPanelProps) {
@@ -96,8 +96,24 @@ export default function AiSuggestionsPanel({ appId, currentName, onApplySuggesti
       const updates: Record<string, string> = {};
       if (suggestions.name) updates.appName = suggestions.name;
       if (suggestions.colors?.primary) updates.themeColor = suggestions.colors.primary;
-      await onApplySuggestions(updates);
+
+      if (onApplySuggestions) {
+        await onApplySuggestions(updates);
+      } else {
+        const response = await fetch(`/api/apps/${appId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(updates),
+        });
+        const payload = await response.json();
+        if (!response.ok) {
+          throw new Error(payload?.error || 'No se pudieron aplicar sugerencias');
+        }
+      }
+
       router.refresh();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'No se pudieron aplicar sugerencias');
     } finally {
       setIsApplying(false);
     }
@@ -168,6 +184,14 @@ export default function AiSuggestionsPanel({ appId, currentName, onApplySuggesti
 
   // Completed — show suggestions
   if (status === 'COMPLETED' && suggestions) {
+    const baseName = (suggestions.name || currentName || 'Tu App').trim();
+    const altNames = [
+      baseName,
+      `${baseName} Go`,
+      `${baseName} Pro`,
+    ].filter((name, index, list) => name.length > 0 && list.indexOf(name) === index);
+    const slogan = `Todo lo que necesitas de ${baseName}, en una app instalable.`;
+
     return (
       <div className="rounded-xl border border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-900/20">
         <button
@@ -185,6 +209,10 @@ export default function AiSuggestionsPanel({ appId, currentName, onApplySuggesti
 
         {expanded && (
           <div className="border-t border-green-200 p-4 dark:border-green-800">
+            <div className="mb-3 rounded-lg border border-green-200 bg-white px-3 py-2 text-sm text-green-800 dark:border-green-800 dark:bg-gray-900 dark:text-green-300">
+              Nuestra IA optimizo tu app automaticamente.
+            </div>
+
             {/* Suggested Name */}
             {suggestions.name && (
               <div className="mb-3">
@@ -193,6 +221,20 @@ export default function AiSuggestionsPanel({ appId, currentName, onApplySuggesti
                 <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Nombre corto sugerido: {(suggestions.name || currentName).slice(0, 12)}</p>
               </div>
             )}
+
+            <div className="mb-3">
+              <p className="text-xs font-medium uppercase text-green-700 dark:text-green-400">Nombres alternativos</p>
+              <div className="mt-1 flex flex-wrap gap-1.5">
+                {altNames.map((name) => (
+                  <span key={name} className="rounded bg-white px-2 py-0.5 text-xs text-gray-700 dark:bg-gray-800 dark:text-gray-300">{name}</span>
+                ))}
+              </div>
+            </div>
+
+            <div className="mb-3">
+              <p className="text-xs font-medium uppercase text-green-700 dark:text-green-400">Slogan sugerido</p>
+              <p className="mt-1 text-sm text-gray-900 dark:text-white">{slogan}</p>
+            </div>
 
             {/* Suggested Colors */}
             {suggestions.colors && (
@@ -208,6 +250,7 @@ export default function AiSuggestionsPanel({ appId, currentName, onApplySuggesti
                     <span className="text-xs text-gray-500">{suggestions.colors.secondary}</span>
                   </div>
                 </div>
+                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Tip premium: usa alto contraste y evita mas de 2 colores principales.</p>
               </div>
             )}
 
@@ -216,6 +259,11 @@ export default function AiSuggestionsPanel({ appId, currentName, onApplySuggesti
               <p className="mt-1 text-sm text-gray-900 dark:text-white">
                 Usa un icono cuadrado, centrado y legible en tamano pequeno.
               </p>
+            </div>
+
+            <div className="mb-3">
+              <p className="text-xs font-medium uppercase text-green-700 dark:text-green-400">Splash sugerida</p>
+              <p className="mt-1 text-sm text-gray-900 dark:text-white">Fondo en {suggestions.colors?.primary || '#178BFF'} con logo centrado y transicion suave a home.</p>
             </div>
 
             {/* Suggested Navigation */}

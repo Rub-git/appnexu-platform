@@ -26,13 +26,13 @@ export default function Footer() {
             </p>
           </div>
           <div className="flex items-center gap-6 text-sm text-gray-500 dark:text-gray-400">
-            <Link href="/" className="hover:text-gray-900 dark:hover:text-white transition-colors">
+            <Link href="/privacy" className="hover:text-gray-900 dark:hover:text-white transition-colors">
               {t('footer.links.privacy')}
             </Link>
-            <Link href="/" className="hover:text-gray-900 dark:hover:text-white transition-colors">
+            <Link href="/terms" className="hover:text-gray-900 dark:hover:text-white transition-colors">
               {t('footer.links.terms')}
             </Link>
-            <Link href="/" className="hover:text-gray-900 dark:hover:text-white transition-colors">
+            <Link href="/help" className="hover:text-gray-900 dark:hover:text-white transition-colors">
               {t('footer.links.support')}
             </Link>
           </div>

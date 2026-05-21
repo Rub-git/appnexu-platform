@@ -16,6 +16,7 @@ import {
   Users,
   Download,
   BarChart3,
+  Share2,
 } from 'lucide-react';
 import { redirect } from 'next/navigation';
 import DeleteAppButton from '@/components/DeleteAppButton';
@@ -79,9 +80,12 @@ export default async function DashboardPage({
       {!canCreateMore && <PlanLimitBanner plan={user.plan} limit={planLimit} />}
 
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white" style={{ fontFamily: "'Sora', sans-serif" }}>
-          {t('dashboard.title')}
-        </h1>
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white" style={{ fontFamily: "'Sora', sans-serif" }}>
+            Mis Apps
+          </h1>
+          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Gestiona, publica y comparte tus PWAs en un solo lugar.</p>
+        </div>
         {canCreateMore ? (
           <Link
             href="/dashboard/create"
@@ -126,7 +130,7 @@ export default async function DashboardPage({
           {apps.map((app) => (
             <div
               key={app.id}
-              className="group relative flex flex-col justify-between overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-gray-200/60 transition-all hover:shadow-md dark:bg-gray-900 dark:ring-gray-800"
+              className="group relative flex flex-col justify-between overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-gray-200/60 transition-all hover:-translate-y-0.5 hover:shadow-md dark:bg-gray-900 dark:ring-gray-800"
             >
               <div className="p-6">
                 <div className="flex items-center justify-between">
@@ -179,6 +183,12 @@ export default async function DashboardPage({
                     failureReason={app.failureReason}
                   />
                 </div>
+
+                <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-3 text-xs text-slate-600 dark:border-slate-800 dark:bg-slate-950/30 dark:text-slate-300">
+                  <p><span className="font-semibold">Dominio:</span> {app.customDomain || 'Sin dominio custom'}</p>
+                  <p className="mt-1"><span className="font-semibold">Actualizada:</span> {new Date(app.createdAt).toLocaleDateString(locale)}</p>
+                  <p className="mt-1"><span className="font-semibold">Installs futuras:</span> Proximamente</p>
+                </div>
               </div>
 
               {/* Analytics Mini Summary */}
@@ -221,7 +231,7 @@ export default async function DashboardPage({
                       year: 'numeric',
                     })}
                   </span>
-                  <StatusBadge status={app.status} t={t} />
+                  <StatusBadge status={app.status} />
                 </div>
                 {app.customDomain && (
                   <div className="mt-1 flex items-start gap-1 text-xs text-gray-400">
@@ -229,8 +239,18 @@ export default async function DashboardPage({
                     <span className="break-all">{app.customDomain}</span>
                   </div>
                 )}
-                <div className="mt-1 text-[11px] text-gray-400">
-                  Modo PWA: {app.pwaMode === 'IMPORT' ? 'Import' : 'Generator'} ({app.pwaModeManual ? 'manual' : 'auto'})
+                <div className="mt-2 flex items-center justify-between text-[11px] text-gray-400">
+                  <span>Modo PWA: {app.pwaMode === 'IMPORT' ? 'Import' : 'Generator'} ({app.pwaModeManual ? 'manual' : 'auto'})</span>
+                  {app.status === 'PUBLISHED' ? (
+                    <a
+                      href={app.customDomain ? `https://${app.customDomain}` : `/${locale}/app/${app.slug}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2 py-0.5 text-blue-600 hover:bg-blue-100 dark:bg-blue-900/20 dark:text-blue-300"
+                    >
+                      <Share2 size={10} /> Compartir
+                    </a>
+                  ) : null}
                 </div>
               </div>
             </div>
@@ -245,38 +265,42 @@ export default async function DashboardPage({
 
 function StatusBadge({
   status,
-  t,
 }: {
   status: string;
-  t: Awaited<ReturnType<typeof getTranslations>>;
 }) {
   const config: Record<
     string,
-    { bg: string; icon: React.ReactNode }
+    { bg: string; icon: React.ReactNode; label: string }
   > = {
     PUBLISHED: {
       bg: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400',
       icon: <Globe size={12} className="mr-1" />,
+      label: 'Publicada',
     },
     GENERATING: {
       bg: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400',
       icon: <Loader2 size={12} className="mr-1 animate-spin" />,
+      label: 'Lista',
     },
     QUEUED: {
       bg: 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400',
       icon: <Clock size={12} className="mr-1" />,
+      label: 'Lista',
     },
     FAILED: {
       bg: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400',
       icon: <AlertTriangle size={12} className="mr-1" />,
+      label: 'Requiere atencion',
     },
     STAGED: {
       bg: 'bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400',
       icon: null,
+      label: 'Lista',
     },
     DRAFT: {
       bg: 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-400',
       icon: null,
+      label: 'Borrador',
     },
   };
 
@@ -287,7 +311,7 @@ function StatusBadge({
       className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${c.bg}`}
     >
       {c.icon}
-      {t(`dashboard.appCard.status.${status.toLowerCase()}`)}
+      {c.label}
     </span>
   );
 }

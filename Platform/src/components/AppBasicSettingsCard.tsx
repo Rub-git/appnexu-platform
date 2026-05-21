@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Loader2, Save } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
@@ -16,6 +16,7 @@ type EditableApp = {
 
 interface AppBasicSettingsCardProps {
   app: EditableApp;
+  enableAutosave?: boolean;
 }
 
 function normalizeStartPath(value: string): string {
@@ -32,7 +33,7 @@ function normalizeStartPath(value: string): string {
   return trimmed.startsWith('/') ? trimmed : `/${trimmed}`;
 }
 
-export default function AppBasicSettingsCard({ app }: AppBasicSettingsCardProps) {
+export default function AppBasicSettingsCard({ app, enableAutosave = true }: AppBasicSettingsCardProps) {
   const router = useRouter();
 
   const [appName, setAppName] = useState(app.appName);
@@ -42,6 +43,7 @@ export default function AppBasicSettingsCard({ app }: AppBasicSettingsCardProps)
   const [iconUrl, setIconUrl] = useState((app.iconUrls || '').split(',').map((item) => item.trim()).filter(Boolean)[0] || '');
   const [startPath, setStartPath] = useState(app.importedStartUrl || '/launch');
   const [isSaving, setIsSaving] = useState(false);
+  const [hasHydrated, setHasHydrated] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -52,13 +54,16 @@ export default function AppBasicSettingsCard({ app }: AppBasicSettingsCardProps)
     setBackgroundColor(app.backgroundColor || '#ffffff');
     setIconUrl((app.iconUrls || '').split(',').map((item) => item.trim()).filter(Boolean)[0] || '');
     setStartPath(app.importedStartUrl || '/launch');
+    setHasHydrated(true);
   }, [app]);
 
   const normalizedStartPath = useMemo(() => normalizeStartPath(startPath), [startPath]);
 
-  const save = async () => {
+  const save = useCallback(async (isAuto = false) => {
     setIsSaving(true);
-    setFeedback(null);
+    if (!isAuto) {
+      setFeedback(null);
+    }
     setError(null);
 
     try {
@@ -83,14 +88,24 @@ export default function AppBasicSettingsCard({ app }: AppBasicSettingsCardProps)
         throw new Error(payload?.error || 'No se pudo guardar la configuracion basica');
       }
 
-      setFeedback('Configuracion actualizada.');
+      setFeedback(isAuto ? 'Guardado automatico' : 'Configuracion actualizada.');
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'No se pudo guardar la configuracion basica');
     } finally {
       setIsSaving(false);
     }
-  };
+  }, [app.id, appName, shortName, themeColor, backgroundColor, iconUrl, normalizedStartPath, router]);
+
+  useEffect(() => {
+    if (!enableAutosave || !hasHydrated) return;
+
+    const timer = window.setTimeout(() => {
+      void save(true);
+    }, 900);
+
+    return () => window.clearTimeout(timer);
+  }, [enableAutosave, hasHydrated, appName, shortName, themeColor, backgroundColor, iconUrl, normalizedStartPath, save]);
 
   return (
     <section className="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-gray-200 dark:bg-gray-900 dark:ring-gray-800">
@@ -187,7 +202,7 @@ export default function AppBasicSettingsCard({ app }: AppBasicSettingsCardProps)
       <div className="border-t border-gray-200 px-6 py-4 dark:border-gray-800">
         <button
           type="button"
-          onClick={save}
+          onClick={() => void save(false)}
           disabled={isSaving}
           className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-60"
         >

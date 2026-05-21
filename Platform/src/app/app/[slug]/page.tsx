@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { prisma } from '@/lib/prisma';
 import { notFound, redirect } from 'next/navigation';
 import { headers } from 'next/headers';
@@ -19,6 +19,14 @@ export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 export const fetchCache = 'force-no-store';
 
+export async function generateViewport({ params }: { params: Promise<{ slug: string }> }): Promise<Viewport> {
+  const { slug } = await params;
+  const app = await prisma.appProject.findUnique({ where: { slug }, select: { themeColor: true } });
+  return {
+    themeColor: app?.themeColor || '#178BFF',
+  };
+}
+
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
   const app = await prisma.appProject.findUnique({ where: { slug } });
@@ -38,6 +46,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
     title: app.appName,
     description: `${app.appName} - Installable app for ${app.targetUrl}`,
     applicationName: app.appName,
+    manifest: manifestHref,
     appleWebApp: {
       capable: true,
       title: app.appName,

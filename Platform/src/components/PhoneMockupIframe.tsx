@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { ExternalLink } from 'lucide-react';
+import { CheckCircle2, ExternalLink } from 'lucide-react';
 
 interface PhoneMockupIframeProps {
   src: string;
@@ -9,6 +9,7 @@ interface PhoneMockupIframeProps {
   themeColor?: string;
   appName: string;
   iconUrl: string;
+  showBottomBar?: boolean;
 }
 
 export default function PhoneMockupIframe({
@@ -17,11 +18,30 @@ export default function PhoneMockupIframe({
   themeColor = '#178BFF',
   appName,
   iconUrl,
+  showBottomBar = true,
 }: PhoneMockupIframeProps) {
   const [failedBySrc, setFailedBySrc] = useState<Record<string, boolean>>({});
   const [loadedBySrc, setLoadedBySrc] = useState<Record<string, boolean>>({});
+  const [showSplash, setShowSplash] = useState(true);
+  const [simulatedInstall, setSimulatedInstall] = useState(false);
   const failed = failedBySrc[src] ?? false;
   const loaded = loadedBySrc[src] ?? false;
+
+  useEffect(() => {
+    const splashTimer = window.setTimeout(() => {
+      setShowSplash(false);
+      setSimulatedInstall(true);
+    }, 1000);
+
+    const installTimer = window.setTimeout(() => {
+      setSimulatedInstall(false);
+    }, 2600);
+
+    return () => {
+      window.clearTimeout(splashTimer);
+      window.clearTimeout(installTimer);
+    };
+  }, [src]);
 
   useEffect(() => {
     if (loaded || failed) {
@@ -49,17 +69,35 @@ export default function PhoneMockupIframe({
 
       {/* Content area */}
       <div className="h-[calc(100%-3rem)] w-full bg-white dark:bg-black relative overflow-hidden">
+        {showSplash ? (
+          <div className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-3 bg-gradient-to-b from-slate-900 to-slate-700 text-white transition-opacity duration-500">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={iconUrl} alt={appName} className="h-16 w-16 rounded-2xl object-cover shadow-lg" />
+            <p className="text-sm font-semibold">{appName}</p>
+            <p className="text-[11px] text-white/70">Cargando experiencia app...</p>
+          </div>
+        ) : null}
+
         {/* Iframe — hidden if failed or not yet loaded */}
         {!failed && (
           <iframe
             src={src}
-            className={`h-full w-full border-0 transition-opacity duration-300 ${loaded ? 'opacity-100' : 'opacity-0'}`}
+            className={`h-full w-full border-0 transition-all duration-500 ${loaded ? 'opacity-100 scale-100' : 'opacity-0 scale-[0.985]'}`}
             title={title}
             sandbox="allow-scripts allow-same-origin allow-forms"
             onLoad={() => setLoadedBySrc((prev) => ({ ...prev, [src]: true }))}
             onError={() => setFailedBySrc((prev) => ({ ...prev, [src]: true }))}
           />
         )}
+
+        {simulatedInstall ? (
+          <div className="absolute left-1/2 top-4 z-30 -translate-x-1/2 rounded-full bg-emerald-600/95 px-3 py-1.5 text-[11px] font-semibold text-white shadow-lg">
+            <span className="inline-flex items-center gap-1">
+              <CheckCircle2 className="h-3.5 w-3.5" />
+              Simulacion: instalada
+            </span>
+          </div>
+        ) : null}
 
         {/* Skeleton while loading */}
         {!failed && !loaded && (
@@ -100,6 +138,14 @@ export default function PhoneMockupIframe({
             </a>
           </div>
         )}
+
+        {showBottomBar ? (
+          <div className="pointer-events-none absolute bottom-0 left-0 right-0 z-10 flex items-center justify-around border-t border-slate-200 bg-white/95 px-3 py-2 text-[10px] text-slate-500 backdrop-blur-sm dark:border-slate-700 dark:bg-slate-900/90 dark:text-slate-300">
+            <span>Inicio</span>
+            <span>Explorar</span>
+            <span>Perfil</span>
+          </div>
+        ) : null}
       </div>
     </>
   );

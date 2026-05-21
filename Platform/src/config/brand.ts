@@ -10,7 +10,7 @@ export const brand = {
   // ─── Identity ──────────────────────────────────────────────────────────────
   name: 'Appnexu',
   domain: 'appnexu.com',
-  supportEmail: 'support@appnexu.com',
+  supportEmail: 'soporte@prospectosdigitales.com',
   copyright: `© ${new Date().getFullYear()} Appnexu. All rights reserved.`,
 
   // ─── Taglines ──────────────────────────────────────────────────────────────

@@ -35,32 +35,33 @@ export async function GET(
     const manifestJson = {
       name: appName,
       short_name: shortName,
-      start_url: '/',
+      start_url: `/pwa/${app.id}/launch`,
       scope: '/',
       display: 'standalone',
       theme_color: themeColor,
       background_color: backgroundColor,
+      prefer_related_applications: false,
       icons: [
         {
-          src: '/icons/icon-192x192.png',
+          src: `/pwa/${app.id}/icon-192.png`,
           sizes: '192x192',
           type: 'image/png',
           purpose: 'any',
         },
         {
-          src: '/icons/icon-512x512.png',
+          src: `/pwa/${app.id}/icon-512.png`,
           sizes: '512x512',
           type: 'image/png',
           purpose: 'any',
         },
         {
-          src: '/icons/maskable-192x192.png',
+          src: `/pwa/${app.id}/maskable-icon.png`,
           sizes: '192x192',
           type: 'image/png',
           purpose: 'any maskable',
         },
         {
-          src: '/icons/maskable-512x512.png',
+          src: `/pwa/${app.id}/maskable-icon.png`,
           sizes: '512x512',
           type: 'image/png',
           purpose: 'any maskable',
@@ -75,7 +76,8 @@ export async function GET(
         '<meta name="apple-mobile-web-app-capable" content="yes" />',
         '<meta name="apple-mobile-web-app-status-bar-style" content="default" />',
         '<meta name="apple-mobile-web-app-title" content="' + appName + '" />',
-        '<link rel="apple-touch-icon" href="/icons/icon-192x192.png" />',
+        '<link rel="apple-touch-icon" href="/pwa/' + app.id + '/apple-touch-icon.png" />',
+        '<link rel="icon" href="/pwa/' + app.id + '/favicon.ico" />',
       ].join('\n'),
       serviceWorkerRegistration: [
         'if ("serviceWorker" in navigator) {',
@@ -101,12 +103,12 @@ export async function GET(
         '});',
       ].join('\n'),
       expectedFiles: [
-        '/manifest.json',
-        '/sw.js',
-        '/icons/icon-192x192.png',
-        '/icons/icon-512x512.png',
-        '/icons/maskable-192x192.png',
-        '/icons/maskable-512x512.png',
+        `/pwa/${app.id}/manifest.json`,
+        `/pwa/${app.id}/sw.js`,
+        `/pwa/${app.id}/icon-192.png`,
+        `/pwa/${app.id}/icon-512.png`,
+        `/pwa/${app.id}/apple-touch-icon.png`,
+        `/pwa/${app.id}/favicon.ico`,
       ],
     };
 

@@ -115,6 +115,11 @@ export default function LoginPage() {
                     disabled={isLoading}
                   />
                 </div>
+                <div className="mt-2 text-right">
+                  <Link href="/forgot-password" className="text-sm font-medium text-[#178BFF] hover:underline">
+                    {t('auth.signIn.forgotPassword')}
+                  </Link>
+                </div>
               </div>
 
               <button

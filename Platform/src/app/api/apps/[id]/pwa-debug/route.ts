@@ -207,10 +207,38 @@ export async function GET(
     }
 
     const serviceWorkerScopeExpected = '/';
+    const expectedStartUrl = isImportMode
+      ? null
+      : useRootDomainAudit
+      ? `${auditOrigin}/launch`
+      : `${auditOrigin}/pwa/${id}/launch`;
     const swAllowedHeader = swStatus.ok ? await (async () => {
       const response = await fetch(swUrl, { cache: 'no-store' });
       return findHeader(response.headers, 'Service-Worker-Allowed');
     })() : null;
+
+    let hasThemeColorMeta = false;
+    let hasAppleTouchIcon = false;
+    let hasFaviconLink = false;
+    let faviconHref: string | null = null;
+    if (installStatus.ok) {
+      try {
+        const installResponse = await fetch(installUrl, { cache: 'no-store' });
+        const html = await installResponse.text();
+
+        hasThemeColorMeta = /<meta[^>]+name=["']theme-color["']/i.test(html);
+        hasAppleTouchIcon = /<link[^>]+rel=["']apple-touch-icon["']/i.test(html);
+        hasFaviconLink = /<link[^>]+rel=["'][^"']*(icon|shortcut icon)[^"']*["']/i.test(html);
+
+        const faviconMatch = html.match(/<link[^>]+rel=["'][^"']*(icon|shortcut icon)[^"']*["'][^>]+href=["']([^"']+)["']/i);
+        faviconHref = faviconMatch?.[2] || null;
+      } catch {
+        hasThemeColorMeta = false;
+        hasAppleTouchIcon = false;
+        hasFaviconLink = false;
+        faviconHref = null;
+      }
+    }
 
     const manifestObj = (manifestJson && typeof manifestJson === 'object'
       ? (manifestJson as {
@@ -220,6 +248,7 @@ export async function GET(
           start_url?: string;
           scope?: string;
           display?: string;
+          prefer_related_applications?: boolean;
           theme_color?: string;
           background_color?: string;
           icons?: Array<{ sizes?: string; src?: string }>;
@@ -249,11 +278,19 @@ export async function GET(
       if (!manifestObj.start_url) installabilityErrors.push('Manifest missing start_url');
       if (!manifestObj.scope) installabilityErrors.push('Manifest missing scope');
       if (manifestObj.display !== 'standalone') installabilityErrors.push(`Manifest display is not standalone (${manifestObj.display ?? 'missing'})`);
+      if (manifestObj.prefer_related_applications !== false) installabilityErrors.push('Manifest prefer_related_applications must be false');
       if (!manifestObj.theme_color) installabilityErrors.push('Manifest missing theme_color');
       if (!manifestObj.background_color) installabilityErrors.push('Manifest missing background_color');
       const iconSizes = new Set((manifestObj.icons || []).map((icon) => icon.sizes));
       if (!iconSizes.has('192x192')) installabilityErrors.push('Manifest missing 192x192 icon');
       if (!iconSizes.has('512x512')) installabilityErrors.push('Manifest missing 512x512 icon');
+
+      if (expectedStartUrl && manifestObj.start_url) {
+        const resolvedStartUrl = new URL(manifestObj.start_url, auditOrigin).toString();
+        if (resolvedStartUrl !== expectedStartUrl) {
+          installabilityErrors.push(`Manifest start_url mismatch (${resolvedStartUrl}), expected ${expectedStartUrl}`);
+        }
+      }
     }
     if (icon192Status && !icon192Status.ok) installabilityErrors.push(`Icon 192 returned ${icon192Status.status ?? 'network error'}`);
     if (icon512Status && !icon512Status.ok) installabilityErrors.push(`Icon 512 returned ${icon512Status.status ?? 'network error'}`);
@@ -275,6 +312,12 @@ export async function GET(
     }
     if (manifestStatus.ok && (!startUrlStatus || !startUrlStatus.ok)) {
       installabilityErrors.push(`start_url returned ${startUrlStatus?.status ?? 'missing'}`);
+    }
+    if (!hasThemeColorMeta) installabilityErrors.push('Install page missing <meta name="theme-color">');
+    if (!hasAppleTouchIcon) installabilityErrors.push('Install page missing <link rel="apple-touch-icon">');
+    if (!hasFaviconLink) installabilityErrors.push('Install page missing favicon link');
+    if (faviconHref && /(appnexu|replit|vercel)/i.test(faviconHref)) {
+      installabilityErrors.push(`Favicon points to platform/default asset (${faviconHref})`);
     }
 
     const startUrlOutsideExpectedScope = Boolean(
@@ -354,7 +397,12 @@ export async function GET(
       icon192Status,
       icon512Status,
       hasManifestLinkOnInstallPage,
+      hasThemeColorMeta,
+      hasAppleTouchIcon,
+      hasFaviconLink,
+      faviconHref,
       serviceWorkerScopeExpected,
+      expectedStartUrl,
       serviceWorkerRegisteredWithExpectedScope: null,
       serviceWorkerRegisteredWithExpectedScopeNote:
         'Client-side state cannot be verified from a server API route. Use browser diagnostics panel or DevTools.',

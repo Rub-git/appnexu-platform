@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useTranslations } from 'next-intl';
 import {
-  Smartphone, Loader2, Download, AlertTriangle, RefreshCw, Check, ExternalLink,
+  Smartphone, Loader2, Download, AlertTriangle, RefreshCw, Check,
 } from 'lucide-react';
 
 interface ApkExportButtonProps {

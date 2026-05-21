@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
-import { ArrowRight, Link as LinkIcon, Loader2, Smartphone, Globe, LayoutTemplate, X, Crown } from 'lucide-react';
+import { ArrowRight, Link as LinkIcon, Loader2, Smartphone, Globe, LayoutTemplate, X, Crown, ArrowLeft } from 'lucide-react';
 import { Link, useRouter } from '@/i18n/routing';
+import OnboardingWizardBar from '@/components/OnboardingWizardBar';
 
 interface SelectedTemplate {
   id: string;
@@ -24,6 +25,15 @@ export default function CreateAppPage() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [error, setError] = useState('');
   const [selectedTemplate, setSelectedTemplate] = useState<SelectedTemplate | null>(null);
+  const [wizardStep, setWizardStep] = useState<1 | 2>(1);
+
+  const steps = [
+    { id: 1, label: 'Ingresa tu website' },
+    { id: 2, label: 'IA analiza tu sitio' },
+    { id: 3, label: 'Personaliza tu app' },
+    { id: 4, label: 'Vista previa' },
+    { id: 5, label: 'Publica' },
+  ];
 
   // Check for template selection from sessionStorage
   useEffect(() => {
@@ -35,6 +45,25 @@ export default function CreateAppPage() {
       }
     } catch { /* ignore */ }
   }, []);
+
+  useEffect(() => {
+    try {
+      const draftUrl = sessionStorage.getItem('appnexu-wizard-url');
+      if (draftUrl) {
+        setUrl(draftUrl);
+      }
+    } catch {
+      // ignore autosave read errors
+    }
+  }, []);
+
+  useEffect(() => {
+    try {
+      sessionStorage.setItem('appnexu-wizard-url', url);
+    } catch {
+      // ignore autosave write errors
+    }
+  }, [url]);
 
   // Normalize URL: add https:// if missing
   const normalizeUrl = (input: string): string => {
@@ -150,7 +179,7 @@ export default function CreateAppPage() {
         fetch(`/api/apps/${generateResult.data.id}/analyze`, { method: 'POST' });
       } catch { /* non-blocking */ }
 
-      router.push(`/dashboard/preview/${generateResult.data.id}`);
+      router.push(`/dashboard/preview/${generateResult.data.id}?wizard=1&step=3`);
     } catch (err) {
       setError(err instanceof Error ? err.message : t('errors.failedToGenerate'));
     } finally {
@@ -159,13 +188,15 @@ export default function CreateAppPage() {
   };
 
   return (
-    <div className="mx-auto max-w-3xl">
+    <div className="mx-auto max-w-3xl space-y-6">
+      <OnboardingWizardBar currentStep={wizardStep} steps={steps} />
+
       <div className="mb-8">
         <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-white">
-          {t('createApp.title')}
+          Creador de Apps con IA
         </h1>
         <p className="mt-2 text-gray-600 dark:text-gray-400">
-          {t('createApp.subtitle')}
+          Flujo guiado para convertir tu website en una PWA profesional.
         </p>
       </div>
 
@@ -229,7 +260,7 @@ export default function CreateAppPage() {
           <form onSubmit={handleAnalyze} className="space-y-6">
             <div>
               <label htmlFor="url" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                {t('createApp.form.urlLabel')}
+                Paso 1: Ingresa tu website
               </label>
               <div className="relative mt-2 rounded-md shadow-sm">
                 <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
@@ -248,27 +279,59 @@ export default function CreateAppPage() {
                 />
               </div>
               <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
-                {t('createApp.form.urlHelp')}
+                Usaremos esta URL para analizar branding, navegacion e instalabilidad.
               </p>
             </div>
 
-            <button
-              type="submit"
-              disabled={isAnalyzing || !url}
-              className="flex w-full items-center justify-center rounded-md bg-primary px-4 py-3 text-sm font-semibold text-white shadow-sm transition-all hover:bg-primary/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-50 disabled:hover:bg-primary"
-            >
-              {isAnalyzing ? (
-                <>
-                  <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                  {t('createApp.form.analyzing')}
-                </>
-              ) : (
-                <>
-                  {t('createApp.form.submitButton')}
-                  <ArrowRight className="ml-2 h-5 w-5" />
-                </>
-              )}
-            </button>
+            {wizardStep === 1 ? (
+              <div className="flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => setWizardStep(2)}
+                  disabled={!url.trim()}
+                  className="inline-flex items-center rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
+                >
+                  Siguiente
+                  <ArrowRight className="ml-1 h-4 w-4" />
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="rounded-xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900 dark:border-blue-900 dark:bg-blue-950/20 dark:text-blue-200">
+                  <p className="font-semibold">Paso 2: IA analiza tu sitio</p>
+                  <p className="mt-1">Analizaremos contenido, color principal, logo, navegacion y estrategia PWA recomendada.</p>
+                </div>
+
+                <div className="flex items-center justify-between gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setWizardStep(1)}
+                    className="inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
+                  >
+                    <ArrowLeft className="mr-1 h-4 w-4" />
+                    Anterior
+                  </button>
+
+                  <button
+                    type="submit"
+                    disabled={isAnalyzing || !url}
+                    className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-semibold text-white shadow-sm transition-all hover:bg-primary/90 disabled:opacity-50"
+                  >
+                    {isAnalyzing ? (
+                      <>
+                        <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                        {t('createApp.form.analyzing')}
+                      </>
+                    ) : (
+                      <>
+                        Analizar y continuar
+                        <ArrowRight className="ml-2 h-5 w-5" />
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            )}
           </form>
         </div>
 

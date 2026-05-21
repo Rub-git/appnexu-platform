@@ -1,20 +1,36 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { prisma } from '@/lib/prisma';
 import { notFound, redirect } from 'next/navigation';
 import InstallButton from '@/components/InstallButton';
 import AnalyticsTracker from '@/components/AnalyticsTracker';
 import { Globe } from 'lucide-react';
-import { getAppAssetVersion, getAppIconUrl, getAppManifestUrl } from '@/lib/pwa-assets';
+import GeneratedAppRuntime from '@/components/GeneratedAppRuntime';
+import {
+  getAppAssetVersion,
+  getAppCachePrefix,
+  getAppIconUrl,
+  getAppManifestUrl,
+  getAppNamedIconUrl,
+} from '@/lib/pwa-assets';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 export const fetchCache = 'force-no-store';
+
+export async function generateViewport({ params }: { params: Promise<{ locale: string; slug: string }> }): Promise<Viewport> {
+  const { slug } = await params;
+  const app = await prisma.appProject.findUnique({ where: { slug }, select: { themeColor: true } });
+  return {
+    themeColor: app?.themeColor || '#178BFF',
+  };
+}
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string; slug: string }> }): Promise<Metadata> {
   const { slug } = await params;
   const app = await prisma.appProject.findUnique({ where: { slug } });
   if (!app) return {};
   const assetVersion = getAppAssetVersion(app);
+  const manifestHref = getAppManifestUrl(app.id, assetVersion);
 
   if (app.pwaMode === 'IMPORT') {
     return {
@@ -28,6 +44,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
     title: app.appName,
     description: `${app.appName} - Installable app for ${app.targetUrl}`,
     applicationName: app.appName,
+    manifest: manifestHref,
     appleWebApp: {
       capable: true,
       title: app.appName,
@@ -36,19 +53,23 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
     icons: {
       icon: [
         {
-          url: getAppIconUrl(app.id, 192, assetVersion),
+          url: getAppNamedIconUrl(app.id, 'favicon.ico', assetVersion),
+          type: 'image/x-icon',
+        },
+        {
+          url: getAppNamedIconUrl(app.id, 'icon-192.png', assetVersion),
           sizes: '192x192',
           type: 'image/png',
         },
         {
-          url: getAppIconUrl(app.id, 512, assetVersion),
+          url: getAppNamedIconUrl(app.id, 'icon-512.png', assetVersion),
           sizes: '512x512',
           type: 'image/png',
         },
       ],
       apple: [
         {
-          url: getAppIconUrl(app.id, 180, assetVersion),
+          url: getAppNamedIconUrl(app.id, 'apple-touch-icon.png', assetVersion),
           sizes: '180x180',
           type: 'image/png',
         },
@@ -94,10 +115,19 @@ export default async function PublicAppPage({
   }
 
   const assetVersion = getAppAssetVersion(app);
+  const manifestHref = getAppManifestUrl(app.id, assetVersion);
+  const cachePrefix = getAppCachePrefix(app.id);
   const finalInstallUrl = app.customDomain ? `https://${app.customDomain}/` : app.targetUrl;
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-black">
+      <GeneratedAppRuntime
+        appId={app.id}
+        slug={app.slug}
+        targetUrl={app.targetUrl}
+        manifestHref={manifestHref}
+        cachePrefix={cachePrefix}
+      />
       <AnalyticsTracker appId={app.id} />
 
       <div className="mx-auto max-w-lg px-4 py-16">
@@ -127,7 +157,12 @@ export default async function PublicAppPage({
           )}
 
           <div className="mt-8">
-            <InstallButton appId={app.id} assetVersion={assetVersion} finalInstallUrl={finalInstallUrl} />
+            <InstallButton
+              appId={app.id}
+              assetVersion={assetVersion}
+              manifestHref={manifestHref}
+              finalInstallUrl={finalInstallUrl}
+            />
           </div>
 
           <div className="mt-12">

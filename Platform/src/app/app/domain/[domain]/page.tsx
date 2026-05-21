@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { prisma } from '@/lib/prisma';
 import { notFound, redirect } from 'next/navigation';
 import { headers } from 'next/headers';
@@ -16,6 +16,16 @@ import {
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 export const fetchCache = 'force-no-store';
+
+export async function generateViewport({ params }: { params: Promise<{ domain: string }> }): Promise<Viewport> {
+  const { domain } = await params;
+  const normalizedDomain = normalizeCustomDomain(domain);
+  const domainCandidates = getCustomDomainCandidates(normalizedDomain);
+  const app = await prisma.appProject.findFirst({ where: { customDomain: { in: domainCandidates } }, select: { themeColor: true } });
+  return {
+    themeColor: app?.themeColor || '#178BFF',
+  };
+}
 
 export async function generateMetadata({ params }: { params: Promise<{ domain: string }> }): Promise<Metadata> {
   const { domain } = await params;
