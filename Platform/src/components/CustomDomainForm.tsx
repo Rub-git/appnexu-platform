@@ -1,13 +1,25 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from '@/i18n/routing';
-import { useTranslations } from 'next-intl';
-import { Globe, Loader2, Check, X, Info } from 'lucide-react';
+import { Check, Globe, Info, Loader2, X } from 'lucide-react';
 
 interface CustomDomainFormProps {
   appId: string;
   currentDomain: string | null;
+}
+
+function normalizeDomain(value: string): string {
+  return value
+    .trim()
+    .toLowerCase()
+    .replace(/^https?:\/\//, '')
+    .replace(/\/.*$/, '')
+    .replace(/\.+$/, '');
+}
+
+function isValidDomain(value: string): boolean {
+  return /^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,}$/i.test(value);
 }
 
 export default function CustomDomainForm({ appId, currentDomain }: CustomDomainFormProps) {
@@ -15,35 +27,26 @@ export default function CustomDomainForm({ appId, currentDomain }: CustomDomainF
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [showDnsHelp, setShowDnsHelp] = useState(false);
   const router = useRouter();
-  const t = useTranslations();
 
   useEffect(() => {
     setDomain(currentDomain || '');
   }, [currentDomain]);
 
-  const normalizeDomain = (value: string): string => {
-    return value
-      .trim()
-      .toLowerCase()
-      .replace(/^https?:\/\//, '')
-      .replace(/\/.*$/, '')
-      .replace(/\.+$/, '');
-  };
+  const dnsState = useMemo(() => {
+    if (!currentDomain) return 'Pendiente de configurar';
+    return 'Configurado (verificacion en progreso)';
+  }, [currentDomain]);
 
-  const isValidDomain = (value: string): boolean => {
-    return /^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,}$/i.test(value);
-  };
-
-  const handleSave = async () => {
+  const connectDomain = async () => {
     setIsLoading(true);
     setError(null);
     setSuccess(null);
 
     const normalizedDomain = normalizeDomain(domain);
-
-    if (normalizedDomain.length > 0 && !isValidDomain(normalizedDomain)) {
-      setError('Invalid domain format. Example: app.example.com');
+    if (!normalizedDomain || !isValidDomain(normalizedDomain)) {
+      setError('Dominio invalido. Ejemplo: app.ejemplo.com');
       setIsLoading(false);
       return;
     }
@@ -52,118 +55,84 @@ export default function CustomDomainForm({ appId, currentDomain }: CustomDomainF
       const response = await fetch(`/api/apps/${appId}/domain`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ customDomain: normalizedDomain || null }),
+        body: JSON.stringify({ customDomain: normalizedDomain }),
       });
 
       const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to update domain');
-      }
+      if (!response.ok) throw new Error(data.error || 'No se pudo conectar el dominio');
 
       setDomain(normalizedDomain);
-      setSuccess(t('customDomain.saved'));
+      setSuccess('Dominio conectado correctamente.');
       router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to update domain');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleRemove = async () => {
-    setIsLoading(true);
-    setError(null);
-    setSuccess(null);
-
-    try {
-      const response = await fetch(`/api/apps/${appId}/domain`, {
-        method: 'DELETE',
-      });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || 'Failed to remove domain');
-      }
-
-      setDomain('');
-      setSuccess(t('customDomain.removed'));
-      router.refresh();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to remove domain');
+      setError(err instanceof Error ? err.message : 'No se pudo conectar el dominio');
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center gap-3">
-        <Globe className="h-5 w-5 text-gray-400" />
-        <h3 className="text-lg font-medium text-gray-900 dark:text-white">
-          {t('customDomain.title')}
-        </h3>
+    <section className="space-y-4">
+      <div className="flex items-center gap-2">
+        <Globe className="h-5 w-5 text-gray-500" />
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Dominio personalizado</h3>
       </div>
 
-      {error && (
+      <div className="rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-700 dark:border-gray-800 dark:bg-gray-950/50 dark:text-gray-300">
+        Estado DNS: <span className="font-semibold">{dnsState}</span>
+      </div>
+
+      {error ? (
         <div className="flex items-center gap-2 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-900/20 dark:text-red-400">
-          <X className="h-4 w-4 flex-shrink-0" />
+          <X className="h-4 w-4" />
           {error}
         </div>
-      )}
+      ) : null}
 
-      {success && (
-        <div className="flex items-center gap-2 rounded-lg bg-green-50 px-3 py-2 text-sm text-green-700 dark:bg-green-900/20 dark:text-green-400">
-          <Check className="h-4 w-4 flex-shrink-0" />
+      {success ? (
+        <div className="flex items-center gap-2 rounded-lg bg-emerald-50 px-3 py-2 text-sm text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-300">
+          <Check className="h-4 w-4" />
           {success}
         </div>
-      )}
+      ) : null}
 
-      <div className="flex flex-col xl:flex-row gap-2">
+      <div className="flex flex-col gap-2 sm:flex-row">
         <input
           type="text"
           value={domain}
-          onChange={(e) => setDomain(normalizeDomain(e.target.value))}
-          placeholder="app.yourdomain.com"
-          className="w-full xl:flex-1 min-w-0 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary dark:border-gray-600 dark:bg-gray-800 dark:text-white"
+          onChange={(event) => setDomain(normalizeDomain(event.target.value))}
+          placeholder="app.tudominio.com"
+          className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
         />
         <button
-          onClick={handleSave}
+          type="button"
+          onClick={connectDomain}
           disabled={isLoading}
-          className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-primary/90 disabled:opacity-50"
+          className="inline-flex items-center justify-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-60"
         >
-          {isLoading ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            <Check className="h-4 w-4" />
-          )}
-          {t('common.save')}
+          {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+          Conectar dominio
         </button>
-        {currentDomain && (
-          <button
-            onClick={handleRemove}
-            disabled={isLoading}
-            className="inline-flex items-center gap-2 rounded-lg bg-gray-100 px-3 py-2 text-sm text-gray-700 hover:bg-gray-200 disabled:opacity-50 dark:bg-gray-700 dark:text-gray-300"
-          >
-            <X className="h-4 w-4" />
-          </button>
-        )}
       </div>
 
-      {/* DNS Instructions */}
-      <div className="rounded-lg bg-blue-50 p-4 dark:bg-blue-900/20">
-        <div className="flex items-start gap-2">
-          <Info className="mt-0.5 h-4 w-4 flex-shrink-0 text-blue-600 dark:text-blue-400" />
-          <div className="text-sm text-blue-800 dark:text-blue-300">
-            <p className="font-medium">{t('customDomain.dnsTitle')}</p>
-            <p className="mt-1">{t('customDomain.dnsInstructions')}</p>
-            <div className="mt-2 rounded bg-blue-100 p-2 font-mono text-xs dark:bg-blue-900/40">
-              <p>Root/apex domain (example.com): Type A or ALIAS - Value 76.76.21.21</p>
-              <p>www subdomain (www.example.com): Type CNAME - Value cname.vercel-dns.com</p>
-            </div>
+      <button
+        type="button"
+        onClick={() => setShowDnsHelp((value) => !value)}
+        className="inline-flex items-center gap-1 text-sm font-medium text-gray-700 underline decoration-dotted underline-offset-4 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white"
+      >
+        <Info className="h-4 w-4" />
+        Ver instrucciones DNS
+      </button>
+
+      {showDnsHelp ? (
+        <div className="rounded-xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900 dark:border-blue-900 dark:bg-blue-950/30 dark:text-blue-200">
+          <p className="font-medium">Configura estos registros en tu proveedor DNS:</p>
+          <div className="mt-2 rounded-lg bg-white p-3 font-mono text-xs text-blue-900 dark:bg-slate-900 dark:text-blue-200">
+            <p>A / ALIAS para dominio raiz -&gt; 76.76.21.21</p>
+            <p>CNAME para www -&gt; cname.vercel-dns.com</p>
           </div>
         </div>
-      </div>
-    </div>
+      ) : null}
+    </section>
   );
 }

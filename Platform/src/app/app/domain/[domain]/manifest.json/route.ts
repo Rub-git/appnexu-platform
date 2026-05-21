@@ -28,6 +28,22 @@ function getInstallDataFromRequestUrl(requestUrl: string) {
   }
 }
 
+function resolveConfiguredPath(path: string | null | undefined, fallbackPath: string): string {
+  const raw = (path || '').trim();
+  if (!raw) return fallbackPath;
+
+  if (raw.startsWith('http://') || raw.startsWith('https://')) {
+    try {
+      const parsed = new URL(raw);
+      return parsed.pathname || fallbackPath;
+    } catch {
+      return fallbackPath;
+    }
+  }
+
+  return raw.startsWith('/') ? raw : `/${raw}`;
+}
+
 function getFallbackNameFromTarget(targetUrl: string): string {
   try {
     return new URL(targetUrl).hostname.replace(/^www\./i, '');
@@ -112,14 +128,18 @@ export async function GET(
     ];
 
     const installData = getInstallDataFromRequestUrl(request.url);
+    const configuredStartPath = resolveConfiguredPath(app.importedStartUrl, '/launch');
+    const configuredScope = (app.importedScope || installData.scope).trim() || installData.scope;
+    const origin = new URL(request.url).origin;
+    const resolvedStartUrl = `${origin}${configuredStartPath}`;
 
     const manifest = {
       name: manifestName,
       short_name: shortName,
       id: installData.id,
       description: `${manifestName} - Progressive Web App`,
-      start_url: installData.startUrl,
-      scope: installData.scope,
+      start_url: resolvedStartUrl,
+      scope: configuredScope,
       display: 'standalone',
       display_override: ['standalone'],
       orientation: 'portrait-primary',
@@ -135,7 +155,7 @@ export async function GET(
           name: `Open ${manifestName}`,
           short_name: 'Open',
           description: `Open ${manifestName}`,
-          url: installData.startUrl,
+          url: resolvedStartUrl,
           icons: icons.length > 0 ? [icons[0]] : [],
         },
       ],

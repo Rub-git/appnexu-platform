@@ -117,7 +117,7 @@ self.addEventListener('fetch', (event) => {
 
             if (cachedResponse) {
                 // Return cached but trigger fetch in background
-                fetchPromise;
+                void fetchPromise;
                 return cachedResponse;
             }
 

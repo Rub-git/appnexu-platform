@@ -3,7 +3,7 @@ import NextAuth, { CredentialsSignin } from 'next-auth';
 import Credentials from 'next-auth/providers/credentials';
 import { prisma } from './prisma';
 import bcrypt from 'bcryptjs';
-import type { User, Role } from '@prisma/client';
+import type { Role } from '@prisma/client';
 
 const useSecureCookies = process.env.NODE_ENV === 'production';
 

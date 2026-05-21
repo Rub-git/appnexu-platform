@@ -2,10 +2,10 @@
 
 import { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { Link, useRouter } from '@/i18n/routing';
+import { useRouter } from '@/i18n/routing';
 import {
   Loader2, Crown, Globe, Church, Utensils, HeartPulse,
-  ShoppingBag, GraduationCap, Calendar, ArrowRight, X, Eye,
+  GraduationCap, Calendar, ArrowRight, X, Eye,
   Filter, Sparkles, LayoutTemplate,
 } from 'lucide-react';
 
@@ -26,6 +26,18 @@ interface Template {
   isPremium: boolean;
   usageCount: number;
 }
+
+type TemplateNavigationItem = {
+  label: string;
+  icon: string;
+  path: string;
+};
+
+type TemplateQuickAction = {
+  label: string;
+  icon: string;
+  action: string;
+};
 
 const CATEGORIES = [
   { key: 'ALL', label: 'All' },
@@ -244,7 +256,7 @@ return (
                 {t('templates.modal.navigation')}
               </h4>
               <div className="flex flex-wrap gap-2">
-                {(config?.navigation || []).map((nav: any, i: number) => (
+                {(config?.navigation || []).map((nav: TemplateNavigationItem, i: number) => (
                   <span
                     key={i}
                     className="inline-flex items-center rounded-xl bg-gray-100 px-3 py-1.5 text-sm font-medium text-gray-700 dark:bg-gray-800 dark:text-gray-300"
@@ -264,7 +276,7 @@ return (
                 {t('templates.modal.quickActions')}
               </h4>
               <div className="grid grid-cols-2 gap-2">
-                {(config?.quickActions || []).map((action: any, i: number) => (
+                {(config?.quickActions || []).map((action: TemplateQuickAction, i: number) => (
                   <div key={i} className="rounded-xl border border-gray-200 p-3 dark:border-gray-700">
                     <p className="text-sm font-medium text-gray-900 dark:text-white">{action.label}</p>
                     <p className="text-xs text-gray-400">{action.action}</p>

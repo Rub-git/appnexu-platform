@@ -11,7 +11,17 @@ export async function GET() {
   const hasWhitespace = dbUrl !== dbUrl.trim();
   const hasNewlines = dbUrl.includes('\n') || dbUrl.includes('\r');
 
-  const checks = {
+  const checks: {
+    timestamp: string;
+    env: Record<string, string | undefined>;
+    notes: string[];
+    database?: {
+      status: string;
+      userCount?: number;
+      error?: string;
+      hint?: string;
+    };
+  } = {
     timestamp: new Date().toISOString(),
     env: {
       AUTH_SECRET: process.env.AUTH_SECRET ? `set (${process.env.AUTH_SECRET.length} chars)` : 'MISSING ❌',
@@ -36,13 +46,13 @@ export async function GET() {
   try {
     const { prisma } = await import('@/lib/prisma');
     const userCount = await prisma.user.count();
-    (checks as any).database = {
+    checks.database = {
       status: 'connected ✅',
       userCount,
     };
   } catch (error: unknown) {
     const errMsg = error instanceof Error ? error.message : String(error);
-    (checks as any).database = {
+    checks.database = {
       status: 'FAILED ❌',
       error: errMsg,
       hint: hasWhitespace ? 'DATABASE_URL has whitespace - this is likely the cause!' : '',

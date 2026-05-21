@@ -35,8 +35,9 @@ async function checkUsers() {
     
     await prisma.$disconnect();
     process.exit(0);
-  } catch (error: any) {
-    console.error('❌ Error:', error.message);
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error('❌ Error:', message);
     await prisma.$disconnect();
     process.exit(1);
   }

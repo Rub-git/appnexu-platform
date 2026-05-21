@@ -39,7 +39,10 @@ export default function GeneratedAppRuntime({
 }: GeneratedAppRuntimeProps) {
   const [manifestData, setManifestData] = useState<ManifestShape | null>(null);
   const [controller, setController] = useState('none');
-  const [documentTitle, setDocumentTitle] = useState('n/a');
+  const [documentTitle] = useState(() => {
+    if (typeof document === 'undefined') return 'n/a';
+    return document.title || 'n/a';
+  });
 
   useEffect(() => {
     const links = Array.from(document.querySelectorAll('link[rel="manifest"]')) as HTMLLinkElement[];
@@ -67,8 +70,6 @@ export default function GeneratedAppRuntime({
         setManifestData(null);
       }
     };
-
-    setDocumentTitle(document.title || 'n/a');
 
     const isolateRuntime = async () => {
       if (!('serviceWorker' in navigator)) return;

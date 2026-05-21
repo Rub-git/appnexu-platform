@@ -1,7 +1,7 @@
 import { analyzeSchema, formatZodErrors } from '@/lib/validations';
 import { apiError, apiSuccess } from '@/lib/api-utils';
 import { logger } from '@/lib/logger';
-import { checkRateLimit, getClientIp } from '@/lib/rate-limit';
+import { checkRateLimit } from '@/lib/rate-limit';
 import { auth } from '@/lib/auth';
 import { scanPwaAssets } from '@/lib/pwa-discovery';
 

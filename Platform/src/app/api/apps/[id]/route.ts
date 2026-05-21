@@ -93,6 +93,8 @@ export async function PATCH(
         iconUrls: data.iconUrls ?? app.iconUrls,
         pwaMode: nextPwaMode,
         pwaModeManual: nextPwaModeManual,
+        importedStartUrl: data.importedStartUrl ?? app.importedStartUrl,
+        importedScope: data.importedScope ?? app.importedScope,
       },
     });
 

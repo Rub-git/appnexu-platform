@@ -31,20 +31,30 @@ async function checkUsers() {
       console.log('❌ NO HAY USUARIOS REGISTRADOS');
     } else {
       console.log(`✅ Total: ${result.rows.length} usuario(s)\n`);
-      result.rows.forEach((row: any, idx: number) => {
-        console.log(`${idx + 1}. Email: ${row.email}`);
-        console.log(`   ID: ${row.id}`);
-        console.log(`   Role: ${row.role}`);
-        console.log(`   Plan: ${row.plan}`);
-        console.log(`   ¿Tiene contraseña?: ${row.has_password ? '✅ SÍ' : '❌ NO'}`);
+      type UserRow = {
+        id: string;
+        email: string;
+        role: string;
+        plan: string;
+        has_password: boolean;
+      };
+
+      result.rows.forEach((row, idx: number) => {
+        const user = row as UserRow;
+        console.log(`${idx + 1}. Email: ${user.email}`);
+        console.log(`   ID: ${user.id}`);
+        console.log(`   Role: ${user.role}`);
+        console.log(`   Plan: ${user.plan}`);
+        console.log(`   ¿Tiene contraseña?: ${user.has_password ? '✅ SÍ' : '❌ NO'}`);
         console.log('');
       });
     }
     
     await client.end();
     process.exit(0);
-  } catch (error: any) {
-    console.error('❌ Error:', error.message);
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
+    console.error('❌ Error:', message);
     process.exit(1);
   }
 }

@@ -37,7 +37,7 @@ export async function GET(
     }
 
     return apiSuccess(template);
-  } catch (error) {
+  } catch {
     return apiError('Failed to fetch template', 500, 'INTERNAL_ERROR');
   }
 }

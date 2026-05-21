@@ -1,4 +1,4 @@
-const http = require('http');
+import http from 'node:http';
 
 http.get('http://localhost:3000/pwa/cmnxj7l4x0002kz04s6exvfno/manifest.json', (res) => {
   console.log('Manifest status:', res.statusCode);

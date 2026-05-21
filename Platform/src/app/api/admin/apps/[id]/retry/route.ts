@@ -64,7 +64,7 @@ export async function POST(
     });
 
     return apiSuccess({ id, status: 'QUEUED', jobId: result.jobId });
-  } catch (error) {
+  } catch {
     return apiError('Failed to retry job', 500, 'INTERNAL_ERROR');
   }
 }

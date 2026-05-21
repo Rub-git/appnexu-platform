@@ -13,7 +13,6 @@ import {
   ArrowLeft,
 } from 'lucide-react';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
-import Logo from '@/components/Logo';
 
 export default async function AdminLayout({
   children,

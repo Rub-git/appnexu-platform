@@ -10,8 +10,6 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   const app = await prisma.appProject.findUnique({ where: { id } });
   if (!app) return {};
 
-  const assetVersion = getAppAssetVersion(app);
-
   return {
     title: app.appName,
     description: `${app.appName} - Installable app for ${app.targetUrl}`,

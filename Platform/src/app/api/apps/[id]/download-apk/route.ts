@@ -84,7 +84,7 @@ export async function GET(
       410,
       'BUILD_EXPIRED',
     );
-  } catch (error) {
+  } catch {
     return apiError('Failed to download APK', 500, 'INTERNAL_ERROR');
   }
 }

@@ -73,7 +73,6 @@ export async function trackEvent({ appId, eventType, metadata, visitorHash }: Tr
     }
 
     // Update daily summary using upsert (atomic)
-    const summaryUpdate: Record<string, unknown> = {};
     const summaryIncrement: Record<string, number> = {};
 
     if (eventType === 'PAGE_VIEW') {

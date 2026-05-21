@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import {
-  Sparkles, Loader2, Check, X, RefreshCw, Wand2,
+  Sparkles, Loader2, Check, RefreshCw, Wand2,
   ChevronDown, ChevronUp, AlertTriangle,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
@@ -14,6 +14,11 @@ interface AISuggestions {
   colors: { primary: string; secondary: string } | null;
   actions: Array<{ label: string; icon: string; action: string }> | null;
 }
+
+type PwaStatusData = {
+  pwaMode: 'GENERATOR' | 'IMPORT';
+  importCandidateDetected: boolean;
+};
 
 interface AiSuggestionsPanelProps {
   appId: string;
@@ -32,6 +37,7 @@ export default function AiSuggestionsPanel({ appId, currentName, onApplySuggesti
   const [loading, setLoading] = useState(false);
   const [expanded, setExpanded] = useState(true);
   const [error, setError] = useState('');
+  const [recommendedPwaMode, setRecommendedPwaMode] = useState<'GENERATOR' | 'IMPORT' | null>(null);
 
   // Fetch existing suggestions on mount
   useEffect(() => {
@@ -44,6 +50,16 @@ export default function AiSuggestionsPanel({ appId, currentName, onApplySuggesti
             setSuggestions(d.data.suggestions);
           }
         }
+      })
+      .catch(() => {});
+
+    fetch(`/api/apps/${appId}/pwa-debug`)
+      .then((r) => r.json())
+      .then((d) => {
+        const data: PwaStatusData | undefined = d?.data;
+        if (!data) return;
+        const recommendation = data.importCandidateDetected ? 'IMPORT' : 'GENERATOR';
+        setRecommendedPwaMode(recommendation);
       })
       .catch(() => {});
   }, [appId]);
@@ -95,7 +111,7 @@ export default function AiSuggestionsPanel({ appId, currentName, onApplySuggesti
           <div className="flex items-center gap-2">
             <Wand2 className="h-5 w-5 text-[#178BFF] dark:text-[#178BFF]" />
             <span className="text-sm font-medium text-indigo-900 dark:text-indigo-300">
-              {t('aiAnalyzer.title')}
+              Asistente IA
             </span>
           </div>
           <button
@@ -106,7 +122,7 @@ export default function AiSuggestionsPanel({ appId, currentName, onApplySuggesti
             {loading ? (
               <><Loader2 className="mr-1.5 h-4 w-4 animate-spin" /> {t('aiAnalyzer.analyzing')}</>
             ) : (
-              <><Sparkles className="mr-1.5 h-4 w-4" /> {t('aiAnalyzer.analyzeButton')}</>
+              <><Sparkles className="mr-1.5 h-4 w-4" /> Analizar con IA</>
             )}
           </button>
         </div>
@@ -115,9 +131,7 @@ export default function AiSuggestionsPanel({ appId, currentName, onApplySuggesti
             <AlertTriangle className="h-3.5 w-3.5" /> {error}
           </p>
         )}
-        <p className="mt-2 text-xs text-[#178BFF]/70 dark:text-[#178BFF]/70">
-          {t('aiAnalyzer.description')}
-        </p>
+        <p className="mt-2 text-xs text-[#178BFF]/70 dark:text-[#178BFF]/70">La IA te sugiere nombre, colores, icono recomendado, navegacion y acciones rapidas.</p>
       </div>
     );
   }
@@ -163,7 +177,7 @@ export default function AiSuggestionsPanel({ appId, currentName, onApplySuggesti
           <div className="flex items-center gap-2">
             <Sparkles className="h-5 w-5 text-green-600 dark:text-green-400" />
             <span className="text-sm font-medium text-green-900 dark:text-green-300">
-              {t('aiAnalyzer.suggestionsReady')}
+              Recomendaciones listas
             </span>
           </div>
           {expanded ? <ChevronUp className="h-4 w-4 text-green-600" /> : <ChevronDown className="h-4 w-4 text-green-600" />}
@@ -174,15 +188,16 @@ export default function AiSuggestionsPanel({ appId, currentName, onApplySuggesti
             {/* Suggested Name */}
             {suggestions.name && (
               <div className="mb-3">
-                <p className="text-xs font-medium uppercase text-green-700 dark:text-green-400">{t('aiAnalyzer.suggestedName')}</p>
+                <p className="text-xs font-medium uppercase text-green-700 dark:text-green-400">Nombre sugerido</p>
                 <p className="mt-1 text-sm text-gray-900 dark:text-white">{suggestions.name}</p>
+                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Nombre corto sugerido: {(suggestions.name || currentName).slice(0, 12)}</p>
               </div>
             )}
 
             {/* Suggested Colors */}
             {suggestions.colors && (
               <div className="mb-3">
-                <p className="text-xs font-medium uppercase text-green-700 dark:text-green-400">{t('aiAnalyzer.suggestedColors')}</p>
+                <p className="text-xs font-medium uppercase text-green-700 dark:text-green-400">Colores sugeridos</p>
                 <div className="mt-1 flex gap-2">
                   <div className="flex items-center gap-1">
                     <div className="h-5 w-5 rounded border" style={{ backgroundColor: suggestions.colors.primary }} />
@@ -196,10 +211,17 @@ export default function AiSuggestionsPanel({ appId, currentName, onApplySuggesti
               </div>
             )}
 
+            <div className="mb-3">
+              <p className="text-xs font-medium uppercase text-green-700 dark:text-green-400">Icono recomendado</p>
+              <p className="mt-1 text-sm text-gray-900 dark:text-white">
+                Usa un icono cuadrado, centrado y legible en tamano pequeno.
+              </p>
+            </div>
+
             {/* Suggested Navigation */}
             {suggestions.navigation && suggestions.navigation.length > 0 && (
               <div className="mb-3">
-                <p className="text-xs font-medium uppercase text-green-700 dark:text-green-400">{t('aiAnalyzer.suggestedNav')}</p>
+                <p className="text-xs font-medium uppercase text-green-700 dark:text-green-400">Navegacion sugerida</p>
                 <div className="mt-1 flex flex-wrap gap-1">
                   {suggestions.navigation.map((nav, i) => (
                     <span key={i} className="rounded bg-white px-2 py-0.5 text-xs text-gray-700 dark:bg-gray-800 dark:text-gray-300">
@@ -213,7 +235,7 @@ export default function AiSuggestionsPanel({ appId, currentName, onApplySuggesti
             {/* Suggested Actions */}
             {suggestions.actions && suggestions.actions.length > 0 && (
               <div className="mb-3">
-                <p className="text-xs font-medium uppercase text-green-700 dark:text-green-400">{t('aiAnalyzer.suggestedActions')}</p>
+                <p className="text-xs font-medium uppercase text-green-700 dark:text-green-400">Acciones rapidas sugeridas</p>
                 <div className="mt-1 flex flex-wrap gap-1">
                   {suggestions.actions.map((action, i) => (
                     <span key={i} className="rounded bg-white px-2 py-0.5 text-xs text-gray-700 dark:bg-gray-800 dark:text-gray-300">
@@ -223,6 +245,10 @@ export default function AiSuggestionsPanel({ appId, currentName, onApplySuggesti
                 </div>
               </div>
             )}
+
+            <div className="mb-3 rounded-lg border border-green-200 bg-white px-3 py-2 text-xs text-green-800 dark:border-green-800 dark:bg-gray-900 dark:text-green-300">
+              Estrategia PWA recomendada: {recommendedPwaMode === 'IMPORT' ? 'Importar la PWA existente del sitio' : 'Generar una PWA nueva para tu app'}
+            </div>
 
             {/* Action Buttons */}
             <div className="mt-4 flex gap-2">

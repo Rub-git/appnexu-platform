@@ -46,7 +46,7 @@ export async function GET(
     const chartData = await getChartData(id, period);
 
     return apiSuccess(chartData);
-  } catch (error) {
+  } catch {
     return apiError('Failed to fetch chart data', 500, 'INTERNAL_ERROR');
   }
 }

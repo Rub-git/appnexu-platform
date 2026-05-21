@@ -9,27 +9,38 @@ interface ManifestIcon {
     purpose?: string;
 }
 
-function getInstallData(appId: string) {
-    const scope = '/';
-    return {
-        startUrl: '/',
-        scope,
-        id: scope,
-    };
-}
-
-function getInstallDataFromTargetUrl(appId: string, targetUrl: string) {
+function getInstallDataFromRequestUrl(requestUrl: string, appId: string) {
     try {
-        const target = new URL(targetUrl);
-        const scope = `${target.origin}/`;
+        const origin = new URL(requestUrl).origin;
+        const installId = `${origin}/pwa/${appId}`;
         return {
-            startUrl: target.toString(),
-            scope,
-            id: scope,
+            startUrl: `${origin}/pwa/${appId}/launch`,
+            scope: '/',
+            id: installId,
         };
     } catch {
-        return getInstallData(appId);
+        return {
+            startUrl: `/pwa/${appId}/launch`,
+            scope: '/',
+            id: `/pwa/${appId}`,
+        };
     }
+}
+
+function resolveConfiguredPath(path: string | null | undefined, fallbackPath: string): string {
+    const raw = (path || '').trim();
+    if (!raw) return fallbackPath;
+
+    if (raw.startsWith('http://') || raw.startsWith('https://')) {
+        try {
+            const parsed = new URL(raw);
+            return parsed.pathname || fallbackPath;
+        } catch {
+            return fallbackPath;
+        }
+    }
+
+    return raw.startsWith('/') ? raw : `/${raw}`;
 }
 
 function getFallbackNameFromTarget(targetUrl: string): string {
@@ -94,7 +105,11 @@ export async function GET(
             );
         }
 
-        const installData = getInstallDataFromTargetUrl(app.id, app.targetUrl);
+        const installData = getInstallDataFromRequestUrl(request.url, app.id);
+        const configuredStartPath = resolveConfiguredPath(app.importedStartUrl, `/pwa/${app.id}/launch`);
+        const configuredScope = (app.importedScope || '/').trim() || '/';
+        const origin = new URL(request.url).origin;
+        const resolvedStartUrl = `${origin}${configuredStartPath}`;
         const manifestName = normalizeManifestName(app.appName, app.targetUrl);
         const version = getAppAssetVersion(app);
         const icons: ManifestIcon[] = [
@@ -131,8 +146,8 @@ export async function GET(
             short_name: shortName,
             id: installData.id,
             description: `${manifestName} - Progressive Web App`,
-            start_url: installData.startUrl,
-            scope: installData.scope,
+            start_url: resolvedStartUrl,
+            scope: configuredScope,
             display: 'standalone',
             display_override: ['standalone'],
             orientation: 'portrait-primary',
@@ -148,7 +163,7 @@ export async function GET(
                     name: `Open ${manifestName}`,
                     short_name: 'Open',
                     description: `Open ${manifestName}`,
-                    url: installData.startUrl,
+                    url: resolvedStartUrl,
                     icons: icons.length > 0 ? [icons[0]] : []
                 }
             ]
@@ -158,7 +173,6 @@ export async function GET(
             headers: {
                 'Content-Type': 'application/manifest+json',
                 'Cache-Control': 'no-cache, no-store, must-revalidate',
-                'Access-Control-Allow-Origin': '*',
             },
         });
     } catch (error) {

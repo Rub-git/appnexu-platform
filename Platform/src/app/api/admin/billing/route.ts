@@ -89,7 +89,7 @@ export async function GET(request: Request) {
         totalUsers: total,
       },
     });
-  } catch (error) {
+  } catch {
     return apiError('Failed to fetch billing data', 500, 'INTERNAL_ERROR');
   }
 }

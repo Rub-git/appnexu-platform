@@ -44,7 +44,7 @@ export async function GET(request: Request) {
     console.log(`Fetched ${templates.length} templates where isActive = true:`, templates);
 
     return apiSuccess(templates);
-  } catch (error) {
+  } catch {
     return apiError('Failed to fetch templates', 500, 'INTERNAL_ERROR');
   }
 }

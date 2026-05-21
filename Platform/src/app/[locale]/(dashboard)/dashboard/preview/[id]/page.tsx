@@ -1,31 +1,51 @@
 import { setRequestLocale } from 'next-intl/server';
 import { getTranslations } from 'next-intl/server';
 import { Link } from '@/i18n/routing';
-import { ArrowLeft, ExternalLink, Settings2, BarChart3, Globe, Smartphone } from 'lucide-react';
+import { ArrowLeft, BarChart3, ExternalLink } from 'lucide-react';
 import { prisma } from '@/lib/prisma';
 import { auth } from '@/lib/auth';
 import { notFound, redirect } from 'next/navigation';
-import { getAppIconUrl, getAppAssetVersion, getAppManifestUrl } from '@/lib/pwa-assets';
+import { getAppIconUrl, getAppAssetVersion } from '@/lib/pwa-assets';
 import { getNormalizedHostnameFromUrl, normalizeCustomDomain } from '@/lib/custom-domain';
 import PublishButton from '@/components/PublishButton';
 import CustomDomainForm from '@/components/CustomDomainForm';
 import AiSuggestionsPanel from '@/components/AiSuggestionsPanel';
 import ApkExportButton from '@/components/ApkExportButton';
 import PhoneMockupIframe from '@/components/PhoneMockupIframe';
-import PwaModeSelector from '@/components/PwaModeSelector';
 import PwaAuditChecklist from '@/components/PwaAuditChecklist';
+import PublicUrlActions from '@/components/PublicUrlActions';
+import AppBasicSettingsCard from '@/components/AppBasicSettingsCard';
 
-type PreviewThemeConfig = {
-  theme: {
-    color: string;
-    backgroundColor: string;
-  };
-};
+function getStatusMeta(status: string): { label: string; className: string } {
+  switch (status) {
+    case 'PUBLISHED':
+      return {
+        label: 'Publicada',
+        className: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300',
+      };
+    case 'FAILED':
+      return {
+        label: 'Requiere atencion',
+        className: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300',
+      };
+    case 'QUEUED':
+    case 'GENERATING':
+      return {
+        label: 'En proceso',
+        className: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300',
+      };
+    default:
+      return {
+        label: 'Pendiente',
+        className: 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300',
+      };
+  }
+}
 
-export default async function AppPreviewPage({ 
-  params 
-}: { 
-  params: Promise<{ id: string; locale: string }> 
+export default async function AppPreviewPage({
+  params,
+}: {
+  params: Promise<{ id: string; locale: string }>;
 }) {
   const { id, locale } = await params;
   setRequestLocale(locale);
@@ -37,298 +57,146 @@ export default async function AppPreviewPage({
 
   const t = await getTranslations();
 
-  // Fetch app and verify ownership with try/catch to prevent 500 errors on invalid IDs
   let app;
   try {
     app = await prisma.appProject.findUnique({
       where: { id },
     });
-  } catch (error) {
-    console.error("Preview error:", error);
+  } catch {
     return notFound();
   }
 
-  if (!app) {
+  if (!app || app.userId !== session.user.id) {
     return notFound();
   }
 
-  // Verify ownership
-  if (app.userId !== session.user.id) {
-    return notFound();
-  }
+  const assetVersion = getAppAssetVersion(app);
+  const normalizedCustomDomain = app.customDomain ? normalizeCustomDomain(app.customDomain) : null;
+  const targetHost = getNormalizedHostnameFromUrl(app.targetUrl);
+  const isSelfReferentialDomain = Boolean(
+    normalizedCustomDomain && targetHost && normalizedCustomDomain === targetHost,
+  );
+  const shouldUseCustomDomainRoot =
+    Boolean(normalizedCustomDomain) &&
+    app.status === 'PUBLISHED' &&
+    !isSelfReferentialDomain;
 
-  // Build a parsedConfig-like object from the actual DB fields
-  const parsedConfig: PreviewThemeConfig = {
-    theme: {
-      color: app.themeColor || '#178BFF',
-      backgroundColor: app.backgroundColor || '#ffffff',
-    },
-  };
+  const mockPreviewUrl = isSelfReferentialDomain
+    ? `/app/${app.slug}`
+    : shouldUseCustomDomainRoot
+      ? `https://${normalizedCustomDomain}`
+      : app.targetUrl;
 
-  try {
-    const assetVersion = getAppAssetVersion(app);
-    const normalizedCustomDomain = app.customDomain ? normalizeCustomDomain(app.customDomain) : null;
-    const targetHost = getNormalizedHostnameFromUrl(app.targetUrl);
-    const isSelfReferentialDomain = Boolean(
-      normalizedCustomDomain && targetHost && normalizedCustomDomain === targetHost,
-    );
-    const shouldUseCustomDomainRoot =
-      Boolean(normalizedCustomDomain) &&
-      app.status === 'PUBLISHED' &&
-      !isSelfReferentialDomain;
+  const publicUrl = app.customDomain
+    ? `https://${app.customDomain}`
+    : `/${locale}/app/${app.slug}`;
 
-    const mockPreviewUrl = isSelfReferentialDomain
-      ? `/app/${app.slug}`
-      : shouldUseCustomDomainRoot
-        ? `https://${normalizedCustomDomain}`
-        : app.targetUrl;
-    const publicUrl = app.customDomain
-      ? `https://${app.customDomain}`
-      : `/app/${app.slug}`;
-    const manifestHref = getAppManifestUrl(app.id, assetVersion);
-    return (
-      <div className="mx-auto max-w-5xl space-y-8">
-      {/* Header */}
-      <div className="flex flex-col flex-wrap items-start justify-between gap-4 sm:flex-row sm:items-center">
-        <div>
-          <Link 
-            href="/dashboard" 
-            className="mb-2 inline-flex items-center text-sm font-medium text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
-          >
-            <ArrowLeft className="mr-1 h-4 w-4" />
-            {t('preview.backToApps')}
-          </Link>
-          <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-white">
-            {app.appName}
-          </h1>
-          <p className="mt-1 flex items-center text-sm text-gray-500 dark:text-gray-400">
-            {t('preview.source')}: 
-            <a 
-              href={app.targetUrl} 
-              target="_blank" 
-              rel="noreferrer" 
-              className="ml-1 flex items-center text-primary hover:underline"
-            >
-              {app.targetUrl} <ExternalLink className="ml-1 h-3 w-3" />
-            </a>
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
-          {app.status === 'PUBLISHED' && (
+  const appConfigured = Boolean(
+    app.appName?.trim() &&
+    (app.shortName || app.appName)?.trim() &&
+    (app.themeColor || '#178BFF') &&
+    (app.backgroundColor || '#ffffff')
+  );
+
+  const statusMeta = getStatusMeta(app.status);
+
+  return (
+    <div className="mx-auto max-w-6xl space-y-8">
+      <section className="rounded-3xl border border-slate-200 bg-gradient-to-br from-white to-slate-50 p-6 shadow-sm dark:border-slate-800 dark:from-slate-900 dark:to-slate-950">
+        <Link
+          href="/dashboard"
+          className="mb-3 inline-flex items-center text-sm font-medium text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
+        >
+          <ArrowLeft className="mr-1 h-4 w-4" />
+          {t('preview.backToApps')}
+        </Link>
+
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <p className="text-sm font-semibold text-blue-600">Tu app esta casi lista</p>
+            <h1 className="mt-1 text-3xl font-bold tracking-tight text-slate-900 dark:text-white">{app.appName}</h1>
+            <p className="mt-2 flex flex-wrap items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
+              URL fuente:
+              <a href={app.targetUrl} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-blue-600 hover:underline">
+                {app.targetUrl}
+                <ExternalLink className="h-3.5 w-3.5" />
+              </a>
+            </p>
+            <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">
+              Estado general:
+              <span className={`ml-2 rounded-full px-2.5 py-1 text-[11px] font-semibold ${statusMeta.className}`}>
+                {statusMeta.label}
+              </span>
+            </p>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            {app.status === 'PUBLISHED' ? (
+              <Link
+                href={`/dashboard/apps/${app.id}/analytics`}
+                className="inline-flex items-center rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
+              >
+                <BarChart3 className="mr-2 h-4 w-4" />
+                {t('analytics.viewAnalytics')}
+              </Link>
+            ) : null}
+
             <Link
-              href={`/dashboard/apps/${app.id}/analytics`}
-              className="inline-flex items-center justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
+              href={`/dashboard/edit/${app.id}`}
+              className="inline-flex items-center rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
             >
-              <BarChart3 className="-ml-1 mr-2 h-4 w-4" />
-              {t('analytics.viewAnalytics')}
+              Editar en detalle
             </Link>
-          )}
-          <Link
-            href={`/dashboard/edit/${app.id}`}
-            className="inline-flex items-center justify-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 dark:hover:bg-gray-700"
-          >
-            <Settings2 className="-ml-1 mr-2 h-4 w-4" />
-            {t('preview.configure')}
-          </Link>
+          </div>
         </div>
-      </div>
+      </section>
 
-      <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
-        {/* Left Col: Details & Checklist */}
-        <div className="space-y-6 lg:col-span-2">
+      <div className="grid grid-cols-1 gap-8 xl:grid-cols-[1.1fr_0.9fr]">
+        <div className="space-y-6">
           <AiSuggestionsPanel
             appId={app.id}
             currentName={app.appName}
             onApplySuggestions={async (updates) => {
-              "use server";
+              'use server';
               const { prisma } = await import('@/lib/prisma');
               const { revalidatePath } = await import('next/cache');
               await prisma.appProject.update({
                 where: { id: app.id },
-                data: updates
+                data: updates,
               });
               revalidatePath('/[locale]/(dashboard)/dashboard/preview/[id]', 'page');
             }}
           />
 
-          <div className="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-gray-200 dark:bg-gray-900 dark:ring-gray-800">
-            <div className="border-b border-gray-200 px-6 py-5 dark:border-gray-800">
-              <h3 className="text-lg font-medium leading-6 text-gray-900 dark:text-white">
-                PWA Preview
-              </h3>
-              <p className="mt-1 max-w-2xl text-sm text-gray-500 dark:text-gray-400">
-                Vista previa del paquete instalable antes de publicar.
-              </p>
-            </div>
-            <div className="px-6 py-5">
-              <div className="grid gap-4 md:grid-cols-[96px_1fr]">
-                <div className="flex items-start justify-center md:justify-start">
-                  <div className="h-24 w-24 overflow-hidden rounded-2xl border border-gray-200 bg-gray-50 shadow-sm dark:border-gray-800 dark:bg-gray-950">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={getAppIconUrl(app.id, 192, assetVersion)}
-                      alt={`${app.appName} icon preview`}
-                      className="h-full w-full object-cover"
-                    />
-                  </div>
-                </div>
-                <div className="space-y-3">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="rounded-full bg-emerald-100 px-2.5 py-1 text-[11px] font-semibold text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300">
-                      standalone
-                    </span>
-                    <span className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold text-slate-700 dark:bg-slate-800 dark:text-slate-300">
-                      {app.pwaMode === 'IMPORT' ? 'import-mode' : 'generator-mode'}
-                    </span>
-                  </div>
+          <AppBasicSettingsCard
+            app={{
+              id: app.id,
+              appName: app.appName,
+              shortName: app.shortName,
+              themeColor: app.themeColor,
+              backgroundColor: app.backgroundColor,
+              iconUrls: app.iconUrls,
+              importedStartUrl: app.importedStartUrl,
+            }}
+          />
 
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    <div className="rounded-xl border border-gray-200 bg-gray-50 p-3 dark:border-gray-800 dark:bg-gray-950/60">
-                      <p className="text-xs text-gray-500 dark:text-gray-400">Nombre</p>
-                      <p className="mt-1 text-sm font-semibold text-gray-900 dark:text-white">{app.appName}</p>
-                    </div>
-                    <div className="rounded-xl border border-gray-200 bg-gray-50 p-3 dark:border-gray-800 dark:bg-gray-950/60">
-                      <p className="text-xs text-gray-500 dark:text-gray-400">Manifest</p>
-                      <a href={manifestHref} className="mt-1 block break-all text-sm font-semibold text-primary hover:underline">
-                        {manifestHref}
-                      </a>
-                    </div>
-                    <div className="rounded-xl border border-gray-200 bg-gray-50 p-3 dark:border-gray-800 dark:bg-gray-950/60">
-                      <p className="text-xs text-gray-500 dark:text-gray-400">Modo PWA</p>
-                      <p className="mt-1 text-sm font-semibold text-gray-900 dark:text-white">
-                        {app.pwaMode === 'IMPORT' ? 'Import' : 'Generator'}
-                      </p>
-                    </div>
-                    <div className="rounded-xl border border-gray-200 bg-gray-50 p-3 dark:border-gray-800 dark:bg-gray-950/60">
-                      <p className="text-xs text-gray-500 dark:text-gray-400">SW importado</p>
-                      <p className="mt-1 break-all text-xs font-semibold text-gray-900 dark:text-white">
-                        {app.importedSwUrl || 'No detectado'}
-                      </p>
-                    </div>
-                    <div className="sm:col-span-2">
-                      <PwaModeSelector
-                        appId={app.id}
-                        currentMode={app.pwaMode}
-                        manualOverride={app.pwaModeManual}
-                      />
-                    </div>
-                    <div className="rounded-xl border border-gray-200 bg-gray-50 p-3 dark:border-gray-800 dark:bg-gray-950/60">
-                      <p className="text-xs text-gray-500 dark:text-gray-400">Theme color</p>
-                      <div className="mt-1 flex items-center gap-2">
-                        <span className="h-4 w-4 rounded-full border border-gray-200" style={{ backgroundColor: parsedConfig?.theme?.color || app.themeColor || '#ffffff' }} />
-                        <span className="text-sm font-semibold text-gray-900 dark:text-white">{parsedConfig?.theme?.color || app.themeColor || '#ffffff'}</span>
-                      </div>
-                    </div>
-                    <div className="rounded-xl border border-gray-200 bg-gray-50 p-3 dark:border-gray-800 dark:bg-gray-950/60">
-                      <p className="text-xs text-gray-500 dark:text-gray-400">Background</p>
-                      <div className="mt-1 flex items-center gap-2">
-                        <span className="h-4 w-4 rounded-full border border-gray-200" style={{ backgroundColor: parsedConfig?.theme?.backgroundColor || app.backgroundColor || '#ffffff' }} />
-                        <span className="text-sm font-semibold text-gray-900 dark:text-white">{parsedConfig?.theme?.backgroundColor || app.backgroundColor || '#ffffff'}</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Details Card */}
-          <div className="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-gray-200 dark:bg-gray-900 dark:ring-gray-800">
-            <div className="border-b border-gray-200 px-6 py-5 dark:border-gray-800">
-              <h3 className="text-lg font-medium leading-6 text-gray-900 dark:text-white">
-                {t('preview.config.title')}
-              </h3>
-              <p className="mt-1 max-w-2xl text-sm text-gray-500 dark:text-gray-400">
-                {t('preview.config.subtitle')}
-              </p>
-            </div>
-            <div className="px-6 py-5">
-              <dl className="grid grid-cols-1 gap-x-4 gap-y-6 sm:grid-cols-2">
-                <div className="sm:col-span-1">
-                  <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                    {t('preview.config.appName')}
-                  </dt>
-                  <dd className="mt-1 text-sm text-gray-900 dark:text-white">
-                    {app.appName}
-                  </dd>
-                </div>
-                <div className="sm:col-span-1">
-                  <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                    {t('preview.config.shortName')}
-                  </dt>
-                  <dd className="mt-1 text-sm text-gray-900 dark:text-white">
-                    {app.shortName || app.appName}
-                  </dd>
-                </div>
-                <div className="sm:col-span-1">
-                  <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                    {t('preview.config.themeColor')}
-                  </dt>
-                  <dd className="mt-1 flex items-center text-sm text-gray-900 dark:text-white">
-                    <span 
-                      className="mr-2 h-4 w-4 rounded-full border border-gray-200 dark:border-gray-700" 
-                      style={{ backgroundColor: parsedConfig?.theme?.color || app.themeColor || '#ffffff' }}
-                    />
-                    {parsedConfig?.theme?.color || app.themeColor || '#ffffff'}
-                  </dd>
-                </div>
-                <div className="sm:col-span-1">
-                  <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                    {t('preview.config.backgroundColor')}
-                  </dt>
-                  <dd className="mt-1 flex items-center text-sm text-gray-900 dark:text-white">
-                    <span 
-                      className="mr-2 h-4 w-4 rounded-full border border-gray-200 dark:border-gray-700" 
-                      style={{ backgroundColor: parsedConfig?.theme?.backgroundColor || app.backgroundColor || '#ffffff' }}
-                    />
-                    {parsedConfig?.theme?.backgroundColor || app.backgroundColor || '#ffffff'}
-                  </dd>
-                </div>
-                <div className="sm:col-span-2">
-                  <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                    {t('preview.config.appIcons')}
-                  </dt>
-                  <dd className="mt-2 flex flex-wrap gap-4">
-                    {/* Always use icon-proxy — it handles upload:/data: tokens server-side */}
-                    <div className="flex flex-col items-center gap-1">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={getAppIconUrl(app.id, 192, assetVersion)}
-                        alt="Icon 512"
-                        className="h-16 w-16 rounded-2xl border border-gray-200 object-cover shadow-sm bg-gray-50 dark:border-gray-700 dark:bg-gray-800"
-                      />
-                      <span className="text-[10px] text-gray-400">512×512</span>
-                    </div>
-                    <div className="flex flex-col items-center gap-1">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={getAppIconUrl(app.id, 96, assetVersion)}
-                        alt="Icon 192"
-                        className="h-12 w-12 rounded-xl border border-gray-200 object-cover shadow-sm bg-gray-50 dark:border-gray-700 dark:bg-gray-800"
-                      />
-                      <span className="text-[10px] text-gray-400">192×192</span>
-                    </div>
-                  </dd>
-                </div>
-              </dl>
-            </div>
-          </div>
-
-          <PwaAuditChecklist appId={app.id} customDomain={app.customDomain} />
+          <PwaAuditChecklist
+            appId={app.id}
+            customDomain={app.customDomain}
+            appConfigured={appConfigured}
+            appStatus={app.status}
+          />
         </div>
 
-          {/* Publishing Card */}
-          <div className="space-y-6">
-          <div className="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-gray-200 dark:bg-gray-900 dark:ring-gray-800">
+        <div className="space-y-6">
+          <section className="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-gray-200 dark:bg-gray-900 dark:ring-gray-800">
             <div className="border-b border-gray-200 px-6 py-5 dark:border-gray-800">
-              <h3 className="text-lg font-medium leading-6 text-gray-900 dark:text-white">
-                {t('publish.title')}
-              </h3>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Publicacion</h3>
               <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-                {t('publish.subtitle')}
+                Estado: {app.status === 'PUBLISHED' ? 'Publicada' : 'No publicada'}
               </p>
             </div>
-            <div className="px-6 py-5">
+            <div className="space-y-4 px-6 py-5">
               <PublishButton
                 appId={app.id}
                 appName={app.appName}
@@ -336,81 +204,52 @@ export default async function AppPreviewPage({
                 slug={app.slug}
                 failureReason={app.failureReason}
               />
-              {app.status === 'PUBLISHED' && (
-                <div className="mt-4 space-y-4 rounded-xl border border-green-200 bg-green-50/50 p-4 dark:border-green-900 dark:bg-green-900/10">
-                  <p className="text-sm text-gray-700 dark:text-gray-300">
-                    {t('publish.publicUrl')}: <a href={publicUrl} target="_blank" rel="noopener noreferrer" className="font-medium text-primary hover:underline">{publicUrl}</a>
-                  </p>
-                  <a
-                    href={publicUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700"
-                  >
-                    <Globe className="h-4 w-4" />
-                    Abrir app
-                  </a>
 
-                  <div className="space-y-3 rounded-lg bg-white p-3 ring-1 ring-green-100 dark:bg-gray-900 dark:ring-green-900/40">
-                    <p className="text-sm font-semibold text-gray-900 dark:text-white">Instalación PWA</p>
-                    <div className="text-xs text-gray-600 dark:text-gray-300">
-                      <p className="font-medium">Chrome Desktop</p>
-                      <p>1) Abrir la URL pública 2) Clic en icono instalar de la barra 3) Confirmar &quot;Instalar&quot;.</p>
-                    </div>
-                    <div className="text-xs text-gray-600 dark:text-gray-300">
-                      <p className="font-medium">Android (Chrome)</p>
-                      <p>1) Abrir la URL pública 2) Menú de Chrome 3) &quot;Instalar app&quot; o &quot;Agregar a pantalla de inicio&quot;.</p>
-                    </div>
-                    <div className="text-xs text-gray-600 dark:text-gray-300">
-                      <p className="font-medium">iPhone (Safari)</p>
-                      <p>1) Abrir la URL pública en Safari 2) Compartir 3) &quot;Añadir a pantalla de inicio&quot;.</p>
-                    </div>
-                    <p className="inline-flex items-center gap-1 text-[11px] text-gray-500 dark:text-gray-400">
-                      <Smartphone className="h-3.5 w-3.5" />
-                      Si instaló con icono viejo, elimina la app instalada y vuelve a instalar tras refrescar.
-                    </p>
+              {app.status === 'PUBLISHED' ? (
+                <div className="rounded-xl border border-emerald-200 bg-emerald-50/60 p-4 dark:border-emerald-900 dark:bg-emerald-950/20">
+                  <p className="text-sm text-gray-700 dark:text-gray-300">
+                    URL publica:{' '}
+                    <a href={publicUrl} target="_blank" rel="noopener noreferrer" className="font-medium text-blue-600 hover:underline">
+                      {publicUrl}
+                    </a>
+                  </p>
+                  <div className="mt-3">
+                    <PublicUrlActions publicUrl={publicUrl} />
                   </div>
                 </div>
-              )}
+              ) : null}
             </div>
-          </div>
+          </section>
 
-          {/* APK Export Card */}
-          <ApkExportButton appId={app.id} appStatus={app.status} />
-
-          {/* Custom Domain Card */}
-          <div className="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-gray-200 dark:bg-gray-900 dark:ring-gray-800">
+          <section className="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-gray-200 dark:bg-gray-900 dark:ring-gray-800">
             <div className="px-6 py-5">
               <CustomDomainForm appId={app.id} currentDomain={app.customDomain} />
             </div>
-          </div>
+          </section>
 
-        {/* Right Col: Device Preview */}
-        <div className="flex flex-col items-center">
-          <h3 className="mb-4 text-sm font-medium uppercase tracking-wider text-gray-500 dark:text-gray-400">
-            {t('preview.mobilePreview')}
-          </h3>
+          <ApkExportButton appId={app.id} appStatus={app.status} />
 
-          {/* iPhone Mockup */}
-          <div className="relative mx-auto h-[600px] w-[300px] rounded-[3rem] border-[8px] border-gray-900 bg-gray-900 shadow-xl dark:border-gray-800 dark:bg-gray-800">
-            <div className="absolute left-1/2 top-0 z-20 h-[24px] w-[120px] -translate-x-1/2 rounded-b-2xl bg-gray-900 dark:bg-gray-800" />
-            <div className="relative h-full w-full overflow-hidden rounded-[2.25rem] bg-white dark:bg-black">
-              <PhoneMockupIframe
-                src={mockPreviewUrl}
-                title={`${app.appName} Preview`}
-                themeColor={app.themeColor || '#178BFF'}
-                appName={app.appName}
-                iconUrl={getAppIconUrl(app.id, 192, assetVersion)}
-              />
+          <section className="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-gray-200 dark:bg-gray-900 dark:ring-gray-800">
+            <div className="border-b border-gray-200 px-6 py-4 dark:border-gray-800">
+              <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Vista previa movil</h3>
             </div>
-          </div>
-        </div>
+            <div className="flex justify-center px-6 py-6">
+              <div className="relative h-[620px] w-[310px] rounded-[3rem] border-[8px] border-gray-900 bg-gray-900 shadow-xl dark:border-gray-800 dark:bg-gray-800">
+                <div className="absolute left-1/2 top-0 z-20 h-[24px] w-[120px] -translate-x-1/2 rounded-b-2xl bg-gray-900 dark:bg-gray-800" />
+                <div className="relative h-full w-full overflow-hidden rounded-[2.25rem] bg-white dark:bg-black">
+                  <PhoneMockupIframe
+                    src={mockPreviewUrl}
+                    title={`${app.appName} Preview`}
+                    themeColor={app.themeColor || '#178BFF'}
+                    appName={app.appName}
+                    iconUrl={getAppIconUrl(app.id, 192, assetVersion)}
+                  />
+                </div>
+              </div>
+            </div>
+          </section>
         </div>
       </div>
-      </div>
-    );
-  } catch (error) {
-    console.error("Render preview error:", error);
-    return notFound();
-  }
+    </div>
+  );
 }

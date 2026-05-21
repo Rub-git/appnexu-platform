@@ -36,35 +36,32 @@ function isPlatformHost(hostname: string): boolean {
 }
 
 export default function InstallButton({ appId, assetVersion = '1', manifestHref, finalInstallUrl }: InstallButtonProps) {
-  const [isInstalled, setIsInstalled] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isInstalled, setIsInstalled] = useState(() => isStandaloneMode());
+  const [isLoading, setIsLoading] = useState(() => !isStandaloneMode());
   const [showHelp, setShowHelp] = useState(false);
   const [copied, setCopied] = useState(false);
-  const [deviceType, setDeviceType] = useState<'ios' | 'android' | 'desktop'>('desktop');
+  const [deviceType] = useState<'ios' | 'android' | 'desktop'>(() => {
+    if (typeof navigator === 'undefined') return 'desktop';
+    const userAgent = navigator.userAgent;
+    if (/iPad|iPhone|iPod/.test(userAgent)) return 'ios';
+    if (/Android/.test(userAgent)) return 'android';
+    return 'desktop';
+  });
   const deferredPrompt = useRef<BeforeInstallPromptEvent | null>(null);
   const isIOS = deviceType === 'ios';
   const isAndroid = deviceType === 'android';
   const isMobileDevice = isIOS || isAndroid;
   const isDesktop = !isMobileDevice;
-  const [isCustomHost, setIsCustomHost] = useState(false);
+  const [isCustomHost] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return false;
+    return !isPlatformHost(window.location.hostname);
+  });
 
   useEffect(() => {
-    const userAgent = navigator.userAgent;
-    if (/iPad|iPhone|iPod/.test(userAgent)) {
-      setDeviceType('ios');
-    } else if (/Android/.test(userAgent)) {
-      setDeviceType('android');
-    } else {
-      setDeviceType('desktop');
-    }
-
-    const customHost = !isPlatformHost(window.location.hostname);
-    setIsCustomHost(customHost);
+    const customHost = isCustomHost;
 
     // When already in standalone mode, no prompt is needed.
     if (isStandaloneMode()) {
-      setIsInstalled(true);
-      setIsLoading(false);
       return;
     }
 
@@ -214,7 +211,7 @@ export default function InstallButton({ appId, assetVersion = '1', manifestHref,
       window.removeEventListener('appinstalled', handleAppInstalled);
       clearTimeout(timeout);
     };
-  }, [appId, assetVersion, manifestHref]);
+  }, [appId, assetVersion, manifestHref, isCustomHost, isInstalled]);
 
   const handleInstall = async () => {
     if (!isCustomHost) {

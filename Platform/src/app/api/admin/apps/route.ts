@@ -106,7 +106,7 @@ export async function GET(request: Request) {
         totalPages: Math.ceil(total / limit),
       },
     });
-  } catch (error) {
+  } catch {
     return apiError('Failed to fetch apps', 500, 'INTERNAL_ERROR');
   }
 }

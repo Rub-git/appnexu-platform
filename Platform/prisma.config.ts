@@ -30,9 +30,11 @@ function loadEnvFile(filePath: string) {
 loadEnvFile(resolve(process.cwd(), ".env.local"));
 loadEnvFile(resolve(process.cwd(), ".env"));
 
-export default {
+const prismaConfig = {
   schema: "prisma/schema.prisma",
   datasource: {
     url: process.env.DATABASE_URL,
   },
 };
+
+export default prismaConfig;

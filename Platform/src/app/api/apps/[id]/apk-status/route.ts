@@ -76,7 +76,7 @@ export async function GET(
       buildLog: app.apkBuildLog,
       errorMessage: app.apkErrorMessage,
     });
-  } catch (error) {
+  } catch {
     return apiError('Failed to fetch APK status', 500, 'INTERNAL_ERROR');
   }
 }

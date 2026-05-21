@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
-import { ArrowRight, Link as LinkIcon, Loader2, Smartphone, Globe, LayoutTemplate, X, Crown, ArrowLeft } from 'lucide-react';
+import { ArrowRight, Link as LinkIcon, Loader2, Smartphone, Globe, LayoutTemplate, X, Crown } from 'lucide-react';
 import { Link, useRouter } from '@/i18n/routing';
 
 interface SelectedTemplate {

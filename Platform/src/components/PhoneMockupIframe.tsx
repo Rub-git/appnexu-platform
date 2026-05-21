@@ -18,13 +18,10 @@ export default function PhoneMockupIframe({
   appName,
   iconUrl,
 }: PhoneMockupIframeProps) {
-  const [failed, setFailed] = useState(false);
-  const [loaded, setLoaded] = useState(false);
-
-  useEffect(() => {
-    setFailed(false);
-    setLoaded(false);
-  }, [src]);
+  const [failedBySrc, setFailedBySrc] = useState<Record<string, boolean>>({});
+  const [loadedBySrc, setLoadedBySrc] = useState<Record<string, boolean>>({});
+  const failed = failedBySrc[src] ?? false;
+  const loaded = loadedBySrc[src] ?? false;
 
   useEffect(() => {
     if (loaded || failed) {
@@ -32,7 +29,7 @@ export default function PhoneMockupIframe({
     }
 
     const timeoutId = window.setTimeout(() => {
-      setFailed(true);
+      setFailedBySrc((prev) => ({ ...prev, [src]: true }));
     }, 12000);
 
     return () => {
@@ -59,8 +56,8 @@ export default function PhoneMockupIframe({
             className={`h-full w-full border-0 transition-opacity duration-300 ${loaded ? 'opacity-100' : 'opacity-0'}`}
             title={title}
             sandbox="allow-scripts allow-same-origin allow-forms"
-            onLoad={() => setLoaded(true)}
-            onError={() => setFailed(true)}
+            onLoad={() => setLoadedBySrc((prev) => ({ ...prev, [src]: true }))}
+            onError={() => setFailedBySrc((prev) => ({ ...prev, [src]: true }))}
           />
         )}
 

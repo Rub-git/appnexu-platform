@@ -15,7 +15,6 @@ import {
   LayoutTemplate,
   Download,
   Sparkles,
-  BarChart3,
 } from 'lucide-react';
 
 interface AdminStats {

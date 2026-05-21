@@ -1,4 +1,4 @@
-const { PrismaClient } = require('@prisma/client');
+import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 async function main() {
   const t = await prisma.appTemplate.findMany({ select: { id: true, name: true, category: true, isActive: true }});

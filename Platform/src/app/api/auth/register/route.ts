@@ -1,11 +1,9 @@
-import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma'
 import bcrypt from 'bcryptjs'; // se queda, pero simplificamos uso
 import { registerSchema, formatZodErrors } from '@/lib/validations';
 import { apiError, apiSuccess } from '@/lib/api-utils';
 import { logger } from '@/lib/logger';
 import { checkRateLimit, getClientIp } from '@/lib/rate-limit';
-import { Prisma } from '@prisma/client';
 
 export async function POST(request: Request) {
   try {

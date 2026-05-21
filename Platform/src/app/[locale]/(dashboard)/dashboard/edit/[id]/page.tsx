@@ -42,7 +42,7 @@ export default function EditAppPage({ params }: { params: Promise<{ id: string }
         setThemeColor(appData.themeColor || '#178BFF');
         setBackgroundColor(appData.backgroundColor || '#ffffff');
         setIconUrls(appData.iconUrls || '');
-      } catch (err) {
+      } catch {
         setError(t('errors.appNotFound'));
       } finally {
         setIsLoading(false);

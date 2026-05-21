@@ -41,7 +41,7 @@ export async function GET(
         actions: app.aiSuggestedActions,
       },
     });
-  } catch (error) {
+  } catch {
     return apiError('Failed to fetch suggestions', 500, 'INTERNAL_ERROR');
   }
 }

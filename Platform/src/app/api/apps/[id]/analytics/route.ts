@@ -46,7 +46,7 @@ export async function GET(
     const analytics = await getAnalyticsSummary(id, period);
 
     return apiSuccess(analytics);
-  } catch (error) {
+  } catch {
     return apiError('Failed to fetch analytics', 500, 'INTERNAL_ERROR');
   }
 }

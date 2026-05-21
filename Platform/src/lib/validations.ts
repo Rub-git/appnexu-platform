@@ -92,6 +92,8 @@ export const updateAppSchema = z.object({
   iconUrls: iconUrlsSchema,
   pwaMode: z.enum(['GENERATOR', 'IMPORT']).optional(),
   pwaModeManual: z.boolean().optional(),
+  importedStartUrl: z.string().max(300).optional(),
+  importedScope: z.string().max(200).optional(),
 });
 
 // ─── Custom domain ────────────────────────────────────────────────────

@@ -116,7 +116,7 @@ export async function GET() {
         databaseConnected: true, // If we got here, DB is fine
       },
     });
-  } catch (error) {
+  } catch {
     return apiError('Failed to fetch health data', 500, 'INTERNAL_ERROR');
   }
 }

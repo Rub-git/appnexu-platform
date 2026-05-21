@@ -13,9 +13,9 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: 'Inter', var(--font-geist-sans), sans-serif;
-  --font-heading: 'Sora', var(--font-geist-sans), sans-serif;
-  --font-mono: var(--font-geist-mono);
+  --font-sans: 'Inter', 'Segoe UI', sans-serif;
+  --font-heading: 'Sora', 'Inter', sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
   --color-primary: #178BFF;
   --color-primary-dark: #5B2CCF;
   --color-secondary: #5B2CCF;

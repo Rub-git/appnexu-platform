@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
+import type { Role } from '@prisma/client';
 
 // GET: Check if users exist and show their info (no passwords)
 export async function GET() {
@@ -41,9 +42,10 @@ export async function GET() {
         ? 'No users found. Use POST to create a test user.'
         : `Found ${users.length} user(s).`,
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const details = error instanceof Error ? error.message : String(error);
     return NextResponse.json(
-      { error: 'Database error', details: error.message },
+      { error: 'Database error', details },
       { status: 500 }
     );
   }
@@ -100,7 +102,7 @@ export async function POST(request: Request) {
         email,
         password: hashedPassword,
         name,
-        role: role as any,
+        role: role as Role,
         plan: 'FREE',
       },
       select: {
@@ -123,9 +125,10 @@ export async function POST(request: Request) {
         note: 'Use these credentials on the login page',
       },
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const details = error instanceof Error ? error.message : String(error);
     return NextResponse.json(
-      { error: 'Failed to create user', details: error.message },
+      { error: 'Failed to create user', details },
       { status: 500 }
     );
   }

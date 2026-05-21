@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
-import { CheckCircle2, AlertTriangle, Loader2 } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { AlertTriangle, CheckCircle2, Loader2, Wrench } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 type StatusCheck = {
@@ -18,14 +18,11 @@ type UrlStatus = {
 };
 
 type PwaDebugResponseData = {
-  appId: string;
   pwaMode: 'GENERATOR' | 'IMPORT';
   pwaModeManual: boolean;
   importedManifestUrl: string | null;
   importedSwUrl: string | null;
-  importedIconsValid: boolean | null;
   importCandidateDetected: boolean;
-  useRootDomainAudit: boolean;
   enforceGeneratorScopeChecks?: boolean;
   installability_errors: string[];
   manifestStatus: UrlStatus;
@@ -33,18 +30,7 @@ type PwaDebugResponseData = {
   startUrlStatus: UrlStatus | null;
   icon192Status: UrlStatus | null;
   icon512Status: UrlStatus | null;
-  swAllowedHeader: string | null;
   serviceWorkerScopeExpected: string;
-  domainVariantApex: {
-    ok: boolean;
-    status: number | null;
-    finalHost: string | null;
-  } | null;
-  domainVariantWww: {
-    ok: boolean;
-    status: number | null;
-    finalHost: string | null;
-  } | null;
   wwwRedirectConflict: boolean;
   diagnostics?: {
     hasServiceWorkerAllowedMismatch?: boolean;
@@ -54,11 +40,17 @@ type PwaDebugResponseData = {
     hasServiceWorkerFetchError?: boolean;
     hasMissingOrInvalidIcons?: boolean;
   };
+  manifestUrl?: string;
+  swUrl?: string;
+  scope?: string | null;
+  expectedStartUrl?: string | null;
 };
 
 interface PwaAuditChecklistProps {
   appId: string;
   customDomain?: string | null;
+  appConfigured: boolean;
+  appStatus: 'DRAFT' | 'QUEUED' | 'GENERATING' | 'STAGED' | 'PUBLISHED' | 'FAILED';
 }
 
 function parseApiData(payload: unknown): PwaDebugResponseData | null {
@@ -68,62 +60,70 @@ function parseApiData(payload: unknown): PwaDebugResponseData | null {
   return wrapped.data as PwaDebugResponseData;
 }
 
-export default function PwaAuditChecklist({ appId, customDomain }: PwaAuditChecklistProps) {
+function getBadge(pass: boolean): { text: string; className: string } {
+  if (pass) {
+    return {
+      text: 'Listo',
+      className: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300',
+    };
+  }
+
+  return {
+    text: 'Requiere atencion',
+    className: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300',
+  };
+}
+
+export default function PwaAuditChecklist({
+  appId,
+  customDomain,
+  appConfigured,
+  appStatus,
+}: PwaAuditChecklistProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [data, setData] = useState<PwaDebugResponseData | null>(null);
   const [fixMessage, setFixMessage] = useState<string | null>(null);
-  const [isApplyingFix, setIsApplyingFix] = useState(false);
+  const [isAutoRepairing, setIsAutoRepairing] = useState(false);
+  const [showTechnical, setShowTechnical] = useState(false);
+
+  const load = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const params = new URLSearchParams();
+      if (customDomain) {
+        params.set('host', customDomain);
+      }
+
+      const response = await fetch(`/api/apps/${appId}/pwa-debug?${params.toString()}`, {
+        cache: 'no-store',
+      });
+
+      const payload = await response.json();
+
+      if (!response.ok) {
+        throw new Error((payload && payload.error) || 'No se pudo verificar el estado de la app');
+      }
+
+      const parsed = parseApiData(payload);
+      if (!parsed) {
+        throw new Error('Respuesta invalida del estado de la app');
+      }
+
+      setData(parsed);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error de verificacion');
+    } finally {
+      setLoading(false);
+    }
+  }, [appId, customDomain]);
 
   useEffect(() => {
-    let active = true;
-
-    const load = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-
-        const params = new URLSearchParams();
-        if (customDomain) {
-          params.set('host', customDomain);
-        }
-
-        const response = await fetch(`/api/apps/${appId}/pwa-debug?${params.toString()}`, {
-          cache: 'no-store',
-        });
-
-        const payload = await response.json();
-
-        if (!response.ok) {
-          throw new Error((payload && payload.error) || 'No se pudo auditar la PWA');
-        }
-
-        const parsed = parseApiData(payload);
-        if (!parsed) {
-          throw new Error('Respuesta inválida del endpoint de auditoría');
-        }
-
-        if (active) {
-          setData(parsed);
-        }
-      } catch (err) {
-        if (active) {
-          setError(err instanceof Error ? err.message : 'Error de auditoría');
-        }
-      } finally {
-        if (active) {
-          setLoading(false);
-        }
-      }
-    };
-
     load().catch(() => {});
-
-    return () => {
-      active = false;
-    };
-  }, [appId, customDomain]);
+  }, [load]);
 
   const checks = useMemo<StatusCheck[]>(() => {
     if (!data) return [];
@@ -134,92 +134,157 @@ export default function PwaAuditChecklist({ appId, customDomain }: PwaAuditCheck
       item.includes('Service-Worker-Allowed mismatch') || item.includes('outside expected scope')
     );
 
-    const httpsCheck: StatusCheck = {
-      label: 'HTTPS operativo',
-      pass: Boolean(data.manifestStatus.ok && data.swUrlStatus.ok),
-      detail: isImportMode
-        ? 'Validado en sitio objetivo/importado'
-        : data.useRootDomainAudit
-        ? 'Validado en raíz del dominio custom'
-        : 'Validado en ruta de preview (no usada como start_url final)',
-    };
-
-    const manifestCheck: StatusCheck = {
-      label: 'Manifest accesible',
-      pass: Boolean(data.manifestStatus.ok),
-      detail: data.manifestStatus.ok
-        ? `HTTP ${data.manifestStatus.status}`
-        : `Error ${data.manifestStatus.status ?? 'de red'}`,
-    };
-
-    const swCheck: StatusCheck = {
-      label: 'Service worker accesible',
-      pass: Boolean(data.swUrlStatus.ok),
-      detail: data.swUrlStatus.ok
-        ? `HTTP ${data.swUrlStatus.status}`
-        : `Error ${data.swUrlStatus.status ?? 'de red'}`,
-    };
-
-    const icon192Check: StatusCheck = {
-      label: 'Ícono 192x192 válido',
-      pass: Boolean(data.icon192Status?.ok),
-      detail: data.icon192Status
-        ? (data.icon192Status.ok ? `HTTP ${data.icon192Status.status}` : `Error ${data.icon192Status.status ?? 'de red'}`)
-        : 'No detectado',
-    };
-
-    const icon512Check: StatusCheck = {
-      label: 'Ícono 512x512 válido',
-      pass: Boolean(data.icon512Status?.ok),
-      detail: data.icon512Status
-        ? (data.icon512Status.ok ? `HTTP ${data.icon512Status.status}` : `Error ${data.icon512Status.status ?? 'de red'}`)
-        : 'No detectado',
-    };
-
-    const startUrlCheck: StatusCheck = {
-      label: 'start_url resolvible',
-      pass: Boolean(data.startUrlStatus?.ok),
-      detail: data.startUrlStatus
-        ? (data.startUrlStatus.ok ? `HTTP ${data.startUrlStatus.status}` : `Error ${data.startUrlStatus.status ?? 'de red'}`)
-        : 'No detectado',
-    };
-
-    const scopeCheck: StatusCheck = {
-      label: 'scope/start_url sin conflicto',
-      pass: isImportMode ? true : !hasScopeMismatch,
-      detail: isImportMode
-        ? 'No aplica en modo Import (usa PWA del sitio original)'
-        : hasScopeMismatch
-        ? 'Hay conflicto de scope o Service-Worker-Allowed'
-        : `Scope esperado: ${data.serviceWorkerScopeExpected}`,
-    };
-
-    const wwwCheck: StatusCheck = {
-      label: 'Sin conflicto www/non-www',
-      pass: !data.wwwRedirectConflict,
-      detail: data.domainVariantApex && data.domainVariantWww
-        ? `Apex -> ${data.domainVariantApex.finalHost || 'n/a'} | WWW -> ${data.domainVariantWww.finalHost || 'n/a'}`
-        : 'No aplica (sin dominio custom)',
-    };
-
     return [
-      httpsCheck,
-      manifestCheck,
-      swCheck,
-      icon192Check,
-      icon512Check,
-      startUrlCheck,
-      scopeCheck,
-      wwwCheck,
+      {
+        label: 'Archivo de instalacion listo',
+        pass: Boolean(data.manifestStatus.ok),
+        detail: data.manifestStatus.ok ? 'Correcto' : 'Requiere atencion',
+      },
+      {
+        label: 'Modo app activo',
+        pass: Boolean(data.swUrlStatus.ok),
+        detail: data.swUrlStatus.ok ? 'Correcto' : 'Requiere atencion',
+      },
+      {
+        label: 'Conexion segura',
+        pass: Boolean(data.manifestStatus.ok && data.swUrlStatus.ok),
+        detail: data.manifestStatus.ok && data.swUrlStatus.ok ? 'Correcto' : 'Requiere atencion',
+      },
+      {
+        label: 'Icono pequeno listo',
+        pass: Boolean(data.icon192Status?.ok),
+        detail: data.icon192Status?.ok ? 'Correcto' : 'Requiere atencion',
+      },
+      {
+        label: 'Icono grande listo',
+        pass: Boolean(data.icon512Status?.ok),
+        detail: data.icon512Status?.ok ? 'Correcto' : 'Requiere atencion',
+      },
+      {
+        label: 'Pantalla inicial lista',
+        pass: Boolean(data.startUrlStatus?.ok),
+        detail: data.startUrlStatus?.ok ? 'Correcto' : 'Requiere atencion',
+      },
+      {
+        label: 'Navegacion correcta',
+        pass: isImportMode ? true : !hasScopeMismatch,
+        detail: isImportMode || !hasScopeMismatch ? 'Correcto' : 'Requiere atencion',
+      },
     ];
   }, [data]);
+
+  const checklist = useMemo(() => {
+    const iconReady = Boolean(data?.icon192Status?.ok && data?.icon512Status?.ok);
+    const installReady = Boolean(
+      data?.manifestStatus?.ok &&
+      data?.swUrlStatus?.ok &&
+      data?.startUrlStatus?.ok &&
+      checks.find((check) => check.label === 'Navegacion correcta')?.pass
+    );
+
+    return [
+      { label: 'App configurada', pass: appConfigured, optional: false },
+      { label: 'Iconos listos', pass: iconReady, optional: false },
+      { label: 'Instalacion lista', pass: installReady, optional: false },
+      { label: 'Vista movil correcta', pass: true, optional: false },
+      { label: 'Publicacion lista', pass: appStatus === 'PUBLISHED', optional: false },
+      { label: 'Dominio opcional', pass: Boolean(customDomain), optional: true },
+    ];
+  }, [appConfigured, appStatus, checks, customDomain, data?.icon192Status?.ok, data?.icon512Status?.ok, data?.manifestStatus?.ok, data?.startUrlStatus?.ok, data?.swUrlStatus?.ok]);
+
+  const autoRepair = async () => {
+    if (!data) return;
+
+    const canUseImport =
+      data.pwaMode !== 'IMPORT' &&
+      (data.importCandidateDetected || Boolean(data.importedManifestUrl && data.importedSwUrl));
+
+    const needsGeneratorNormalization = Boolean(
+      data.pwaMode !== 'IMPORT' &&
+      data.enforceGeneratorScopeChecks &&
+      (
+        data.diagnostics?.hasServiceWorkerAllowedMismatch ||
+        data.diagnostics?.hasStartUrlOutsideScope ||
+        data.diagnostics?.hasStartUrlFetchError
+      )
+    );
+
+    const needsAssetRegeneration = Boolean(
+      data.diagnostics?.hasManifestFetchError ||
+      data.diagnostics?.hasServiceWorkerFetchError ||
+      data.diagnostics?.hasMissingOrInvalidIcons
+    );
+
+    try {
+      setFixMessage(null);
+      setIsAutoRepairing(true);
+
+      if (canUseImport && (needsGeneratorNormalization || data.wwwRedirectConflict)) {
+        const response = await fetch(`/api/apps/${appId}`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            pwaMode: 'IMPORT',
+            pwaModeManual: true,
+          }),
+        });
+        const payload = await response.json();
+        if (!response.ok) throw new Error(payload?.error || 'No se pudo cambiar al modo recomendado');
+        setFixMessage('Reparacion aplicada: se uso el modo recomendado para evitar conflictos.');
+      } else if (needsAssetRegeneration || needsGeneratorNormalization) {
+        const regenerate = await fetch(`/api/apps/${appId}/pwa-regenerate`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ forceGenerator: true }),
+        });
+        const regenPayload = await regenerate.json();
+        if (!regenerate.ok) throw new Error(regenPayload?.error || 'No se pudo reparar la configuracion PWA');
+
+        await fetch(`/api/apps/${appId}`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            pwaModeManual: false,
+          }),
+        });
+
+        setFixMessage('Reparacion aplicada: se corrigieron recursos y configuracion automaticamente.');
+      } else {
+        const response = await fetch(`/api/apps/${appId}`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            pwaModeManual: false,
+          }),
+        });
+        const payload = await response.json();
+        if (!response.ok) throw new Error(payload?.error || 'No se pudo activar reparacion automatica');
+        setFixMessage('La app ya estaba estable. Se dejo la estrategia automatica activa.');
+      }
+
+      await load();
+      router.refresh();
+    } catch (err) {
+      setFixMessage(err instanceof Error ? err.message : 'No se pudo completar la reparacion');
+    } finally {
+      setIsAutoRepairing(false);
+    }
+  };
 
   if (loading) {
     return (
       <div className="rounded-2xl bg-white p-5 shadow-sm ring-1 ring-gray-200 dark:bg-gray-900 dark:ring-gray-800">
         <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300">
           <Loader2 className="h-4 w-4 animate-spin" />
-          Auditando installabilidad PWA...
+          Revisando el estado de tu app...
         </div>
       </div>
     );
@@ -228,96 +293,12 @@ export default function PwaAuditChecklist({ appId, customDomain }: PwaAuditCheck
   if (error) {
     return (
       <div className="rounded-2xl border border-red-200 bg-red-50 p-5 text-sm text-red-700 dark:border-red-900 dark:bg-red-950/20 dark:text-red-300">
-        Error de auditoría: {error}
+        No se pudo cargar el estado: {error}
       </div>
     );
   }
 
-  if (!data) {
-    return null;
-  }
-
-  const canForceImport =
-    data.pwaMode !== 'IMPORT' &&
-    data.importCandidateDetected ||
-    (data.pwaMode !== 'IMPORT' && Boolean(data.importedManifestUrl && data.importedSwUrl));
-
-  const needsGeneratorNormalization = Boolean(
-    data.pwaMode !== 'IMPORT' && data.enforceGeneratorScopeChecks && (
-      data.diagnostics?.hasServiceWorkerAllowedMismatch ||
-      data.diagnostics?.hasStartUrlOutsideScope ||
-      data.diagnostics?.hasStartUrlFetchError
-    )
-  );
-
-  const needsAssetRegeneration = Boolean(
-    data.diagnostics?.hasManifestFetchError ||
-    data.diagnostics?.hasServiceWorkerFetchError ||
-    data.diagnostics?.hasMissingOrInvalidIcons
-  );
-
-  const applyFix = async (mode: 'GENERATOR' | 'IMPORT') => {
-    try {
-      setFixMessage(null);
-      setIsApplyingFix(true);
-
-      const response = await fetch(`/api/apps/${appId}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          pwaMode: mode,
-          pwaModeManual: true,
-        }),
-      });
-
-      const payload = await response.json();
-      if (!response.ok) {
-        throw new Error(payload?.error || 'No se pudo aplicar el fix');
-      }
-
-      setFixMessage(
-        mode === 'GENERATOR'
-          ? 'Fix aplicado: modo GENERATOR manual.'
-          : 'Fix aplicado: modo IMPORT manual.'
-      );
-      router.refresh();
-    } catch (err) {
-      setFixMessage(err instanceof Error ? err.message : 'Error al aplicar fix');
-    } finally {
-      setIsApplyingFix(false);
-    }
-  };
-
-  const applyAutoDetect = async () => {
-    try {
-      setFixMessage(null);
-      setIsApplyingFix(true);
-
-      const response = await fetch(`/api/apps/${appId}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          pwaModeManual: false,
-        }),
-      });
-
-      const payload = await response.json();
-      if (!response.ok) {
-        throw new Error(payload?.error || 'No se pudo activar modo AUTO');
-      }
-
-      setFixMessage('Fix aplicado: modo AUTO (deteccion en publish).');
-      router.refresh();
-    } catch (err) {
-      setFixMessage(err instanceof Error ? err.message : 'Error al activar modo AUTO');
-    } finally {
-      setIsApplyingFix(false);
-    }
-  };
+  if (!data) return null;
 
   const passed = checks.filter((check) => check.pass).length;
   const total = checks.length;
@@ -325,103 +306,109 @@ export default function PwaAuditChecklist({ appId, customDomain }: PwaAuditCheck
   return (
     <div className="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-gray-200 dark:bg-gray-900 dark:ring-gray-800">
       <div className="border-b border-gray-200 px-6 py-5 dark:border-gray-800">
-        <h3 className="text-lg font-medium leading-6 text-gray-900 dark:text-white">Auditoría PWA</h3>
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Estado de la App</h3>
         <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-          {passed}/{total} checks aprobados · Modo {data.pwaMode} ({data.pwaModeManual ? 'manual' : 'auto'})
+          {passed}/{total} validaciones en estado listo
         </p>
       </div>
 
       <ul className="divide-y divide-gray-200 dark:divide-gray-800">
-        {checks.map((check) => (
-          <li key={check.label} className="px-6 py-4">
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <p className="text-sm font-medium text-gray-900 dark:text-white">{check.label}</p>
-                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">{check.detail}</p>
+        {checks.map((check) => {
+          const badge = getBadge(check.pass);
+
+          return (
+            <li key={check.label} className="px-6 py-4">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <p className="text-sm font-medium text-gray-900 dark:text-white">{check.label}</p>
+                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">{check.detail}</p>
+                </div>
+
+                <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-semibold ${badge.className}`}>
+                  {badge.text}
+                </span>
               </div>
-              <span className={check.pass ? 'text-emerald-600' : 'text-amber-600'}>
-                {check.pass ? <CheckCircle2 className="h-5 w-5" /> : <AlertTriangle className="h-5 w-5" />}
-              </span>
-            </div>
-          </li>
-        ))}
+            </li>
+          );
+        })}
       </ul>
 
-      {data.installability_errors.length > 0 ? (
-        <div className="border-t border-amber-200 bg-amber-50 px-6 py-4 dark:border-amber-900 dark:bg-amber-950/20">
-          <p className="text-xs font-semibold text-amber-800 dark:text-amber-300">Issues detectados</p>
-          <div className="mt-2 space-y-1 text-xs text-amber-700 dark:text-amber-300">
-            {data.installability_errors.map((item) => (
-              <p key={item}>- {item}</p>
-            ))}
-          </div>
+      <div className="border-t border-gray-200 bg-gray-50 px-6 py-5 dark:border-gray-800 dark:bg-gray-950/30">
+        <h4 className="text-sm font-semibold text-gray-900 dark:text-white">Checklist visual</h4>
+        <div className="mt-3 grid gap-2 sm:grid-cols-2">
+          {checklist.map((item) => {
+            const pass = item.pass;
+            const badge = item.optional && !pass
+              ? {
+                  text: 'Opcional',
+                  className: 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300',
+                }
+              : getBadge(pass);
 
-          <div className="mt-3 space-y-2 text-xs text-amber-800 dark:text-amber-200">
-            {needsGeneratorNormalization ? (
-              <p>
-                Sugerencia: hay conflicto de <strong>scope/start_url/SW-Allowed</strong>. Recomendado aplicar <strong>Fix 1</strong> para normalizar Generator.
-              </p>
-            ) : null}
-            {canForceImport ? (
-              <p>
-                Sugerencia: se detecta PWA existente. Puedes aplicar <strong>Fix 2</strong> para gestionarla como Import sin doble wrapper.
-              </p>
-            ) : null}
-            {needsAssetRegeneration ? (
-              <p>
-                Sugerencia: faltan assets PWA (manifest/sw/iconos). Activa <strong>AUTO</strong> para redetectar al publicar o fuerza Generator.
-              </p>
-            ) : null}
-          </div>
-
-          <div className="mt-3 flex flex-wrap gap-2">
-            <button
-              type="button"
-              onClick={() => applyFix('GENERATOR')}
-              disabled={isApplyingFix}
-              className="inline-flex items-center rounded-lg bg-blue-600 px-3 py-2 text-xs font-semibold text-white hover:bg-blue-700 disabled:opacity-60"
-            >
-              Fix 1: Normalizar a Generator
-            </button>
-            <button
-              type="button"
-              onClick={() => applyFix('IMPORT')}
-              disabled={isApplyingFix || !canForceImport}
-              className="inline-flex items-center rounded-lg bg-emerald-600 px-3 py-2 text-xs font-semibold text-white hover:bg-emerald-700 disabled:opacity-60"
-            >
-              Fix 2: Cambiar a Import
-            </button>
-            <button
-              type="button"
-              onClick={applyAutoDetect}
-              disabled={isApplyingFix}
-              className="inline-flex items-center rounded-lg bg-slate-700 px-3 py-2 text-xs font-semibold text-white hover:bg-slate-800 disabled:opacity-60"
-            >
-              Auto-fix: Activar AUTO
-            </button>
-          </div>
-
-          {fixMessage ? (
-            <p className="mt-2 text-xs text-amber-800 dark:text-amber-200">{fixMessage}</p>
-          ) : null}
+            return (
+              <div key={item.label} className="flex items-center justify-between rounded-xl border border-gray-200 bg-white px-3 py-2 dark:border-gray-800 dark:bg-gray-900">
+                <span className="text-sm text-gray-700 dark:text-gray-300">{item.label}</span>
+                <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${badge.className}`}>
+                  {badge.text}
+                </span>
+              </div>
+            );
+          })}
         </div>
-      ) : null}
+      </div>
 
-      {data.wwwRedirectConflict ? (
-        <div className="border-t border-red-200 bg-red-50 px-6 py-4 dark:border-red-900 dark:bg-red-950/20">
-          <p className="text-xs font-semibold text-red-800 dark:text-red-300">
-            Fix 3: Conflicto www/non-www detectado
+      <div className="border-t border-gray-200 px-6 py-4 dark:border-gray-800">
+        <button
+          type="button"
+          onClick={autoRepair}
+          disabled={isAutoRepairing}
+          className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-60"
+        >
+          {isAutoRepairing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wrench className="h-4 w-4" />}
+          Reparar automaticamente
+        </button>
+
+        {fixMessage ? <p className="mt-2 text-xs text-gray-600 dark:text-gray-300">{fixMessage}</p> : null}
+
+        {data.installability_errors.length > 0 ? (
+          <p className="mt-2 inline-flex items-center gap-1 text-xs text-amber-700 dark:text-amber-300">
+            <AlertTriangle className="h-3.5 w-3.5" />
+            Se detectaron ajustes tecnicos pendientes. Puedes corregirlos con reparacion automatica.
           </p>
-          <div className="mt-2 space-y-1 text-xs text-red-700 dark:text-red-300">
-            <p>- Define un canónico único (recomendado: apex sin www o solo www).</p>
-            <p>- Configura redirect 301 del host secundario al canónico.</p>
-            <p>- Mantén manifest/scope/start_url en el mismo host canónico.</p>
-            <p>
-              - Verificado: apex -&gt; {data.domainVariantApex?.finalHost || 'n/a'} | www -&gt; {data.domainVariantWww?.finalHost || 'n/a'}
-            </p>
+        ) : (
+          <p className="mt-2 inline-flex items-center gap-1 text-xs text-emerald-700 dark:text-emerald-300">
+            <CheckCircle2 className="h-3.5 w-3.5" />
+            Todo listo para instalar y publicar.
+          </p>
+        )}
+      </div>
+
+      <div className="border-t border-gray-200 px-6 py-4 dark:border-gray-800">
+        <button
+          type="button"
+          onClick={() => setShowTechnical((value) => !value)}
+          className="text-sm font-medium text-gray-700 underline decoration-dotted underline-offset-4 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white"
+        >
+          {showTechnical ? 'Ocultar detalles tecnicos' : 'Ver detalles tecnicos'}
+        </button>
+
+        {showTechnical ? (
+          <div className="mt-3 rounded-xl border border-gray-200 bg-gray-50 p-4 text-xs text-gray-700 dark:border-gray-800 dark:bg-gray-950 dark:text-gray-300">
+            <div className="grid gap-2 sm:grid-cols-2">
+              <p>manifest_url: {data.manifestUrl || data.manifestStatus.url || 'n/a'}</p>
+              <p>service_worker_url: {data.swUrl || data.swUrlStatus.url || 'n/a'}</p>
+              <p>scope: {data.scope || data.serviceWorkerScopeExpected || 'n/a'}</p>
+              <p>start_url: {data.expectedStartUrl || data.startUrlStatus?.url || 'n/a'}</p>
+              <p>modo_pwa: {data.pwaMode}</p>
+              <p>http_manifest: {data.manifestStatus.status ?? 'n/a'}</p>
+              <p>http_service_worker: {data.swUrlStatus.status ?? 'n/a'}</p>
+              <p>http_start_url: {data.startUrlStatus?.status ?? 'n/a'}</p>
+              <p>http_icon_192: {data.icon192Status?.status ?? 'n/a'}</p>
+              <p>http_icon_512: {data.icon512Status?.status ?? 'n/a'}</p>
+            </div>
           </div>
-        </div>
-      ) : null}
+        ) : null}
+      </div>
     </div>
   );
 }
