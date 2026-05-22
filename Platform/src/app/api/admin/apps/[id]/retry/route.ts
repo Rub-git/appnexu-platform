@@ -9,6 +9,7 @@ import { prisma } from '@/lib/prisma';
 import { apiError, apiSuccess } from '@/lib/api-utils';
 import { enqueueGenerateJob } from '@/lib/queue';
 import { logger } from '@/lib/logger';
+import { invalidateAppProjectCaches } from '@/lib/app-project-cache';
 
 export async function POST(
   request: Request,
@@ -43,6 +44,8 @@ export async function POST(
         failureReason: null,
       },
     });
+
+    await invalidateAppProjectCaches(app.userId);
 
     // Enqueue generation job
     const deduplicationId = `admin-retry-${id}-${Date.now()}`;

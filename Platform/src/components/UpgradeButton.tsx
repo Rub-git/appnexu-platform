@@ -80,6 +80,7 @@ export default function UpgradeButton({ targetPlan, currentPlan }: UpgradeButton
 
   const Icon = targetPlan === 'AGENCY' ? Crown : Zap;
   const planPricing = targetPlan === 'PRO' ? '$19/mo' : '$49/mo';
+  const planLabel = targetPlan === 'AGENCY' ? 'Business' : 'Pro';
 
   return (
     <div>
@@ -114,7 +115,7 @@ export default function UpgradeButton({ targetPlan, currentPlan }: UpgradeButton
         )}
         {isLoading
           ? t('common.loading')
-          : `${t('settings.plan.upgradeTo')} ${t(`settings.plan.${targetPlan.toLowerCase()}`)} - ${planPricing}`}
+          : `${t('settings.plan.upgradeTo')} ${planLabel} - ${planPricing}`}
       </button>
     </div>
   );

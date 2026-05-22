@@ -2,6 +2,7 @@ import { requireAdmin } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { apiError, apiSuccess } from '@/lib/api-utils';
 import { logger } from '@/lib/logger';
+import { invalidateAppProjectCaches } from '@/lib/app-project-cache';
 
 // DELETE /api/admin/apps/[id]/domain - Admin can release a reserved custom domain
 export async function DELETE(
@@ -21,7 +22,7 @@ export async function DELETE(
 
     const app = await prisma.appProject.findUnique({
       where: { id },
-      select: { id: true, appName: true, customDomain: true },
+      select: { id: true, userId: true, appName: true, customDomain: true },
     });
 
     if (!app) {
@@ -32,6 +33,8 @@ export async function DELETE(
       where: { id },
       data: { customDomain: null },
     });
+
+    await invalidateAppProjectCaches(app.userId);
 
     logger.info('admin.domain', 'Admin released custom domain', {
       adminId: admin.id,

@@ -5,12 +5,14 @@ import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { redirect } from 'next/navigation';
 import { Link } from '@/i18n/routing';
-import { LayoutDashboard, PlusCircle, Settings, Shield, LayoutTemplate } from 'lucide-react';
+import { LayoutDashboard, PlusCircle, Settings, Shield, LayoutTemplate, CreditCard } from 'lucide-react';
 import SignOutButton from '@/components/SignOutButton';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 import Logo from '@/components/Logo';
 import ServiceWorkerRegistration from '@/components/ServiceWorkerRegistration';
 import { brand } from '@/config/brand';
+import { canCreateApp } from '@/lib/auth';
+import SoftLimitNotice from '@/components/SoftLimitNotice';
 
 export const metadata: Metadata = {
   applicationName: brand.name,
@@ -53,9 +55,10 @@ export default async function DashboardLayout({
   // Check if user is admin (for showing admin link)
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
-    select: { role: true },
+    select: { role: true, name: true },
   });
   const isAdmin = user?.role === 'ADMIN';
+  const appLimitInfo = await canCreateApp(session.user.id);
 
   return (
     <div className="flex min-h-screen flex-col bg-slate-50 md:flex-row dark:bg-black">
@@ -102,6 +105,13 @@ export default async function DashboardLayout({
                 <Settings className="mr-3 h-5 w-5 text-gray-500 dark:text-gray-400" />
                 {t('nav.settings')}
               </Link>
+              <Link
+                href="/billing"
+                className="flex items-center rounded-xl px-3 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-white"
+              >
+                <CreditCard className="mr-3 h-5 w-5 text-gray-500 dark:text-gray-400" />
+                Billing
+              </Link>
               {isAdmin && (
                 <Link
                   href="/admin"
@@ -126,7 +136,7 @@ export default async function DashboardLayout({
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
-                  {session.user.name || session.user.email}
+                  {user?.name || session.user.name || session.user.email}
                 </p>
               </div>
             </div>
@@ -139,6 +149,13 @@ export default async function DashboardLayout({
       <main className="flex-1 overflow-y-auto">
         <div className="py-6">
           <div className="mx-auto max-w-7xl px-4 sm:px-6 md:px-8">
+            {appLimitInfo.softLimitReached && appLimitInfo.limit > 0 ? (
+              <SoftLimitNotice
+                plan={appLimitInfo.plan as 'FREE' | 'PRO' | 'AGENCY'}
+                current={appLimitInfo.current}
+                limit={appLimitInfo.limit}
+              />
+            ) : null}
             {children}
           </div>
         </div>

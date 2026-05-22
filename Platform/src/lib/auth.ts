@@ -178,7 +178,14 @@ export const PLAN_LIMITS = {
 } as const;
 
 // Check if user can create more apps
-export async function canCreateApp(userId: string): Promise<{ allowed: boolean; limit: number; current: number; plan: string }> {
+export async function canCreateApp(userId: string): Promise<{
+  allowed: boolean;
+  limit: number;
+  current: number;
+  plan: string;
+  remaining: number;
+  softLimitReached: boolean;
+}> {
   const user = await prisma.user.findUnique({
     where: { id: userId },
     include: {
@@ -189,16 +196,22 @@ export async function canCreateApp(userId: string): Promise<{ allowed: boolean; 
   });
 
   if (!user) {
-    return { allowed: false, limit: 0, current: 0, plan: 'FREE' };
+    return { allowed: false, limit: 0, current: 0, plan: 'FREE', remaining: 0, softLimitReached: false };
   }
 
   const limit = PLAN_LIMITS[user.plan] ?? PLAN_LIMITS.FREE;
   const current = user._count.apps;
 
+  const normalizedLimit = limit === Infinity ? -1 : limit;
+  const remaining = normalizedLimit === -1 ? -1 : Math.max(normalizedLimit - current, 0);
+  const ratio = normalizedLimit <= 0 ? 0 : current / normalizedLimit;
+
   return {
     allowed: current < limit,
-    limit: limit === Infinity ? -1 : limit,
+    limit: normalizedLimit,
     current,
     plan: user.plan,
+    remaining,
+    softLimitReached: normalizedLimit !== -1 && ratio >= 0.8,
   };
 }

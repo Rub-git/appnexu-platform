@@ -13,9 +13,18 @@ config({ path: '.env.local' });
 config(); // also load .env
 
 import { PrismaClient } from '@prisma/client';
+import { PrismaPg } from '@prisma/adapter-pg';
 import bcrypt from 'bcryptjs';
 
-const prisma = new PrismaClient();
+const connectionString = process.env.DATABASE_URL;
+
+if (!connectionString) {
+  throw new Error('DATABASE_URL is required to run seed.');
+}
+
+const prisma = new PrismaClient({
+  adapter: new PrismaPg({ connectionString }),
+});
 
 async function main() {
   if (process.env.NODE_ENV === 'production') {
@@ -151,6 +160,79 @@ async function main() {
     },
   });
   console.log(`✅ App (FREE user): ${freeApp.appName} — at plan limit`);
+
+  // 4. Seed billing catalog and limits
+  const starter = await prisma.billingPlan.upsert({
+    where: { key: 'starter' },
+    update: {
+      displayName: 'Starter',
+      appLimit: 1,
+      isActive: true,
+      sortOrder: 1,
+    },
+    create: {
+      key: 'starter',
+      displayName: 'Starter',
+      cycle: 'MONTHLY',
+      appLimit: 1,
+      isActive: true,
+      sortOrder: 1,
+    },
+  });
+
+  const pro = await prisma.billingPlan.upsert({
+    where: { key: 'pro' },
+    update: {
+      displayName: 'Pro',
+      appLimit: 10,
+      isActive: true,
+      sortOrder: 2,
+    },
+    create: {
+      key: 'pro',
+      displayName: 'Pro',
+      cycle: 'MONTHLY',
+      appLimit: 10,
+      isActive: true,
+      sortOrder: 2,
+    },
+  });
+
+  const business = await prisma.billingPlan.upsert({
+    where: { key: 'business' },
+    update: {
+      displayName: 'Business',
+      appLimit: null,
+      isActive: true,
+      sortOrder: 3,
+    },
+    create: {
+      key: 'business',
+      displayName: 'Business',
+      cycle: 'MONTHLY',
+      appLimit: null,
+      isActive: true,
+      sortOrder: 3,
+    },
+  });
+
+  await prisma.billingPlanLimit.upsert({
+    where: { planId_metricKey: { planId: starter.id, metricKey: 'apps' } },
+    update: { softLimit: 1, hardLimit: 1 },
+    create: { planId: starter.id, metricKey: 'apps', softLimit: 1, hardLimit: 1 },
+  });
+  await prisma.billingPlanLimit.upsert({
+    where: { planId_metricKey: { planId: pro.id, metricKey: 'apps' } },
+    update: { softLimit: 8, hardLimit: 10 },
+    create: { planId: pro.id, metricKey: 'apps', softLimit: 8, hardLimit: 10 },
+  });
+  await prisma.billingPlanLimit.upsert({
+    where: { planId_metricKey: { planId: business.id, metricKey: 'apps' } },
+    update: { softLimit: null, hardLimit: null },
+    create: { planId: business.id, metricKey: 'apps', softLimit: null, hardLimit: null },
+  });
+
+  console.log('✅ Billing catalog: Starter / Pro / Business');
 
   console.log('\n🎉 Seeding complete!\n');
   console.log('Login credentials:');

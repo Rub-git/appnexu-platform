@@ -16,6 +16,7 @@ import { NextRequest } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { apiError, apiSuccess } from '@/lib/api-utils';
 import { logger } from '@/lib/logger';
+import { invalidateAppProjectCaches } from '@/lib/app-project-cache';
 
 export async function POST(request: NextRequest) {
   try {
@@ -56,7 +57,7 @@ export async function POST(request: NextRequest) {
 
     const app = await prisma.appProject.findUnique({
       where: { id: appId },
-      select: { id: true, apkBuildStatus: true },
+      select: { id: true, userId: true, apkBuildStatus: true },
     });
 
     if (!app) {
@@ -80,6 +81,8 @@ export async function POST(request: NextRequest) {
         },
       });
 
+      await invalidateAppProjectCaches(app.userId);
+
       logger.info('apk-build-complete', 'APK build completed', {
         appId,
         apkUrl,
@@ -97,6 +100,8 @@ export async function POST(request: NextRequest) {
         apkErrorMessage: error || 'APK build failed',
       },
     });
+
+    await invalidateAppProjectCaches(app.userId);
 
     logger.warn('apk-build-complete', 'APK build failed', {
       appId,

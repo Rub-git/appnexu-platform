@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { apiError, apiSuccess } from "@/lib/api-utils";
 import { logger } from "@/lib/logger";
 import { enqueueGenerateJob, MAX_RETRIES } from "@/lib/queue";
+import { invalidateAppProjectCaches } from '@/lib/app-project-cache';
 
 /**
  * POST /api/apps/[id]/retry
@@ -61,6 +62,8 @@ export async function POST(
         failureReason: null,
       },
     });
+
+    await invalidateAppProjectCaches(session.user.id);
 
     // Enqueue retry job
     const nextAttempt = app.retryCount + 1;

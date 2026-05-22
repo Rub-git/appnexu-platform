@@ -20,6 +20,7 @@ import { prisma } from '@/lib/prisma';
 import { apiError, apiSuccess } from '@/lib/api-utils';
 import { logger } from '@/lib/logger';
 import { NextRequest } from 'next/server';
+import { invalidateAppProjectCaches } from '@/lib/app-project-cache';
 
 export async function POST(request: NextRequest) {
   try {
@@ -70,7 +71,7 @@ export async function POST(request: NextRequest) {
     // ── Verify the app exists and is still BUILDING ───────────────
     const app = await prisma.appProject.findUnique({
       where: { id: app_id },
-      select: { id: true, apkBuildStatus: true, appName: true },
+      select: { id: true, userId: true, apkBuildStatus: true, appName: true },
     });
 
     if (!app) {
@@ -100,6 +101,8 @@ export async function POST(request: NextRequest) {
         },
       });
 
+      await invalidateAppProjectCaches(app.userId);
+
       logger.info('apk-callback', 'APK build marked READY', {
         app_id,
         download_url,
@@ -113,6 +116,8 @@ export async function POST(request: NextRequest) {
           apkErrorMessage: error_message ?? 'Build failed',
         },
       });
+
+      await invalidateAppProjectCaches(app.userId);
 
       logger.warn('apk-callback', 'APK build marked FAILED', {
         app_id,

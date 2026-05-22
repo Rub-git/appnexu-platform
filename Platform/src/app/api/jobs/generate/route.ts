@@ -6,6 +6,8 @@ import { MAX_RETRIES, enqueueGenerateJob, resolveAppBaseUrl } from "@/lib/queue"
 import type { GenerateJobPayload } from "@/lib/queue";
 import { trackEvent } from "@/lib/analytics";
 import { scanPwaAssets, type PwaAssetScanResult } from "@/lib/pwa-discovery";
+import { trackBillingUsage } from '@/lib/billing-usage';
+import { invalidateAppProjectCaches } from '@/lib/app-project-cache';
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 30; // Allow up to 30s for generation
@@ -256,6 +258,15 @@ export async function POST(request: Request) {
       eventType: 'PUBLISHED',
       metadata: { slug: app.slug, attempt },
     });
+
+    await trackBillingUsage({
+      userId,
+      appId,
+      metricKey: 'apps_published',
+      metadata: { slug: app.slug, attempt },
+    });
+
+    await invalidateAppProjectCaches(userId);
 
     logger.info("jobs.generate", "App published successfully", {
       appId,

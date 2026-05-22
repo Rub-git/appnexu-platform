@@ -3,6 +3,7 @@ import { auth } from '@/lib/auth';
 import { customDomainSchema, formatZodErrors } from '@/lib/validations';
 import { apiError, apiSuccess } from '@/lib/api-utils';
 import { logger } from '@/lib/logger';
+import { invalidateAppProjectCaches } from '@/lib/app-project-cache';
 import {
   getNormalizedHostnameFromUrl,
   getCustomDomainCandidates,
@@ -118,6 +119,8 @@ export async function PATCH(
       },
     });
 
+    await invalidateAppProjectCaches(session.user.id);
+
     logger.info('domain', 'Custom domain updated', {
       userId: session.user.id,
       appId: id,
@@ -166,6 +169,8 @@ export async function DELETE(
       where: { id },
       data: { customDomain: null },
     });
+
+    await invalidateAppProjectCaches(session.user.id);
 
     logger.info('domain', 'Custom domain removed', { userId: session.user.id, appId: id });
 

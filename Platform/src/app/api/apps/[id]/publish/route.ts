@@ -3,6 +3,7 @@ import { auth } from "@/lib/auth";
 import { apiError, apiSuccess } from "@/lib/api-utils";
 import { logger } from "@/lib/logger";
 import { enqueueGenerateJob } from "@/lib/queue";
+import { invalidateAppProjectCaches } from '@/lib/app-project-cache';
 
 /**
  * POST /api/apps/[id]/publish
@@ -75,6 +76,8 @@ export async function POST(
         retryCount: 0,
       },
     });
+
+    await invalidateAppProjectCaches(session.user.id);
 
     // Enqueue the generation job
     const deduplicationId = `publish-${id}-${Date.now()}`;
@@ -170,6 +173,8 @@ export async function DELETE(
         lastJobId: null,
       },
     });
+
+    await invalidateAppProjectCaches(session.user.id);
 
     logger.info("publish", "App unpublished/cancelled", {
       userId: session.user.id,

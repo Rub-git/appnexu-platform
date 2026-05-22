@@ -4,6 +4,7 @@ import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { apiError } from '@/lib/api-utils';
 import { logger } from '@/lib/logger';
+import { invalidateAppProjectCaches } from '@/lib/app-project-cache';
 
 export const dynamic = 'force-dynamic';
 
@@ -102,6 +103,8 @@ export async function POST(
       data: { iconUrls: newIconUrls },
     });
 
+    await invalidateAppProjectCaches(session.user.id);
+
     logger.info('upload-icon', 'Logo uploaded', { appId: id, userId: session.user.id, sizeKb: Math.round(png512.length / 1024) });
 
     // Return a proper data URL so the UI can render a preview
@@ -143,6 +146,8 @@ export async function DELETE(
       where: { id },
       data: { iconUrls: remaining },
     });
+
+    await invalidateAppProjectCaches(session.user.id);
 
     return NextResponse.json({ success: true });
   } catch (error) {

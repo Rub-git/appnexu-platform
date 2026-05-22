@@ -48,6 +48,15 @@ export const registerSchema = z.object({
   password: z.string().min(8, 'Password must be at least 8 characters').max(128),
 });
 
+export const updateProfileSchema = z.object({
+  name: z
+    .string()
+    .trim()
+    .min(2, 'Name must be at least 2 characters')
+    .max(100, 'Name is too long')
+    .optional(),
+});
+
 // ─── Analyze ──────────────────────────────────────────────────────────
 
 export const analyzeSchema = z.object({

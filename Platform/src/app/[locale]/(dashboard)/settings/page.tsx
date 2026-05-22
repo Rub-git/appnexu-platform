@@ -4,6 +4,8 @@ import { auth, getCurrentUser, PLAN_LIMITS } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 import { User, CreditCard, Smartphone, CheckCircle } from 'lucide-react';
 import UpgradeButton from '@/components/UpgradeButton';
+import { SAAS_PLAN_META } from '@/lib/saas';
+import UserProfileForm from '@/components/UserProfileForm';
 
 export default async function SettingsPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
@@ -24,6 +26,7 @@ export default async function SettingsPage({ params }: { params: Promise<{ local
   const planLimit = PLAN_LIMITS[user.plan];
   const appCount = user._count.apps;
   const usagePercentage = planLimit === Infinity ? 0 : (appCount / planLimit) * 100;
+  const planMeta = SAAS_PLAN_META[user.plan];
 
   return (
     <div className="mx-auto max-w-3xl space-y-8">
@@ -50,6 +53,14 @@ export default async function SettingsPage({ params }: { params: Promise<{ local
           <dl className="space-y-4">
             <div className="flex justify-between">
               <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                Nombre
+              </dt>
+              <dd className="text-sm text-gray-900 dark:text-white">
+                {user.name || 'Sin nombre'}
+              </dd>
+            </div>
+            <div className="flex justify-between">
+              <dt className="text-sm font-medium text-gray-500 dark:text-gray-400">
                 {t('settings.account.email')}
               </dt>
               <dd className="text-sm text-gray-900 dark:text-white">
@@ -69,6 +80,8 @@ export default async function SettingsPage({ params }: { params: Promise<{ local
               </dd>
             </div>
           </dl>
+
+          <UserProfileForm initialName={user.name || ''} locale={locale} />
         </div>
       </div>
 
@@ -89,9 +102,7 @@ export default async function SettingsPage({ params }: { params: Promise<{ local
                 <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
                   {t('settings.plan.current')}
                 </p>
-                <p className="mt-1 text-2xl font-bold text-gray-900 dark:text-white">
-                  {t(`settings.plan.${user.plan.toLowerCase()}`)}
-                </p>
+                <p className="mt-1 text-2xl font-bold text-gray-900 dark:text-white">{planMeta.marketingName}</p>
               </div>
               <span className={`inline-flex items-center rounded-full px-3 py-1 text-sm font-medium ${
                 user.plan === 'FREE' 
@@ -100,7 +111,7 @@ export default async function SettingsPage({ params }: { params: Promise<{ local
                   ? 'bg-[#178BFF]/10 text-[#178BFF]'
                   : 'bg-[#5B2CCF]/10 text-[#5B2CCF]'
               }`}>
-                {t(`settings.plan.${user.plan.toLowerCase()}`)}
+                {planMeta.marketingName}
               </span>
             </div>
 
@@ -127,6 +138,9 @@ export default async function SettingsPage({ params }: { params: Promise<{ local
                   />
                 </div>
               )}
+              <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                Límite suave activo: te avisaremos cuando estés cerca del tope para que puedas mejorar sin bloquear tu flujo.
+              </p>
             </div>
 
             {/* Upgrade CTAs with Stripe */}
@@ -166,14 +180,14 @@ export default async function SettingsPage({ params }: { params: Promise<{ local
               user.plan === 'FREE' ? 'ring-2 ring-[#178BFF] bg-[#178BFF]/5' : 'bg-gray-50 dark:bg-gray-800'
             }`}>
               <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                {t('settings.plan.free')}
+                Starter
               </p>
               <p className="mt-1 text-2xl font-bold text-gray-900 dark:text-white">$0</p>
               <p className="text-xs text-gray-500">/mo</p>
               <div className="mt-3 space-y-1 text-left text-xs text-gray-600 dark:text-gray-400">
                 <p className="flex items-center gap-1"><CheckCircle size={12} className="text-green-500" /> {t('plans.limits.free')}</p>
-                <p className="flex items-center gap-1"><CheckCircle size={12} className="text-green-500" /> PWA Generation</p>
-                <p className="flex items-center gap-1"><CheckCircle size={12} className="text-green-500" /> Public Link</p>
+                <p className="flex items-center gap-1"><CheckCircle size={12} className="text-green-500" /> Branding básico</p>
+                <p className="flex items-center gap-1"><CheckCircle size={12} className="text-green-500" /> Link instalable</p>
               </div>
               {user.plan === 'FREE' && (
                 <span className="mt-3 inline-block rounded-full bg-[#178BFF]/10 px-2 py-0.5 text-xs font-medium text-[#178BFF]">
@@ -187,14 +201,14 @@ export default async function SettingsPage({ params }: { params: Promise<{ local
               user.plan === 'PRO' ? 'ring-2 ring-[#178BFF] bg-[#178BFF]/5' : 'bg-gray-50 dark:bg-gray-800'
             }`}>
               <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                {t('settings.plan.pro')}
+                Pro
               </p>
               <p className="mt-1 text-2xl font-bold text-gray-900 dark:text-white">$19</p>
               <p className="text-xs text-gray-500">/mo</p>
               <div className="mt-3 space-y-1 text-left text-xs text-gray-600 dark:text-gray-400">
                 <p className="flex items-center gap-1"><CheckCircle size={12} className="text-green-500" /> {t('plans.limits.pro')}</p>
                 <p className="flex items-center gap-1"><CheckCircle size={12} className="text-green-500" /> Custom Domain</p>
-                <p className="flex items-center gap-1"><CheckCircle size={12} className="text-green-500" /> Priority Support</p>
+                <p className="flex items-center gap-1"><CheckCircle size={12} className="text-green-500" /> Branding premium</p>
               </div>
               {user.plan === 'PRO' && (
                 <span className="mt-3 inline-block rounded-full bg-[#178BFF]/10 px-2 py-0.5 text-xs font-medium text-[#178BFF]">
@@ -203,19 +217,20 @@ export default async function SettingsPage({ params }: { params: Promise<{ local
               )}
             </div>
 
-            {/* Agency (AGENCY) Plan */}
+            {/* Business (AGENCY) Plan */}
             <div className={`rounded-2xl p-4 text-center ${
               user.plan === 'AGENCY' ? 'ring-2 ring-[#5B2CCF] bg-[#5B2CCF]/5' : 'bg-gray-50 dark:bg-gray-800'
             }`}>
               <p className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                {t('settings.plan.agency')}
+                Business
               </p>
               <p className="mt-1 text-2xl font-bold text-gray-900 dark:text-white">$49</p>
               <p className="text-xs text-gray-500">/mo</p>
               <div className="mt-3 space-y-1 text-left text-xs text-gray-600 dark:text-gray-400">
                 <p className="flex items-center gap-1"><CheckCircle size={12} className="text-green-500" /> {t('plans.limits.agency')}</p>
                 <p className="flex items-center gap-1"><CheckCircle size={12} className="text-green-500" /> Custom Domain</p>
-                <p className="flex items-center gap-1"><CheckCircle size={12} className="text-green-500" /> White Label</p>
+                <p className="flex items-center gap-1"><CheckCircle size={12} className="text-green-500" /> Analytics básico incluido</p>
+                <p className="flex items-center gap-1"><CheckCircle size={12} className="text-green-500" /> Export features futuras</p>
               </div>
               {user.plan === 'AGENCY' && (
                 <span className="mt-3 inline-block rounded-full bg-[#5B2CCF]/10 px-2 py-0.5 text-xs font-medium text-[#5B2CCF]">

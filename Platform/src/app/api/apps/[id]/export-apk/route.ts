@@ -14,6 +14,7 @@ import { logger } from '@/lib/logger';
 import { ApkBuilderNotConfiguredError, triggerGitHubActionsApkBuild } from '@/lib/apk-builder';
 import { checkRateLimit } from '@/lib/rate-limit';
 import { getUserPlan, canExportApk } from '@/lib/plan-gates';
+import { invalidateAppProjectCaches } from '@/lib/app-project-cache';
 
 export async function POST(
   _request: Request,
@@ -136,6 +137,8 @@ export async function POST(
       },
     });
 
+    await invalidateAppProjectCaches(app.userId);
+
     // ── Dispatch to GitHub Actions ───────────────────────────────
     try {
       await triggerGitHubActionsApkBuild(app);
@@ -147,6 +150,8 @@ export async function POST(
           apkBuildLog: 'Build started on GitHub Actions',
         },
       });
+
+      await invalidateAppProjectCaches(app.userId);
 
       logger.info('apk-export', 'APK build dispatched to GitHub Actions', { appId: id });
       return apiSuccess({ status: 'BUILDING' });
@@ -160,6 +165,8 @@ export async function POST(
           apkErrorMessage: buildError instanceof Error ? buildError.message : 'Dispatch failed',
         },
       });
+
+      await invalidateAppProjectCaches(app.userId);
 
       if (buildError instanceof ApkBuilderNotConfiguredError) {
         logger.warn('apk-export', 'APK builder not configured', {

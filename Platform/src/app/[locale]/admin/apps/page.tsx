@@ -40,6 +40,16 @@ interface Pagination {
   limit: number;
   total: number;
   totalPages: number;
+  adjusted?: boolean;
+}
+
+interface AdminAppsSummary {
+  totalApps: number;
+  publishedApps: number;
+  failedApps: number;
+  customDomainApps: number;
+  totalVisits: number;
+  totalInstalls: number;
 }
 
 export default function AdminAppsPage() {
@@ -47,6 +57,7 @@ export default function AdminAppsPage() {
   const locale = useLocale();
   const [apps, setApps] = useState<AppRow[]>([]);
   const [pagination, setPagination] = useState<Pagination>({ page: 1, limit: 20, total: 0, totalPages: 0 });
+  const [summary, setSummary] = useState<AdminAppsSummary | null>(null);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
@@ -54,26 +65,44 @@ export default function AdminAppsPage() {
   const [actionBusyId, setActionBusyId] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [actionSuccess, setActionSuccess] = useState<string | null>(null);
+  const [debouncedSearch, setDebouncedSearch] = useState('');
 
-  const fetchApps = useCallback(async (page = 1) => {
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => {
+      setDebouncedSearch(search.trim());
+    }, 300);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [search]);
+
+  const fetchApps = useCallback(async (page = 1, signal?: AbortSignal) => {
     setLoading(true);
     try {
       const params = new URLSearchParams({ page: String(page), limit: '20' });
-      if (search) params.set('search', search);
+      if (debouncedSearch) params.set('search', debouncedSearch);
       if (statusFilter) params.set('status', statusFilter);
       if (ownerPlanFilter) params.set('ownerPlan', ownerPlanFilter);
 
-      const res = await fetch(`/api/admin/apps?${params}`);
+      const res = await fetch(`/api/admin/apps?${params}`, { signal });
       const data = await res.json();
       if (data.data) {
         setApps(data.data.apps);
+        setSummary(data.data.summary ?? null);
         setPagination(data.data.pagination);
       }
-    } catch { /* ignore */ }
+    } catch (error) {
+      if (error instanceof DOMException && error.name === 'AbortError') {
+        return;
+      }
+    }
     finally { setLoading(false); }
-  }, [search, statusFilter, ownerPlanFilter]);
+  }, [debouncedSearch, statusFilter, ownerPlanFilter]);
 
-  useEffect(() => { fetchApps(1); }, [fetchApps]);
+  useEffect(() => {
+    const controller = new AbortController();
+    fetchApps(1, controller.signal);
+    return () => controller.abort();
+  }, [fetchApps]);
 
   const releaseDomain = async (app: AppRow) => {
     if (!app.customDomain) return;
@@ -168,6 +197,23 @@ export default function AdminAppsPage() {
       </div>
 
       {/* Table */}
+      {summary && (
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-6">
+          <StatChip label="Apps" value={summary.totalApps} tone="slate" />
+          <StatChip label="Published" value={summary.publishedApps} tone="green" />
+          <StatChip label="Failed" value={summary.failedApps} tone="red" />
+          <StatChip label="Domains" value={summary.customDomainApps} tone="cyan" />
+          <StatChip label="Visits" value={summary.totalVisits} tone="blue" />
+          <StatChip label="Installs" value={summary.totalInstalls} tone="violet" />
+        </div>
+      )}
+
+      {pagination.adjusted && (
+        <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800 dark:border-amber-900/60 dark:bg-amber-900/20 dark:text-amber-200">
+          El dataset cambio mientras navegabas. Te movimos automaticamente a la ultima pagina disponible.
+        </div>
+      )}
+
       <div className="rounded-2xl bg-white shadow-sm ring-1 ring-gray-200 dark:bg-gray-900 dark:ring-gray-800 overflow-x-auto">
         {actionError && (
           <div className="mx-4 mt-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-900/20 dark:text-red-400">
@@ -305,6 +351,32 @@ export default function AdminAppsPage() {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+function StatChip({
+  label,
+  value,
+  tone,
+}: {
+  label: string;
+  value: number;
+  tone: 'slate' | 'green' | 'red' | 'cyan' | 'blue' | 'violet';
+}) {
+  const tones: Record<string, string> = {
+    slate: 'border-slate-200 text-slate-700 dark:border-slate-700 dark:text-slate-200',
+    green: 'border-green-200 text-green-700 dark:border-green-800 dark:text-green-300',
+    red: 'border-red-200 text-red-700 dark:border-red-800 dark:text-red-300',
+    cyan: 'border-cyan-200 text-cyan-700 dark:border-cyan-800 dark:text-cyan-300',
+    blue: 'border-blue-200 text-blue-700 dark:border-blue-800 dark:text-blue-300',
+    violet: 'border-violet-200 text-violet-700 dark:border-violet-800 dark:text-violet-300',
+  };
+
+  return (
+    <div className={`rounded-xl border bg-white px-3 py-2 dark:bg-gray-900 ${tones[tone]}`}>
+      <p className="text-[11px] font-semibold uppercase tracking-wide opacity-80">{label}</p>
+      <p className="mt-1 text-lg font-bold">{value.toLocaleString()}</p>
     </div>
   );
 }

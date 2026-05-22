@@ -10,6 +10,8 @@ import { trackEvent } from '@/lib/analytics';
 import { isBot, getDeviceType, getBrowserType, createVisitorHash } from '@/lib/bot-detection';
 import { checkRateLimit, getClientIp } from '@/lib/rate-limit';
 import { logger } from '@/lib/logger';
+import { trackBillingUsage } from '@/lib/billing-usage';
+import { invalidateAppProjectCaches } from '@/lib/app-project-cache';
 
 export async function POST(request: Request) {
   try {
@@ -52,7 +54,7 @@ export async function POST(request: Request) {
     // Verify app exists and is published (only track published apps)
     const app = await prisma.appProject.findUnique({
       where: { id: appId },
-      select: { id: true, status: true },
+      select: { id: true, status: true, userId: true },
     });
 
     if (!app) {
@@ -92,6 +94,24 @@ export async function POST(request: Request) {
       metadata,
       visitorHash,
     });
+
+    if (eventType === 'PAGE_VIEW') {
+      await trackBillingUsage({
+        userId: app.userId,
+        appId,
+        metricKey: 'app_open',
+        metadata: { referrer: referrerHost },
+      });
+    } else if (eventType === 'INSTALL_CLICK') {
+      await trackBillingUsage({
+        userId: app.userId,
+        appId,
+        metricKey: 'install_click',
+        metadata: { referrer: referrerHost },
+      });
+
+      await invalidateAppProjectCaches(app.userId);
+    }
 
     return NextResponse.json({ success: true });
   } catch (error) {

@@ -2,6 +2,7 @@ import { requireAdmin } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { apiError, apiSuccess } from '@/lib/api-utils';
 import { logger } from '@/lib/logger';
+import { invalidateAppProjectCaches } from '@/lib/app-project-cache';
 
 // DELETE /api/admin/apps/[id] - Admin delete app
 export async function DELETE(
@@ -23,6 +24,7 @@ export async function DELETE(
       where: { id },
       select: {
         id: true,
+        userId: true,
         appName: true,
         targetUrl: true,
         customDomain: true,
@@ -37,6 +39,7 @@ export async function DELETE(
     }
 
     await prisma.appProject.delete({ where: { id } });
+    await invalidateAppProjectCaches(app.userId);
 
     logger.info('admin.apps', 'Admin deleted app', {
       adminId: admin.id,

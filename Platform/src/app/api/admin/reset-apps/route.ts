@@ -2,6 +2,7 @@ import { prisma } from '@/lib/prisma';
 import { requireAdmin } from '@/lib/auth';
 import { apiError, apiSuccess } from '@/lib/api-utils';
 import { logger } from '@/lib/logger';
+import { invalidateAppProjectCaches } from '@/lib/app-project-cache';
 
 /**
  * Admin endpoint to check and reset app count for a user.
@@ -97,6 +98,8 @@ export async function DELETE(request: Request) {
     const deleteResult = await prisma.appProject.deleteMany({
       where: { userId: user.id },
     });
+
+    await invalidateAppProjectCaches(user.id);
 
     logger.info('admin.resetApps', 'Apps reset for user', {
       adminId: admin.id,

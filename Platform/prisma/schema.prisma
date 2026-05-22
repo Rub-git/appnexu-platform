@@ -54,6 +54,8 @@ model User {
   apps     AppProject[]
   accounts Account[]
   sessions Session[]
+  subscriptions BillingSubscription[]
+  usageRecords BillingUsage[]
 
   @@index([email])
   @@index([stripeCustomerId])
@@ -165,6 +167,19 @@ enum AnalyticsEventType {
   UNIQUE_VISIT
 }
 
+enum BillingCycle {
+  MONTHLY
+  YEARLY
+}
+
+enum BillingSubscriptionStatus {
+  TRIALING
+  ACTIVE
+  PAST_DUE
+  CANCELED
+  INCOMPLETE
+}
+
 model AppProject {
   id              String    @id @default(cuid())
   slug            String    @unique @default(cuid()) // Unique slug for public URLs
@@ -228,6 +243,7 @@ model AppProject {
   // Analytics relations
   analyticsEvents    AppAnalyticsEvent[]
   analyticsSummaries AppAnalyticsSummary[]
+  usageRecords       BillingUsage[]
 
   // Timestamps
   createdAt DateTime @default(now())
@@ -239,6 +255,10 @@ model AppProject {
   @@index([status])
   @@index([pwaMode])
   @@index([createdAt])
+  @@index([userId, status, createdAt(sort: Desc), id(sort: Desc)])
+  @@index([userId, totalVisits(sort: Desc), id(sort: Desc)])
+  @@index([userId, totalInstalls(sort: Desc), id(sort: Desc)])
+  @@index([userId, appName, id])
   @@index([aiAnalysisStatus])
   @@index([apkBuildStatus])
   @@index([templateId])
@@ -281,4 +301,89 @@ model AppAnalyticsSummary {
   @@unique([appId, date])
   @@index([appId])
   @@index([appId, date])
+}
+
+model BillingPlan {
+  id            String    @id @default(cuid())
+  key           String    @unique // starter | pro | business
+  displayName   String    @map("display_name")
+  stripePriceId String?   @unique @map("stripe_price_id")
+  cycle         BillingCycle @default(MONTHLY)
+  appLimit      Int?      @map("app_limit")
+  isActive      Boolean   @default(true) @map("is_active")
+  sortOrder     Int       @default(0) @map("sort_order")
+  metadata      Json?
+
+  limits        BillingPlanLimit[]
+  subscriptions BillingSubscription[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
+
+  @@index([isActive])
+  @@index([sortOrder])
+}
+
+model BillingPlanLimit {
+  id         String @id @default(cuid())
+  planId     String @map("plan_id")
+  metricKey  String @map("metric_key") // apps, collaborators, domains, etc
+  softLimit  Int?   @map("soft_limit")
+  hardLimit  Int?   @map("hard_limit")
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @default(now()) @updatedAt @map("updated_at")
+
+  plan BillingPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+
+  @@unique([planId, metricKey])
+  @@index([metricKey])
+}
+
+model BillingSubscription {
+  id                    String                    @id @default(cuid())
+  userId                String                    @map("user_id")
+  planId                String                    @map("plan_id")
+  status                BillingSubscriptionStatus @default(INCOMPLETE)
+  stripeSubscriptionId  String?                   @unique @map("stripe_subscription_id")
+  stripeCustomerId      String?                   @map("stripe_customer_id")
+  currentPeriodStart    DateTime?                 @map("current_period_start")
+  currentPeriodEnd      DateTime?                 @map("current_period_end")
+  cancelAtPeriodEnd     Boolean                   @default(false) @map("cancel_at_period_end")
+  canceledAt            DateTime?                 @map("canceled_at")
+  trialEndsAt           DateTime?                 @map("trial_ends_at")
+  metadata              Json?
+
+  user User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plan BillingPlan @relation(fields: [planId], references: [id], onDelete: Restrict)
+  usageRecords BillingUsage[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
+
+  @@index([userId])
+  @@index([planId])
+  @@index([status])
+}
+
+model BillingUsage {
+  id              String   @id @default(cuid())
+  subscriptionId  String   @map("subscription_id")
+  userId          String   @map("user_id")
+  appId           String?  @map("app_id")
+  metricKey       String   @map("metric_key")
+  value           Int      @default(0)
+  periodStart     DateTime @map("period_start")
+  periodEnd       DateTime @map("period_end")
+  metadata        Json?
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @default(now()) @updatedAt @map("updated_at")
+
+  subscription BillingSubscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  app AppProject? @relation(fields: [appId], references: [id], onDelete: SetNull)
+
+  @@index([subscriptionId])
+  @@index([userId])
+  @@index([metricKey])
+  @@index([periodStart, periodEnd])
 }

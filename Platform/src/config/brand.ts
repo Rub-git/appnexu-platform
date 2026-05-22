@@ -86,7 +86,7 @@ export const brand = {
   planLabels: {
     FREE: { en: 'Starter', es: 'Starter' },
     PRO: { en: 'Pro', es: 'Pro' },
-    AGENCY: { en: 'Agency', es: 'Agency' },
+    AGENCY: { en: 'Business', es: 'Business' },
   } as Record<string, { en: string; es: string }>,
 
   // ─── UI Tokens ─────────────────────────────────────────────────────────────

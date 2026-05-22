@@ -3,6 +3,7 @@ import { auth } from '@/lib/auth';
 import { updateAppSchema, formatZodErrors } from '@/lib/validations';
 import { apiError, apiSuccess } from '@/lib/api-utils';
 import { logger } from '@/lib/logger';
+import { invalidateAppProjectCaches } from '@/lib/app-project-cache';
 
 // GET - Fetch a single app
 export async function GET(
@@ -98,6 +99,8 @@ export async function PATCH(
       },
     });
 
+    await invalidateAppProjectCaches(session.user.id);
+
     logger.info('apps.update', 'App updated', { userId: session.user.id, appId: id });
     return apiSuccess({ app: updatedApp });
   } catch (error) {
@@ -137,6 +140,8 @@ export async function DELETE(
     await prisma.appProject.delete({
       where: { id },
     });
+
+    await invalidateAppProjectCaches(session.user.id);
 
     logger.info('apps.delete', 'App deleted', { userId: session.user.id, appId: id });
     return apiSuccess();

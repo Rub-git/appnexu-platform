@@ -12,6 +12,7 @@ import { logger } from '@/lib/logger';
 import { analyzeWebsiteWithAI } from '@/lib/ai-analyzer';
 import { checkRateLimit } from '@/lib/rate-limit';
 import { getUserPlan, checkAiAnalysisQuota } from '@/lib/plan-gates';
+import { invalidateAppProjectCaches } from '@/lib/app-project-cache';
 
 export const maxDuration = 60; // Extend Vercel Hobby plan timeout
 export const dynamic = 'force-dynamic';
@@ -62,6 +63,8 @@ export async function POST(
       data: { aiAnalysisStatus: 'ANALYZING' },
     });
 
+    await invalidateAppProjectCaches(session.user.id);
+
     // ── Run analysis (inline for now; could be queued) ───────────
     try {
       const suggestions = await analyzeWebsiteWithAI(app.targetUrl);
@@ -77,6 +80,8 @@ export async function POST(
         },
       });
 
+      await invalidateAppProjectCaches(session.user.id);
+
       logger.info('ai-analyze', 'Analysis completed', { appId: id });
       return apiSuccess({ status: 'COMPLETED', suggestions });
     } catch (analysisError) {
@@ -85,6 +90,7 @@ export async function POST(
         where: { id },
         data: { aiAnalysisStatus: 'FAILED' },
       });
+      await invalidateAppProjectCaches(session.user.id);
       logger.error('ai-analyze', 'Analysis failed', {
         appId: id,
         error: analysisError instanceof Error ? analysisError.message : 'Unknown',

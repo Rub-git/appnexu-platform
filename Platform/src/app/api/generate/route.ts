@@ -5,6 +5,8 @@ import { apiError, apiSuccess } from '@/lib/api-utils';
 import { logger } from '@/lib/logger';
 import { checkRateLimit } from '@/lib/rate-limit';
 import { getUserPlan, canUsePremiumTemplate } from '@/lib/plan-gates';
+import { trackBillingUsage } from '@/lib/billing-usage';
+import { invalidateAppProjectCaches } from '@/lib/app-project-cache';
 
 export async function POST(request: Request) {
   try {
@@ -108,6 +110,18 @@ export async function POST(request: Request) {
       slug: appProject.slug,
       templateSlug: data.templateSlug || null,
     });
+
+    await trackBillingUsage({
+      userId: session.user.id,
+      appId: appProject.id,
+      metricKey: 'apps_created',
+      metadata: {
+        slug: appProject.slug,
+        templateSlug: data.templateSlug || null,
+      },
+    });
+
+    await invalidateAppProjectCaches(session.user.id);
 
     return apiSuccess({
       id: appProject.id,

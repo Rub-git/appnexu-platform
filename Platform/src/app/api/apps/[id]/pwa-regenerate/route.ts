@@ -3,6 +3,7 @@ import { auth } from '@/lib/auth';
 import { apiError, apiSuccess } from '@/lib/api-utils';
 import { logger } from '@/lib/logger';
 import { getAppAssetVersion, getAppManifestUrl, getAppNamedIconUrl, getAppServiceWorkerUrl } from '@/lib/pwa-assets';
+import { invalidateAppProjectCaches } from '@/lib/app-project-cache';
 
 type RegeneratePayload = {
   forceGenerator?: boolean;
@@ -59,6 +60,8 @@ export async function POST(
         failureReason: null,
       },
     });
+
+    await invalidateAppProjectCaches(session.user.id);
 
     const version = getAppAssetVersion(updated);
 

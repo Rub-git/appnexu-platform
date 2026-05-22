@@ -7,7 +7,7 @@ import { logger } from '@/lib/logger';
 const intlMiddleware = createMiddleware(routing);
 
 // Protected routes that require authentication
-const protectedRoutes = ['/dashboard', '/settings', '/admin'];
+const protectedRoutes = ['/dashboard', '/settings', '/billing', '/admin'];
 
 // Known platform hostnames (add your production domain here)
 function normalizeHost(value: string): string {
