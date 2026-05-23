@@ -18,6 +18,7 @@ import AppBasicSettingsCard from '@/components/AppBasicSettingsCard';
 import OnboardingWizardBar from '@/components/OnboardingWizardBar';
 import QrCodeCard from '@/components/QrCodeCard';
 import PublishedSuccessCard from '@/components/PublishedSuccessCard';
+import AppMiniPreview from '@/components/AppMiniPreview';
 import { FUTURE_SAAS_MODULES } from '@/lib/future-modules';
 
 function getStatusMeta(status: string): { label: string; className: string } {
@@ -59,7 +60,7 @@ export default async function AppPreviewPage({
   searchParams,
 }: {
   params: Promise<{ id: string; locale: string }>;
-  searchParams: Promise<{ step?: string; wizard?: string }>;
+  searchParams: Promise<{ step?: string; wizard?: string; advanced?: string }>;
 }) {
   const { id, locale } = await params;
   const query = await searchParams;
@@ -115,6 +116,8 @@ export default async function AppPreviewPage({
 
   const statusMeta = getStatusMeta(app.status);
   const wizardStep = clampWizardStep(query.step);
+  const advancedMode = query.advanced === '1';
+  const isEs = locale.toLowerCase().startsWith('es');
   const steps = [
     { id: 1, label: 'Ingresa tu website' },
     { id: 2, label: 'IA analiza tu sitio' },
@@ -125,10 +128,16 @@ export default async function AppPreviewPage({
 
   const prevStep = wizardStep > 3 ? wizardStep - 1 : 3;
   const nextStep = wizardStep < 5 ? wizardStep + 1 : 5;
+  const makeStepHref = (step: number) => `/dashboard/preview/${app.id}?wizard=1&step=${step}&advanced=${advancedMode ? '1' : '0'}`;
+  const toggleAdvancedHref = `/dashboard/preview/${app.id}?wizard=1&step=${wizardStep}&advanced=${advancedMode ? '0' : '1'}`;
 
   return (
     <div className="mx-auto max-w-6xl space-y-8">
       <OnboardingWizardBar currentStep={wizardStep} steps={steps} />
+
+      <section className="rounded-2xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-900 dark:border-blue-900 dark:bg-blue-950/30 dark:text-blue-200">
+        {isEs ? 'Pega tu URL -> La IA analiza -> Personaliza -> Vista previa -> Publica.' : 'Paste your URL -> AI analyzes -> Customize -> Preview -> Publish.'}
+      </section>
 
       <section className="rounded-3xl border border-slate-200 bg-gradient-to-br from-white to-slate-50 p-6 shadow-sm dark:border-slate-800 dark:from-slate-900 dark:to-slate-950">
         <Link
@@ -179,14 +188,14 @@ export default async function AppPreviewPage({
 
         <div className="mt-5 flex items-center justify-between gap-3 border-t border-slate-200 pt-4 dark:border-slate-700">
           <Link
-            href={`/dashboard/preview/${app.id}?wizard=1&step=${prevStep}`}
+            href={makeStepHref(prevStep)}
             className="inline-flex items-center rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
           >
             <ArrowLeft className="mr-1 h-4 w-4" />
             Anterior
           </Link>
           <Link
-            href={`/dashboard/preview/${app.id}?wizard=1&step=${nextStep}`}
+            href={makeStepHref(nextStep)}
             className="inline-flex items-center rounded-lg bg-blue-600 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-700"
           >
             Siguiente
@@ -198,6 +207,23 @@ export default async function AppPreviewPage({
       {wizardStep === 3 ? (
         <div className="grid grid-cols-1 gap-8 xl:grid-cols-[1.1fr_0.9fr]">
           <div className="space-y-6">
+            <section className="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-gray-200 dark:bg-gray-900 dark:ring-gray-800">
+              <div className="flex items-center justify-between gap-3 px-6 py-4">
+                <div>
+                  <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Modo avanzado</h3>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    {isEs ? 'Activalo para ver DNS, tracking, APK y configuraciones Pro.' : 'Enable it to see DNS, tracking, APK and Pro settings.'}
+                  </p>
+                </div>
+                <Link
+                  href={toggleAdvancedHref}
+                  className={`inline-flex h-7 w-14 items-center rounded-full p-1 transition ${advancedMode ? 'bg-blue-600 justify-end' : 'bg-slate-300 justify-start dark:bg-slate-700'}`}
+                >
+                  <span className="h-5 w-5 rounded-full bg-white" />
+                </Link>
+              </div>
+            </section>
+
             <AiSuggestionsPanel appId={app.id} currentName={app.appName} />
 
             <AppBasicSettingsCard
@@ -211,36 +237,77 @@ export default async function AppPreviewPage({
                 importedStartUrl: app.importedStartUrl,
               }}
               enableAutosave
+              showAdvancedFields={advancedMode}
             />
+
+            <section className="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-gray-200 dark:bg-gray-900 dark:ring-gray-800">
+              <div className="border-b border-gray-200 px-6 py-4 dark:border-gray-800">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Vista previa</h3>
+              </div>
+              <div className="px-6 py-5">
+                <AppMiniPreview
+                  url={mockPreviewUrl}
+                  appName={app.appName}
+                  themeColor={app.themeColor || '#178BFF'}
+                  iconUrl={getAppIconUrl(app.id, 192, assetVersion)}
+                />
+              </div>
+              <div className="border-t border-gray-200 px-6 py-4 dark:border-gray-800">
+                <div className="flex flex-wrap items-center gap-2">
+                  <Link
+                    href={makeStepHref(4)}
+                    className="inline-flex items-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+                  >
+                    Siguiente
+                  </Link>
+                  <Link
+                    href={makeStepHref(5)}
+                    className="inline-flex items-center rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
+                  >
+                    Publicar
+                  </Link>
+                </div>
+              </div>
+            </section>
 
             <PwaAuditChecklist
               appId={app.id}
               customDomain={app.customDomain}
               appConfigured={appConfigured}
               appStatus={app.status}
+              showAdvancedDetails={advancedMode}
             />
           </div>
 
           <div className="space-y-6">
-            <section className="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-gray-200 dark:bg-gray-900 dark:ring-gray-800">
-              <div className="px-6 py-5">
-                <CustomDomainForm appId={app.id} currentDomain={app.customDomain} />
+            <details className="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-gray-200 dark:bg-gray-900 dark:ring-gray-800">
+              <summary className="cursor-pointer px-6 py-4 text-sm font-semibold text-gray-900 dark:text-white">
+                Dominio personalizado opcional
+              </summary>
+              <div className="border-t border-gray-200 px-6 py-5 dark:border-gray-800">
+                <CustomDomainForm
+                  appId={app.id}
+                  currentDomain={app.customDomain}
+                  showDnsDetails={advancedMode}
+                />
               </div>
-            </section>
+            </details>
 
-            <section className="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-gray-200 dark:bg-gray-900 dark:ring-gray-800">
-              <div className="border-b border-gray-200 px-6 py-4 dark:border-gray-800">
-                <h3 className="text-sm font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Arquitectura premium preparada</h3>
-              </div>
-              <div className="grid gap-2 px-6 py-4">
-                {FUTURE_SAAS_MODULES.map((module) => (
-                  <div key={module.key} className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 dark:border-slate-700 dark:bg-slate-900">
-                    <p className="text-sm font-medium text-slate-900 dark:text-white">{module.title}</p>
-                    <p className="text-xs text-slate-500 dark:text-slate-400">{module.description}</p>
-                  </div>
-                ))}
-              </div>
-            </section>
+            {advancedMode ? (
+              <details className="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-gray-200 dark:bg-gray-900 dark:ring-gray-800">
+                <summary className="cursor-pointer px-6 py-4 text-sm font-semibold text-gray-900 dark:text-white">
+                  Funciones avanzadas / Pro
+                </summary>
+                <div className="grid gap-2 border-t border-gray-200 px-6 py-4 dark:border-gray-800">
+                  {FUTURE_SAAS_MODULES.map((module) => (
+                    <div key={module.key} className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 dark:border-slate-700 dark:bg-slate-900">
+                      <p className="text-sm font-medium text-slate-900 dark:text-white">{module.title}</p>
+                      <p className="text-xs text-slate-500 dark:text-slate-400">{module.description}</p>
+                    </div>
+                  ))}
+                </div>
+              </details>
+            ) : null}
           </div>
         </div>
       ) : null}
@@ -334,7 +401,7 @@ export default async function AppPreviewPage({
               </div>
             </section>
 
-            <ApkExportButton appId={app.id} appStatus={app.status} />
+            {advancedMode ? <ApkExportButton appId={app.id} appStatus={app.status} /> : null}
           </div>
 
           <div className="space-y-6">

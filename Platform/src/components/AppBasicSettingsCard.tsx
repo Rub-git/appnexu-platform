@@ -17,6 +17,7 @@ type EditableApp = {
 interface AppBasicSettingsCardProps {
   app: EditableApp;
   enableAutosave?: boolean;
+  showAdvancedFields?: boolean;
 }
 
 function normalizeStartPath(value: string): string {
@@ -33,7 +34,11 @@ function normalizeStartPath(value: string): string {
   return trimmed.startsWith('/') ? trimmed : `/${trimmed}`;
 }
 
-export default function AppBasicSettingsCard({ app, enableAutosave = true }: AppBasicSettingsCardProps) {
+export default function AppBasicSettingsCard({
+  app,
+  enableAutosave = true,
+  showAdvancedFields = false,
+}: AppBasicSettingsCardProps) {
   const router = useRouter();
 
   const [appName, setAppName] = useState(app.appName);
@@ -111,9 +116,7 @@ export default function AppBasicSettingsCard({ app, enableAutosave = true }: App
     <section className="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-gray-200 dark:bg-gray-900 dark:ring-gray-800">
       <div className="border-b border-gray-200 px-6 py-5 dark:border-gray-800">
         <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Configuracion basica</h3>
-        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-          Ajusta solo lo necesario para personalizar tu app antes de publicar.
-        </p>
+        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Ajusta solo lo esencial antes de publicar.</p>
       </div>
 
       <div className="grid gap-4 px-6 py-5 sm:grid-cols-2">
@@ -170,26 +173,30 @@ export default function AppBasicSettingsCard({ app, enableAutosave = true }: App
           </div>
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Pantalla inicial</label>
-          <input
-            value={startPath}
-            onChange={(event) => setStartPath(event.target.value)}
-            placeholder="/launch"
-            className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
-          />
-        </div>
+        {showAdvancedFields ? (
+          <>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Pantalla inicial</label>
+              <input
+                value={startPath}
+                onChange={(event) => setStartPath(event.target.value)}
+                placeholder="/launch"
+                className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+              />
+            </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Modo de visualizacion</label>
-          <select
-            value="standalone"
-            onChange={() => {}}
-            className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
-          >
-            <option value="standalone">standalone</option>
-          </select>
-        </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Modo de visualizacion</label>
+              <select
+                value="standalone"
+                onChange={() => {}}
+                className="mt-1 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-700 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-200 dark:border-gray-700 dark:bg-gray-800 dark:text-white"
+              >
+                <option value="standalone">standalone</option>
+              </select>
+            </div>
+          </>
+        ) : null}
       </div>
 
       {(feedback || error) ? (

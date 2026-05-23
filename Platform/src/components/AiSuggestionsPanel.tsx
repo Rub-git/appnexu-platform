@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import {
   Sparkles, Loader2, Check, RefreshCw, Wand2,
-  ChevronDown, ChevronUp, AlertTriangle,
+  AlertTriangle,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
@@ -35,7 +35,6 @@ export default function AiSuggestionsPanel({ appId, currentName, onApplySuggesti
   const [status, setStatus] = useState<string>('NOT_ANALYZED');
   const [suggestions, setSuggestions] = useState<AISuggestions | null>(null);
   const [loading, setLoading] = useState(false);
-  const [expanded, setExpanded] = useState(true);
   const [error, setError] = useState('');
   const [recommendedPwaMode, setRecommendedPwaMode] = useState<'GENERATOR' | 'IMPORT' | null>(null);
 
@@ -194,134 +193,127 @@ export default function AiSuggestionsPanel({ appId, currentName, onApplySuggesti
 
     return (
       <div className="rounded-xl border border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-900/20">
-        <button
-          onClick={() => setExpanded(!expanded)}
-          className="flex w-full items-center justify-between p-4"
-        >
+        <div className="border-b border-green-200 p-4 dark:border-green-800">
           <div className="flex items-center gap-2">
             <Sparkles className="h-5 w-5 text-green-600 dark:text-green-400" />
             <span className="text-sm font-medium text-green-900 dark:text-green-300">
               Recomendaciones listas
             </span>
           </div>
-          {expanded ? <ChevronUp className="h-4 w-4 text-green-600" /> : <ChevronDown className="h-4 w-4 text-green-600" />}
-        </button>
+        </div>
 
-        {expanded && (
-          <div className="border-t border-green-200 p-4 dark:border-green-800">
-            <div className="mb-3 rounded-lg border border-green-200 bg-white px-3 py-2 text-sm text-green-800 dark:border-green-800 dark:bg-gray-900 dark:text-green-300">
-              Nuestra IA optimizo tu app automaticamente.
+        <div className="space-y-4 p-4">
+          {suggestions.name ? (
+            <div>
+              <p className="text-xs font-medium uppercase text-green-700 dark:text-green-400">Nombre sugerido</p>
+              <p className="mt-1 text-sm text-gray-900 dark:text-white">{suggestions.name}</p>
             </div>
+          ) : null}
 
-            {/* Suggested Name */}
-            {suggestions.name && (
-              <div className="mb-3">
-                <p className="text-xs font-medium uppercase text-green-700 dark:text-green-400">Nombre sugerido</p>
-                <p className="mt-1 text-sm text-gray-900 dark:text-white">{suggestions.name}</p>
-                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Nombre corto sugerido: {(suggestions.name || currentName).slice(0, 12)}</p>
-              </div>
-            )}
-
-            <div className="mb-3">
-              <p className="text-xs font-medium uppercase text-green-700 dark:text-green-400">Nombres alternativos</p>
-              <div className="mt-1 flex flex-wrap gap-1.5">
-                {altNames.map((name) => (
-                  <span key={name} className="rounded bg-white px-2 py-0.5 text-xs text-gray-700 dark:bg-gray-800 dark:text-gray-300">{name}</span>
-                ))}
-              </div>
-            </div>
-
-            <div className="mb-3">
-              <p className="text-xs font-medium uppercase text-green-700 dark:text-green-400">Slogan sugerido</p>
-              <p className="mt-1 text-sm text-gray-900 dark:text-white">{slogan}</p>
-            </div>
-
-            {/* Suggested Colors */}
-            {suggestions.colors && (
-              <div className="mb-3">
-                <p className="text-xs font-medium uppercase text-green-700 dark:text-green-400">Colores sugeridos</p>
-                <div className="mt-1 flex gap-2">
-                  <div className="flex items-center gap-1">
-                    <div className="h-5 w-5 rounded border" style={{ backgroundColor: suggestions.colors.primary }} />
-                    <span className="text-xs text-gray-500">{suggestions.colors.primary}</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <div className="h-5 w-5 rounded border" style={{ backgroundColor: suggestions.colors.secondary }} />
-                    <span className="text-xs text-gray-500">{suggestions.colors.secondary}</span>
-                  </div>
-                </div>
-                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Tip premium: usa alto contraste y evita mas de 2 colores principales.</p>
-              </div>
-            )}
-
-            <div className="mb-3">
-              <p className="text-xs font-medium uppercase text-green-700 dark:text-green-400">Icono recomendado</p>
-              <p className="mt-1 text-sm text-gray-900 dark:text-white">
-                Usa un icono cuadrado, centrado y legible en tamano pequeno.
-              </p>
-            </div>
-
-            <div className="mb-3">
-              <p className="text-xs font-medium uppercase text-green-700 dark:text-green-400">Splash sugerida</p>
-              <p className="mt-1 text-sm text-gray-900 dark:text-white">Fondo en {suggestions.colors?.primary || '#178BFF'} con logo centrado y transicion suave a home.</p>
-            </div>
-
-            {/* Suggested Navigation */}
-            {suggestions.navigation && suggestions.navigation.length > 0 && (
-              <div className="mb-3">
-                <p className="text-xs font-medium uppercase text-green-700 dark:text-green-400">Navegacion sugerida</p>
-                <div className="mt-1 flex flex-wrap gap-1">
-                  {suggestions.navigation.map((nav, i) => (
-                    <span key={i} className="rounded bg-white px-2 py-0.5 text-xs text-gray-700 dark:bg-gray-800 dark:text-gray-300">
-                      {nav.label}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* Suggested Actions */}
-            {suggestions.actions && suggestions.actions.length > 0 && (
-              <div className="mb-3">
-                <p className="text-xs font-medium uppercase text-green-700 dark:text-green-400">Acciones rapidas sugeridas</p>
-                <div className="mt-1 flex flex-wrap gap-1">
-                  {suggestions.actions.map((action, i) => (
-                    <span key={i} className="rounded bg-white px-2 py-0.5 text-xs text-gray-700 dark:bg-gray-800 dark:text-gray-300">
-                      {action.label}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            <div className="mb-3 rounded-lg border border-green-200 bg-white px-3 py-2 text-xs text-green-800 dark:border-green-800 dark:bg-gray-900 dark:text-green-300">
-              Estrategia PWA recomendada: {recommendedPwaMode === 'IMPORT' ? 'Importar la PWA existente del sitio' : 'Generar una PWA nueva para tu app'}
-            </div>
-
-            {/* Action Buttons */}
-            <div className="mt-4 flex gap-2">
-              <button
-                onClick={handleAcceptAll}
-                disabled={isApplying}
-                className="inline-flex items-center rounded-lg bg-green-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-green-700 disabled:opacity-50"
-              >
-                {isApplying ? (
-                  <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
-                ) : (
-                  <Check className="mr-1.5 h-4 w-4" />
-                )}
-                {t('aiAnalyzer.acceptAll')}
-              </button>
-              <button
-                onClick={handleAnalyze}
-                className="inline-flex items-center rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300"
-              >
-                <RefreshCw className="mr-1.5 h-4 w-4" />
-                {t('aiAnalyzer.reAnalyze')}
-              </button>
-            </div>
+          <div>
+            <p className="text-xs font-medium uppercase text-green-700 dark:text-green-400">Icono recomendado</p>
+            <p className="mt-1 text-sm text-gray-900 dark:text-white">
+              Usa un icono cuadrado, centrado y legible en tamano pequeno.
+            </p>
           </div>
-        )}
+
+          {suggestions.colors ? (
+            <div>
+              <p className="text-xs font-medium uppercase text-green-700 dark:text-green-400">Colores sugeridos</p>
+              <div className="mt-1 flex gap-3">
+                <div className="flex items-center gap-1.5">
+                  <div className="h-5 w-5 rounded border" style={{ backgroundColor: suggestions.colors.primary }} />
+                  <span className="text-xs text-gray-500">{suggestions.colors.primary}</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <div className="h-5 w-5 rounded border" style={{ backgroundColor: suggestions.colors.secondary }} />
+                  <span className="text-xs text-gray-500">{suggestions.colors.secondary}</span>
+                </div>
+              </div>
+            </div>
+          ) : null}
+
+          <div className="flex flex-wrap gap-2">
+            <button
+              onClick={handleAcceptAll}
+              disabled={isApplying}
+              className="inline-flex items-center rounded-lg bg-green-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-green-700 disabled:opacity-50"
+            >
+              {isApplying ? (
+                <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
+              ) : (
+                <Check className="mr-1.5 h-4 w-4" />
+              )}
+              {t('aiAnalyzer.acceptAll')}
+            </button>
+            <button
+              onClick={handleAnalyze}
+              className="inline-flex items-center rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-800 dark:text-gray-300"
+            >
+              <RefreshCw className="mr-1.5 h-4 w-4" />
+              {t('aiAnalyzer.reAnalyze')}
+            </button>
+          </div>
+
+          <details className="rounded-lg border border-green-200 bg-white dark:border-green-800 dark:bg-gray-900">
+            <summary className="cursor-pointer list-none px-3 py-2 text-sm font-medium text-green-800 dark:text-green-300">
+              Ver recomendaciones avanzadas
+            </summary>
+
+            <div className="space-y-3 border-t border-green-200 px-3 py-3 dark:border-green-800">
+              <div>
+                <p className="text-xs font-medium uppercase text-green-700 dark:text-green-400">Nombres alternativos</p>
+                <div className="mt-1 flex flex-wrap gap-1.5">
+                  {altNames.map((name) => (
+                    <span key={name} className="rounded bg-slate-100 px-2 py-0.5 text-xs text-gray-700 dark:bg-gray-800 dark:text-gray-300">{name}</span>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <p className="text-xs font-medium uppercase text-green-700 dark:text-green-400">Slogan sugerido</p>
+                <p className="mt-1 text-sm text-gray-900 dark:text-white">{slogan}</p>
+              </div>
+
+              <div>
+                <p className="text-xs font-medium uppercase text-green-700 dark:text-green-400">Splash sugerida</p>
+                <p className="mt-1 text-sm text-gray-900 dark:text-white">
+                  Fondo en {suggestions.colors?.primary || '#178BFF'} con logo centrado y transicion suave a home.
+                </p>
+              </div>
+
+              {suggestions.navigation && suggestions.navigation.length > 0 ? (
+                <div>
+                  <p className="text-xs font-medium uppercase text-green-700 dark:text-green-400">Navegacion sugerida</p>
+                  <div className="mt-1 flex flex-wrap gap-1">
+                    {suggestions.navigation.map((nav, i) => (
+                      <span key={i} className="rounded bg-slate-100 px-2 py-0.5 text-xs text-gray-700 dark:bg-gray-800 dark:text-gray-300">
+                        {nav.label}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+
+              {suggestions.actions && suggestions.actions.length > 0 ? (
+                <div>
+                  <p className="text-xs font-medium uppercase text-green-700 dark:text-green-400">Acciones rapidas sugeridas</p>
+                  <div className="mt-1 flex flex-wrap gap-1">
+                    {suggestions.actions.map((action, i) => (
+                      <span key={i} className="rounded bg-slate-100 px-2 py-0.5 text-xs text-gray-700 dark:bg-gray-800 dark:text-gray-300">
+                        {action.label}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+
+              <div className="rounded-lg border border-green-200 bg-green-50 px-3 py-2 text-xs text-green-800 dark:border-green-800 dark:bg-green-900/20 dark:text-green-300">
+                Estrategia PWA recomendada: {recommendedPwaMode === 'IMPORT' ? 'Importar la PWA existente del sitio' : 'Generar una PWA nueva para tu app'}
+              </div>
+            </div>
+          </details>
+        </div>
       </div>
     );
   }

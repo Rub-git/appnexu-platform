@@ -51,6 +51,7 @@ interface PwaAuditChecklistProps {
   customDomain?: string | null;
   appConfigured: boolean;
   appStatus: 'DRAFT' | 'QUEUED' | 'GENERATING' | 'STAGED' | 'PUBLISHED' | 'FAILED';
+  showAdvancedDetails?: boolean;
 }
 
 function parseApiData(payload: unknown): PwaDebugResponseData | null {
@@ -79,6 +80,7 @@ export default function PwaAuditChecklist({
   customDomain,
   appConfigured,
   appStatus,
+  showAdvancedDetails = true,
 }: PwaAuditChecklistProps) {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
@@ -182,15 +184,21 @@ export default function PwaAuditChecklist({
       checks.find((check) => check.label === 'Navegacion correcta')?.pass
     );
 
+    const navigationReady = Boolean(
+      checks.find((check) => check.label === 'Navegacion correcta')?.pass
+    );
+
     return [
       { label: 'App configurada', pass: appConfigured, optional: false },
       { label: 'Iconos listos', pass: iconReady, optional: false },
       { label: 'Instalacion lista', pass: installReady, optional: false },
-      { label: 'Vista movil correcta', pass: true, optional: false },
+      { label: 'Vista movil correcta', pass: true, optional: true },
+      { label: 'Navegacion correcta', pass: navigationReady, optional: false },
       { label: 'Publicacion lista', pass: appStatus === 'PUBLISHED', optional: false },
-      { label: 'Dominio opcional', pass: Boolean(customDomain), optional: true },
     ];
-  }, [appConfigured, appStatus, checks, customDomain, data?.icon192Status?.ok, data?.icon512Status?.ok, data?.manifestStatus?.ok, data?.startUrlStatus?.ok, data?.swUrlStatus?.ok]);
+  }, [appConfigured, appStatus, checks, data?.icon192Status?.ok, data?.icon512Status?.ok, data?.manifestStatus?.ok, data?.startUrlStatus?.ok, data?.swUrlStatus?.ok]);
+
+  const hasAttention = checklist.some((item) => !item.optional && !item.pass);
 
   const autoRepair = async () => {
     if (!data) return;
@@ -358,15 +366,17 @@ export default function PwaAuditChecklist({
       </div>
 
       <div className="border-t border-gray-200 px-6 py-4 dark:border-gray-800">
-        <button
-          type="button"
-          onClick={autoRepair}
-          disabled={isAutoRepairing}
-          className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-60"
-        >
-          {isAutoRepairing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wrench className="h-4 w-4" />}
-          Reparar automaticamente
-        </button>
+        {hasAttention ? (
+          <button
+            type="button"
+            onClick={autoRepair}
+            disabled={isAutoRepairing}
+            className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-60"
+          >
+            {isAutoRepairing ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wrench className="h-4 w-4" />}
+            Corregir automaticamente
+          </button>
+        ) : null}
 
         {fixMessage ? <p className="mt-2 text-xs text-gray-600 dark:text-gray-300">{fixMessage}</p> : null}
 
@@ -383,32 +393,34 @@ export default function PwaAuditChecklist({
         )}
       </div>
 
-      <div className="border-t border-gray-200 px-6 py-4 dark:border-gray-800">
-        <button
-          type="button"
-          onClick={() => setShowTechnical((value) => !value)}
-          className="text-sm font-medium text-gray-700 underline decoration-dotted underline-offset-4 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white"
-        >
-          {showTechnical ? 'Ocultar detalles tecnicos' : 'Ver detalles tecnicos'}
-        </button>
+      {showAdvancedDetails ? (
+        <div className="border-t border-gray-200 px-6 py-4 dark:border-gray-800">
+          <button
+            type="button"
+            onClick={() => setShowTechnical((value) => !value)}
+            className="text-sm font-medium text-gray-700 underline decoration-dotted underline-offset-4 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white"
+          >
+            {showTechnical ? 'Ocultar detalles tecnicos' : 'Ver detalles tecnicos'}
+          </button>
 
-        {showTechnical ? (
-          <div className="mt-3 rounded-xl border border-gray-200 bg-gray-50 p-4 text-xs text-gray-700 dark:border-gray-800 dark:bg-gray-950 dark:text-gray-300">
-            <div className="grid gap-2 sm:grid-cols-2">
-              <p>manifest_url: {data.manifestUrl || data.manifestStatus.url || 'n/a'}</p>
-              <p>service_worker_url: {data.swUrl || data.swUrlStatus.url || 'n/a'}</p>
-              <p>scope: {data.scope || data.serviceWorkerScopeExpected || 'n/a'}</p>
-              <p>start_url: {data.expectedStartUrl || data.startUrlStatus?.url || 'n/a'}</p>
-              <p>modo_pwa: {data.pwaMode}</p>
-              <p>http_manifest: {data.manifestStatus.status ?? 'n/a'}</p>
-              <p>http_service_worker: {data.swUrlStatus.status ?? 'n/a'}</p>
-              <p>http_start_url: {data.startUrlStatus?.status ?? 'n/a'}</p>
-              <p>http_icon_192: {data.icon192Status?.status ?? 'n/a'}</p>
-              <p>http_icon_512: {data.icon512Status?.status ?? 'n/a'}</p>
+          {showTechnical ? (
+            <div className="mt-3 rounded-xl border border-gray-200 bg-gray-50 p-4 text-xs text-gray-700 dark:border-gray-800 dark:bg-gray-950 dark:text-gray-300">
+              <div className="grid gap-2 sm:grid-cols-2">
+                <p>manifest_url: {data.manifestUrl || data.manifestStatus.url || 'n/a'}</p>
+                <p>service_worker_url: {data.swUrl || data.swUrlStatus.url || 'n/a'}</p>
+                <p>scope: {data.scope || data.serviceWorkerScopeExpected || 'n/a'}</p>
+                <p>start_url: {data.expectedStartUrl || data.startUrlStatus?.url || 'n/a'}</p>
+                <p>modo_pwa: {data.pwaMode}</p>
+                <p>http_manifest: {data.manifestStatus.status ?? 'n/a'}</p>
+                <p>http_service_worker: {data.swUrlStatus.status ?? 'n/a'}</p>
+                <p>http_start_url: {data.startUrlStatus?.status ?? 'n/a'}</p>
+                <p>http_icon_192: {data.icon192Status?.status ?? 'n/a'}</p>
+                <p>http_icon_512: {data.icon512Status?.status ?? 'n/a'}</p>
+              </div>
             </div>
-          </div>
-        ) : null}
-      </div>
+          ) : null}
+        </div>
+      ) : null}
     </div>
   );
 }

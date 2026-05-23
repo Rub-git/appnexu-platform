@@ -7,6 +7,7 @@ import { Check, Globe, Info, Loader2, X } from 'lucide-react';
 interface CustomDomainFormProps {
   appId: string;
   currentDomain: string | null;
+  showDnsDetails?: boolean;
 }
 
 function normalizeDomain(value: string): string {
@@ -22,7 +23,11 @@ function isValidDomain(value: string): boolean {
   return /^(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,}$/i.test(value);
 }
 
-export default function CustomDomainForm({ appId, currentDomain }: CustomDomainFormProps) {
+export default function CustomDomainForm({
+  appId,
+  currentDomain,
+  showDnsDetails = true,
+}: CustomDomainFormProps) {
   const [domain, setDomain] = useState(currentDomain || '');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -78,9 +83,11 @@ export default function CustomDomainForm({ appId, currentDomain }: CustomDomainF
         <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Dominio personalizado</h3>
       </div>
 
-      <div className="rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-700 dark:border-gray-800 dark:bg-gray-950/50 dark:text-gray-300">
-        Estado DNS: <span className="font-semibold">{dnsState}</span>
-      </div>
+      {showDnsDetails ? (
+        <div className="rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-700 dark:border-gray-800 dark:bg-gray-950/50 dark:text-gray-300">
+          Estado DNS: <span className="font-semibold">{dnsState}</span>
+        </div>
+      ) : null}
 
       {error ? (
         <div className="flex items-center gap-2 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-900/20 dark:text-red-400">
@@ -115,23 +122,27 @@ export default function CustomDomainForm({ appId, currentDomain }: CustomDomainF
         </button>
       </div>
 
-      <button
-        type="button"
-        onClick={() => setShowDnsHelp((value) => !value)}
-        className="inline-flex items-center gap-1 text-sm font-medium text-gray-700 underline decoration-dotted underline-offset-4 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white"
-      >
-        <Info className="h-4 w-4" />
-        Ver instrucciones DNS
-      </button>
+      {showDnsDetails ? (
+        <>
+          <button
+            type="button"
+            onClick={() => setShowDnsHelp((value) => !value)}
+            className="inline-flex items-center gap-1 text-sm font-medium text-gray-700 underline decoration-dotted underline-offset-4 hover:text-gray-900 dark:text-gray-300 dark:hover:text-white"
+          >
+            <Info className="h-4 w-4" />
+            Ver instrucciones DNS
+          </button>
 
-      {showDnsHelp ? (
-        <div className="rounded-xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900 dark:border-blue-900 dark:bg-blue-950/30 dark:text-blue-200">
-          <p className="font-medium">Configura estos registros en tu proveedor DNS:</p>
-          <div className="mt-2 rounded-lg bg-white p-3 font-mono text-xs text-blue-900 dark:bg-slate-900 dark:text-blue-200">
-            <p>A / ALIAS para dominio raiz -&gt; 76.76.21.21</p>
-            <p>CNAME para www -&gt; cname.vercel-dns.com</p>
-          </div>
-        </div>
+          {showDnsHelp ? (
+            <div className="rounded-xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900 dark:border-blue-900 dark:bg-blue-950/30 dark:text-blue-200">
+              <p className="font-medium">Configura estos registros en tu proveedor DNS:</p>
+              <div className="mt-2 rounded-lg bg-white p-3 font-mono text-xs text-blue-900 dark:bg-slate-900 dark:text-blue-200">
+                <p>A / ALIAS para dominio raiz -&gt; 76.76.21.21</p>
+                <p>CNAME para www -&gt; cname.vercel-dns.com</p>
+              </div>
+            </div>
+          ) : null}
+        </>
       ) : null}
     </section>
   );
