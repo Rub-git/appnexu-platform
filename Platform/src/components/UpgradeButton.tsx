@@ -7,9 +7,11 @@ import { Loader2, Zap, Crown, AlertTriangle } from 'lucide-react';
 interface UpgradeButtonProps {
   targetPlan: 'PRO' | 'AGENCY';
   currentPlan: string;
+  locale?: string;
+  buttonLabel?: string;
 }
 
-export default function UpgradeButton({ targetPlan, currentPlan }: UpgradeButtonProps) {
+export default function UpgradeButton({ targetPlan, currentPlan, locale = 'en', buttonLabel }: UpgradeButtonProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [configStatus, setConfigStatus] = useState<{
@@ -31,14 +33,22 @@ export default function UpgradeButton({ targetPlan, currentPlan }: UpgradeButton
   // eslint-disable-next-line react-hooks/rules-of-hooks
   useEffect(() => {
     fetch('/api/stripe/config')
-      .then(res => res.json())
-      .then(data => setConfigStatus(data))
+      .then(async (res) => {
+        if (!res.ok) return null;
+        return res.json();
+      })
+      .then((data) => {
+        if (data && typeof data === 'object' && 'stripeConfigured' in data) {
+          setConfigStatus(data as { stripeConfigured: boolean; proPriceConfigured: boolean; agencyPriceConfigured: boolean });
+        }
+      })
       .catch(() => {}); // silently fail
   }, []);
 
   const isPriceConfigured = configStatus
     ? (targetPlan === 'PRO' ? configStatus.proPriceConfigured : configStatus.agencyPriceConfigured)
     : true; // assume configured until we know
+  const canStartCheckout = !configStatus || (configStatus.stripeConfigured && isPriceConfigured);
 
   const handleUpgrade = async () => {
     setIsLoading(true);
@@ -52,6 +62,12 @@ export default function UpgradeButton({ targetPlan, currentPlan }: UpgradeButton
       });
 
       const data = await response.json();
+
+      if (response.status === 401) {
+        const callbackUrl = encodeURIComponent(window.location.href);
+        window.location.href = `/${locale}/login?callbackUrl=${callbackUrl}`;
+        return;
+      }
 
       if (!response.ok) {
         if (data.code === 'PRICE_NOT_CONFIGURED') {
@@ -101,7 +117,7 @@ export default function UpgradeButton({ targetPlan, currentPlan }: UpgradeButton
       )}
       <button
         onClick={handleUpgrade}
-        disabled={isLoading}
+        disabled={isLoading || !canStartCheckout}
         className={`inline-flex w-full items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium text-white transition-all disabled:opacity-50 ${
           targetPlan === 'AGENCY'
             ? 'bg-gradient-to-r from-[#5B2CCF] to-[#F54291] hover:shadow-md hover:shadow-[#5B2CCF]/25'
@@ -115,7 +131,7 @@ export default function UpgradeButton({ targetPlan, currentPlan }: UpgradeButton
         )}
         {isLoading
           ? t('common.loading')
-          : `${t('settings.plan.upgradeTo')} ${planLabel} - ${planPricing}`}
+          : (buttonLabel || `${t('settings.plan.upgradeTo')} ${planLabel} - ${planPricing}`)}
       </button>
     </div>
   );

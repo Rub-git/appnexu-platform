@@ -1,7 +1,9 @@
 'use client';
 
+import Link from 'next/link';
 import { useLocale } from 'next-intl';
 import { CheckCircle2 } from 'lucide-react';
+import UpgradeButton from '@/components/UpgradeButton';
 
 export default function PricingPage() {
   const locale = useLocale();
@@ -22,6 +24,8 @@ export default function PricingPage() {
         <PlanCard
           name="Starter"
           price="$0"
+          locale={locale}
+          isEs={isEs}
           perks={[
             isEs ? '1 app' : '1 app',
             isEs ? 'Branding básico' : 'Basic branding',
@@ -33,6 +37,9 @@ export default function PricingPage() {
         <PlanCard
           name="Pro"
           price="$19/mo"
+          locale={locale}
+          isEs={isEs}
+          targetPlan="PRO"
           featured
           perks={[
             isEs ? 'Múltiples apps' : 'Multiple apps',
@@ -45,6 +52,9 @@ export default function PricingPage() {
         <PlanCard
           name="Business"
           price="$49/mo"
+          locale={locale}
+          isEs={isEs}
+          targetPlan="AGENCY"
           perks={[
             isEs ? 'Apps ilimitadas' : 'Unlimited apps',
             isEs ? 'Analytics básico' : 'Basic analytics',
@@ -56,8 +66,8 @@ export default function PricingPage() {
 
       <p className="mt-8 text-center text-sm text-slate-500">
         {isEs
-          ? 'Los cobros automáticos pueden activarse después. Esta fase prioriza arquitectura de billing y límites suaves.'
-          : 'Automatic charging can be enabled later. This phase prioritizes billing architecture and soft limits.'}
+          ? 'Si faltan precios en Stripe, los upgrades se desactivan automáticamente hasta completar la configuración.'
+          : 'If Stripe prices are missing, upgrade actions are automatically disabled until configuration is complete.'}
       </p>
     </div>
   );
@@ -66,14 +76,20 @@ export default function PricingPage() {
 function PlanCard({
   name,
   price,
+  locale,
+  isEs,
   perks,
   cta,
+  targetPlan,
   featured,
 }: {
   name: string;
   price: string;
+  locale: string;
+  isEs: boolean;
   perks: string[];
   cta: string;
+  targetPlan?: 'PRO' | 'AGENCY';
   featured?: boolean;
 }) {
   return (
@@ -94,14 +110,30 @@ function PlanCard({
           </li>
         ))}
       </ul>
-      <button
-        type="button"
-        className={`mt-6 w-full rounded-xl px-4 py-2.5 text-sm font-semibold text-white ${
-          featured ? 'bg-cyan-600 hover:bg-cyan-700' : 'bg-slate-900 hover:bg-black'
-        }`}
-      >
-        {cta}
-      </button>
+      <div className="mt-6">
+        {targetPlan ? (
+          <UpgradeButton
+            targetPlan={targetPlan}
+            currentPlan="FREE"
+            locale={locale}
+            buttonLabel={cta}
+          />
+        ) : (
+          <Link
+            href={`/${locale}/signup`}
+            className={`inline-flex w-full items-center justify-center rounded-xl px-4 py-2.5 text-sm font-semibold text-white ${
+              featured ? 'bg-cyan-600 hover:bg-cyan-700' : 'bg-slate-900 hover:bg-black'
+            }`}
+          >
+            {cta}
+          </Link>
+        )}
+        {targetPlan && (
+          <p className="mt-2 text-center text-xs text-slate-500">
+            {isEs ? 'Requiere sesión iniciada.' : 'Requires an active session.'}
+          </p>
+        )}
+      </div>
     </div>
   );
 }
