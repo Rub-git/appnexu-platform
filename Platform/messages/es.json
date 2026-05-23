@@ -54,6 +54,7 @@
     },
     "errors": {
       "invalidCredentials": "Correo electrónico o contraseña inválidos",
+      "serverUnavailable": "El servicio de inicio de sesión está temporalmente no disponible. Intenta de nuevo en unos minutos.",
       "emailExists": "Ya existe una cuenta con este correo electrónico",
       "passwordMismatch": "Las contraseñas no coinciden",
       "weakPassword": "La contraseña debe tener al menos 8 caracteres",

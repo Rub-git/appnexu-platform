@@ -11,7 +11,7 @@ type DashboardSummary = {
   totalVisits: number;
   totalOpens: number;
   totalInstalls: number;
-  latestPublishedAt: Date | null;
+  latestPublishedAt: string | null;
   statusCounts: Record<string, number>;
   publishedApps: number;
 };
@@ -49,7 +49,7 @@ export async function getDashboardSummaryCached(userId: string): Promise<Dashboa
         totalVisits: aggregate._sum.totalVisits ?? 0,
         totalOpens: aggregate._sum.uniqueVisitors ?? 0,
         totalInstalls: aggregate._sum.totalInstalls ?? 0,
-        latestPublishedAt: aggregate._max.lastPublishedAt,
+        latestPublishedAt: aggregate._max.lastPublishedAt ? aggregate._max.lastPublishedAt.toISOString() : null,
         statusCounts,
         publishedApps: statusCounts.PUBLISHED ?? 0,
       };

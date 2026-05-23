@@ -49,6 +49,19 @@ function decodeCursorToken(token: string) {
   return token === 'ROOT' ? undefined : token;
 }
 
+function formatDashboardDate(value: unknown, locale: string, options?: Intl.DateTimeFormatOptions) {
+  if (!value) return null;
+
+  const date = value instanceof Date ? value : new Date(String(value));
+  if (Number.isNaN(date.getTime())) return null;
+
+  try {
+    return date.toLocaleDateString(locale, options);
+  } catch {
+    return null;
+  }
+}
+
 export default async function DashboardPage({
   params,
   searchParams,
@@ -82,7 +95,14 @@ export default async function DashboardPage({
   const decodedStack = cursorStack.map(decodeCursorToken);
   setRequestLocale(locale);
 
-  const session = await auth();
+  let session = null;
+  try {
+    session = await auth();
+  } catch (error) {
+    console.error('[DashboardPage] auth() failed, redirecting to login:', error);
+    redirect(`/${locale}/login`);
+  }
+
   if (!session?.user?.id) {
     redirect(`/${locale}/login`);
   }
@@ -333,7 +353,7 @@ export default async function DashboardPage({
             <BusinessStat
               icon={<Calendar className="h-4 w-4 text-amber-600" />}
               label={isEs ? 'Última publicación' : 'Last publish'}
-              value={latestPublishedAt ? latestPublishedAt.toLocaleDateString(locale) : isEs ? 'Nunca' : 'Never'}
+              value={formatDashboardDate(latestPublishedAt, locale) ?? (isEs ? 'Nunca' : 'Never')}
             />
           </div>
 
@@ -560,7 +580,7 @@ export default async function DashboardPage({
 
                     <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-3 text-xs text-slate-600 dark:border-slate-800 dark:bg-slate-950/30 dark:text-slate-300">
                       <p><span className="font-semibold">Dominio:</span> {app.customDomain || 'Sin dominio custom'}</p>
-                      <p className="mt-1"><span className="font-semibold">Actualizada:</span> {new Date(app.updatedAt).toLocaleDateString(locale)}</p>
+                      <p className="mt-1"><span className="font-semibold">Actualizada:</span> {formatDashboardDate(app.updatedAt, locale) ?? '—'}</p>
                       <p className="mt-1"><span className="font-semibold">Estado SaaS:</span> {getSaaSState(app.status)}</p>
                     </div>
                   </div>
@@ -608,7 +628,7 @@ export default async function DashboardPage({
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-gray-500 dark:text-gray-400">
                         {t('dashboard.appCard.createdOn')}{' '}
-                        {new Date(app.createdAt).toLocaleDateString(locale, {
+                        {formatDashboardDate(app.createdAt, locale, {
                           month: 'short',
                           day: 'numeric',
                           year: 'numeric',

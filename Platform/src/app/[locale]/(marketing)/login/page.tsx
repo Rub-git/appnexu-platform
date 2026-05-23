@@ -18,7 +18,6 @@ export default function LoginPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("LOGIN CLICKED");
     setIsLoading(true);
     setError('');
 
@@ -29,7 +28,11 @@ export default function LoginPage() {
         redirect: false,
       });
 
-      console.log("LOGIN RESULT:", result);
+      if (result?.status === 503) {
+        setError(t('auth.errors.serverUnavailable'));
+        setIsLoading(false);
+        return;
+      }
 
       if (result?.error || !result?.ok) {
         setError(t('auth.errors.invalidCredentials'));
@@ -40,7 +43,7 @@ export default function LoginPage() {
       window.location.href = `/${locale}/dashboard`;
     } catch (error) {
       console.error("Login error:", error);
-      setError(t('auth.errors.invalidCredentials'));
+      setError(t('auth.errors.serverUnavailable'));
       setIsLoading(false);
     }
   };

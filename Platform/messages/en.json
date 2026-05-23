@@ -54,6 +54,7 @@
     },
     "errors": {
       "invalidCredentials": "Invalid email or password",
+      "serverUnavailable": "Login service is temporarily unavailable. Please try again in a few minutes.",
       "emailExists": "An account with this email already exists",
       "passwordMismatch": "Passwords do not match",
       "weakPassword": "Password must be at least 8 characters",

@@ -43,8 +43,14 @@ export default async function DashboardLayout({
 }) {
   const { locale } = await params;
   setRequestLocale(locale);
-  
-  const session = await auth();
+
+  let session = null;
+  try {
+    session = await auth();
+  } catch (error) {
+    console.error('[DashboardLayout] auth() failed, redirecting to login:', error);
+    redirect(`/${locale}/login`);
+  }
   
   if (!session?.user) {
     redirect(`/${locale}/login`);
