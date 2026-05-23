@@ -270,7 +270,7 @@
   "landing": {
     "hero": {
       "title": "Convierte tu sitio web en una app en minutos",
-      "subtitle": "Appnexu transforma tu website en una app instalable con análisis inteligente, plantillas por industria y publicación rápida.",
+      "subtitle": "Appnexu transforma tu website en una app instalable con análisis inteligente, diseño visual asistido por IA y publicación rápida.",
       "cta": "Crear mi app",
       "demo": "Ver cómo funciona"
     },
@@ -403,12 +403,12 @@
     }
   },
   "templates": {
-    "badge": "Plantillas de Apps",
-    "title": "Comienza con una Plantilla",
-    "subtitle": "Elige de nuestra colección de plantillas diseñadas profesionalmente para iniciar tu creación de app.",
+    "badge": "Experiencia Visual",
+    "title": "Elige el Estilo de tu App",
+    "subtitle": "Appnexu adapta automáticamente colores, splash, iconos y estilo UI con presets inteligentes.",
     "preview": "Vista Previa",
-    "useTemplate": "Usar Plantilla",
-    "noTemplates": "No se encontraron plantillas para esta categoría.",
+    "useTemplate": "Aplicar Estilo",
+    "noTemplates": "No se encontraron estilos visuales disponibles.",
     "categories": {
       "ALL": "Todas",
       "BUSINESS": "Negocios",
@@ -426,7 +426,7 @@
       "secondary": "Secundario"
     },
     "premiumBadge": "Pro",
-    "premiumOnly": "Esta plantilla está disponible para planes Pro y Agency."
+    "premiumOnly": "Esta experiencia visual está disponible para planes Pro y Agency."
   },
   "aiAnalyzer": {
     "title": "Analizador de IA",
@@ -459,10 +459,10 @@
   "createApp": {
     "title": "Crear Nueva App",
     "subtitle": "Ingresa la URL del sitio web que quieres convertir en una aplicación móvil instalable.",
-    "usingTemplate": "Usando plantilla",
-    "templateApplied": "Los colores y navegación de la plantilla se aplicarán a tu app.",
-    "browseTemplates": "Comenzar con una plantilla",
-    "browseTemplatesDesc": "Elige entre plantillas prediseñadas para restaurantes, iglesias, clínicas y más.",
+    "usingTemplate": "Estilo de App activo",
+    "templateApplied": "Tu Experiencia Visual y Branding AI se aplicarán automáticamente a tu app.",
+    "browseTemplates": "Elegir Experiencia Visual",
+    "browseTemplatesDesc": "Selecciona un Estilo de App inteligente: Moderno, Profesional, Minimalista, Vibrante, Oscuro o Corporativo.",
     "form": {
       "urlLabel": "URL del sitio web",
       "urlPlaceholder": "https://ejemplo.com",
@@ -503,7 +503,7 @@
       "popular": "Más Popular",
       "features": {
         "apps": "5 apps",
-        "templates": "Plantillas premium",
+        "templates": "Experiencias visuales premium",
         "ai": "Análisis IA de sitios web",
         "apk": "Exportación APK",
         "analytics": "Analíticas avanzadas",
@@ -516,7 +516,7 @@
       "description": "Para agencias y equipos grandes",
       "features": {
         "apps": "Apps ilimitadas",
-        "templates": "Todas las plantillas premium",
+        "templates": "Todas las experiencias visuales premium",
         "ai": "Análisis IA ilimitado",
         "apk": "Exportaciones APK ilimitadas",
         "whiteLabel": "Marca blanca",

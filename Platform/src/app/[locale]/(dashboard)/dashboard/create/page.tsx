@@ -2,19 +2,20 @@
 
 import { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
-import { ArrowRight, Link as LinkIcon, Loader2, Smartphone, Globe, LayoutTemplate, X, Crown, ArrowLeft } from 'lucide-react';
+import { ArrowRight, Link as LinkIcon, Loader2, Smartphone, Globe, LayoutTemplate, X, ArrowLeft } from 'lucide-react';
 import { Link, useRouter } from '@/i18n/routing';
 import OnboardingWizardBar from '@/components/OnboardingWizardBar';
 
-interface SelectedTemplate {
-  id: string;
-  name: string;
+interface SelectedVisualPreset {
   slug: string;
-  isPremium: boolean;
-  configJson: {
-    colorScheme: { primary: string; secondary: string };
-    navigation: Array<{ label: string; icon: string; path: string }>;
-    quickActions: Array<{ label: string; icon: string; action: string }>;
+  nameEs: string;
+  nameEn: string;
+  colors: {
+    primary: string;
+    secondary: string;
+    background: string;
+    surface: string;
+    text: string;
   };
 }
 
@@ -24,7 +25,7 @@ export default function CreateAppPage() {
   const [url, setUrl] = useState('');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [error, setError] = useState('');
-  const [selectedTemplate, setSelectedTemplate] = useState<SelectedTemplate | null>(null);
+  const [selectedPreset, setSelectedPreset] = useState<SelectedVisualPreset | null>(null);
   const [wizardStep, setWizardStep] = useState<1 | 2>(1);
 
   const steps = [
@@ -35,13 +36,13 @@ export default function CreateAppPage() {
     { id: 5, label: 'Publica' },
   ];
 
-  // Check for template selection from sessionStorage
+  // Check for visual preset selection from sessionStorage
   useEffect(() => {
     try {
-      const stored = sessionStorage.getItem('selectedTemplate');
+      const stored = sessionStorage.getItem('selectedVisualPreset');
       if (stored) {
-        setSelectedTemplate(JSON.parse(stored));
-        sessionStorage.removeItem('selectedTemplate');
+        setSelectedPreset(JSON.parse(stored));
+        sessionStorage.removeItem('selectedVisualPreset');
       }
     } catch { /* ignore */ }
   }, []);
@@ -134,7 +135,7 @@ export default function CreateAppPage() {
 
       // Map analyze response fields to generate API schema
       // analyze returns { url, title, description, themeColor, icons: string[] }
-      // generate expects { url, title, themeColor, backgroundColor, iconUrls: string, templateSlug }
+      // generate expects { url, title, themeColor, backgroundColor, iconUrls: string, visualPresetSlug }
       // Only forward themeColor if it's a valid hex color (e.g. not rgb(), hsl(), or named colors)
       const rawThemeColor: unknown = analyzeData.themeColor;
       const safeThemeColor =
@@ -153,11 +154,33 @@ export default function CreateAppPage() {
           : undefined,
       };
 
-      // Apply template colors if selected
-      if (selectedTemplate) {
-        generateData.themeColor = selectedTemplate.configJson.colorScheme.primary;
-        generateData.backgroundColor = '#ffffff';
-        generateData.templateSlug = selectedTemplate.slug;
+      // Apply selected visual preset if user chose one.
+      if (selectedPreset) {
+        generateData.themeColor = selectedPreset.colors.primary;
+        generateData.backgroundColor = selectedPreset.colors.background;
+        generateData.visualPresetSlug = selectedPreset.slug;
+      } else {
+        // Automatic recommendation keeps UX lightweight: no mandatory manual selection.
+        try {
+          const recommendationRes = await fetch('/api/visual-presets/recommend', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              url: analyzeData.url,
+              title: analyzeData.title,
+              themeColor: safeThemeColor,
+            }),
+          });
+          const recommendationData = await recommendationRes.json();
+          const preset = recommendationData?.data?.preset;
+          if (recommendationRes.ok && preset) {
+            generateData.themeColor = generateData.themeColor || preset.colors.primary;
+            generateData.backgroundColor = generateData.backgroundColor || preset.colors.background;
+            generateData.visualPresetSlug = preset.slug;
+          }
+        } catch {
+          // Non-blocking fallback: app generation continues with detected/default colors.
+        }
       }
 
       // Call generate API to create the DB record
@@ -200,23 +223,20 @@ export default function CreateAppPage() {
         </p>
       </div>
 
-      {/* Template Selection Banner */}
-      {selectedTemplate ? (
+      {/* Visual Preset Selection Banner */}
+      {selectedPreset ? (
         <div className="mb-6 rounded-xl border-2 border-indigo-200 bg-[#178BFF]/10 p-4 dark:border-indigo-800 dark:bg-[#178BFF]/10">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div
                 className="h-10 w-10 rounded-lg"
                 style={{
-                  background: `linear-gradient(135deg, ${selectedTemplate.configJson.colorScheme.primary}, ${selectedTemplate.configJson.colorScheme.secondary})`,
+                  background: `linear-gradient(135deg, ${selectedPreset.colors.primary}, ${selectedPreset.colors.secondary})`,
                 }}
               />
               <div>
                 <p className="text-sm font-semibold text-indigo-900 dark:text-indigo-300">
-                  {t('createApp.usingTemplate')}: {selectedTemplate.name}
-                  {selectedTemplate.isPremium && (
-                    <Crown className="ml-1.5 inline h-3.5 w-3.5 text-amber-500" />
-                  )}
+                  {t('createApp.usingTemplate')}: {selectedPreset.nameEs || selectedPreset.nameEn}
                 </p>
                 <p className="text-xs text-[#178BFF]/70 dark:text-[#178BFF]/70">
                   {t('createApp.templateApplied')}
@@ -224,7 +244,7 @@ export default function CreateAppPage() {
               </div>
             </div>
             <button
-              onClick={() => setSelectedTemplate(null)}
+              onClick={() => setSelectedPreset(null)}
               className="rounded-full p-1 text-indigo-400 hover:bg-indigo-100 dark:hover:bg-indigo-800"
             >
               <X className="h-4 w-4" />

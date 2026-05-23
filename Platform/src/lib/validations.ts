@@ -71,7 +71,7 @@ export const generateSchema = z.object({
   themeColor: z.string().regex(/^#[0-9a-fA-F]{3,8}$/, 'Invalid color format').optional(),
   backgroundColor: z.string().regex(/^#[0-9a-fA-F]{3,8}$/, 'Invalid color format').optional(),
   iconUrls: z.string().max(5000).optional(),
-  templateSlug: z.string().max(100).optional(), // template to apply during creation
+  visualPresetSlug: z.string().max(100).optional(), // visual preset to apply during creation
 });
 
 // ─── Update app ───────────────────────────────────────────────────────
@@ -118,12 +118,6 @@ export const customDomainSchema = z.object({
 
 export const checkoutSchema = z.object({
   plan: z.enum(['PRO', 'AGENCY']),
-});
-
-// ─── Template slug ────────────────────────────────────────────────────
-
-export const templateSlugSchema = z.object({
-  slug: z.string().min(1).max(100).regex(/^[a-z0-9-]+$/, 'Invalid template slug'),
 });
 
 /** Helper to format Zod errors into a flat string array */

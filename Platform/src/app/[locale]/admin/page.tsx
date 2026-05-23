@@ -30,10 +30,10 @@ interface AdminStats {
     queuedJobs: number;
     generatingJobs: number;
   };
-  templates: {
-    total: number;
-    premium: number;
-    mostUsed: Array<{ name: string; slug: string; usageCount: number; category: string }>;
+  visualPresets: {
+    catalogSize: number;
+    totalApplied: number;
+    mostUsed: Array<{ name: string; slug: string; usageCount: number }>;
   };
   apkBuilds: {
     totalExports: number;
@@ -122,28 +122,28 @@ export default function AdminDashboardPage() {
 
       {/* New Feature Stats */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        {/* Templates Section */}
+        {/* Visual Presets Section */}
         <div className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-200 dark:bg-gray-900 dark:ring-gray-800">
           <div className="flex items-center gap-2 mb-4">
             <LayoutTemplate className="h-5 w-5 text-[#178BFF]" />
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-              {t('admin.overview.templatesTitle')}
+              Experiencias Visuales
             </h2>
           </div>
           <div className="grid grid-cols-2 gap-3 mb-4">
             <div className="rounded-lg bg-[#178BFF]/5 p-3 dark:bg-[#178BFF]/10">
-              <p className="text-xs text-[#178BFF] dark:text-[#178BFF]">{t('admin.overview.totalTemplates')}</p>
-              <p className="text-xl font-bold text-gray-900 dark:text-white">{stats.templates.total}</p>
+              <p className="text-xs text-[#178BFF] dark:text-[#178BFF]">Catalogo total</p>
+              <p className="text-xl font-bold text-gray-900 dark:text-white">{stats.visualPresets.catalogSize}</p>
             </div>
             <div className="rounded-lg bg-amber-50 p-3 dark:bg-amber-900/20">
-              <p className="text-xs text-amber-600 dark:text-amber-400">{t('admin.overview.premiumTemplates')}</p>
-              <p className="text-xl font-bold text-gray-900 dark:text-white">{stats.templates.premium}</p>
+              <p className="text-xs text-amber-600 dark:text-amber-400">Aplicados en apps</p>
+              <p className="text-xl font-bold text-gray-900 dark:text-white">{stats.visualPresets.totalApplied}</p>
             </div>
           </div>
-          {stats.templates.mostUsed.length > 0 && (
+          {stats.visualPresets.mostUsed.length > 0 && (
             <div>
-              <p className="text-xs font-medium text-gray-500 mb-2">{t('admin.overview.mostUsedTemplates')}</p>
-              {stats.templates.mostUsed.map((tpl, i) => (
+              <p className="text-xs font-medium text-gray-500 mb-2">Top presets mas usados</p>
+              {stats.visualPresets.mostUsed.map((tpl, i) => (
                 <div key={i} className="flex items-center justify-between py-1 text-sm">
                   <span className="text-gray-700 dark:text-gray-300">{tpl.name}</span>
                   <span className="text-xs text-gray-400">{tpl.usageCount} {t('admin.overview.uses')}</span>

@@ -10,6 +10,7 @@ import { requireAdmin } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { apiError, apiSuccess } from '@/lib/api-utils';
 import { logger } from '@/lib/logger';
+import { VISUAL_PRESETS } from '@/lib/visual-presets';
 
 /** Safely run a prisma query; returns fallback on error. */
 async function safe<T>(fn: () => Promise<T>, fallback: T): Promise<T> {
@@ -42,9 +43,8 @@ export async function GET() {
       recentSignupsList,
       recentPublishedList,
       recentFailedList,
-      totalTemplates,
-      premiumTemplates,
-      mostUsedTemplates,
+      totalAppsWithPreset,
+      mostUsedPresetGroups,
       totalApkExports,
       failedApkBuilds,
       buildingApks,
@@ -80,12 +80,13 @@ export async function GET() {
         take: 10,
         select: { id: true, appName: true, slug: true, failureReason: true, retryCount: true, updatedAt: true, user: { select: { email: true } } },
       }), []),
-      safe(() => prisma.appTemplate.count(), 0),
-      safe(() => prisma.appTemplate.count({ where: { isPremium: true } }), 0),
-      safe(() => prisma.appTemplate.findMany({
-        orderBy: { usageCount: 'desc' },
-        take: 5,
-        select: { name: true, slug: true, usageCount: true, category: true },
+      safe(() => prisma.appProject.count({ where: { visualPresetSlug: { not: null } } }), 0),
+      safe(() => prisma.appProject.groupBy({
+        by: ['visualPresetSlug'],
+        where: { visualPresetSlug: { not: null } },
+        _count: { _all: true },
+        orderBy: { _count: { visualPresetSlug: 'desc' } },
+        take: 6,
       }), []),
       safe(() => prisma.appProject.count({ where: { apkBuildStatus: 'READY' } }), 0),
       safe(() => prisma.appProject.count({ where: { apkBuildStatus: 'FAILED' } }), 0),
@@ -94,6 +95,18 @@ export async function GET() {
       safe(() => prisma.appProject.count({ where: { aiAnalysisStatus: 'COMPLETED' } }), 0),
       safe(() => prisma.appProject.count({ where: { aiAnalysisStatus: 'FAILED' } }), 0),
     ]);
+
+    const presetLabelBySlug = new Map<string, string>(
+      VISUAL_PRESETS.map((preset) => [preset.slug, preset.nameEs]),
+    );
+
+    const mostUsedPresets = mostUsedPresetGroups
+      .filter((group) => !!group.visualPresetSlug)
+      .map((group) => ({
+        slug: group.visualPresetSlug as string,
+        name: presetLabelBySlug.get(group.visualPresetSlug as string) ?? (group.visualPresetSlug as string),
+        usageCount: group._count._all,
+      }));
 
     return apiSuccess({
       totals: {
@@ -108,10 +121,10 @@ export async function GET() {
         queuedJobs,
         generatingJobs,
       },
-      templates: {
-        total: totalTemplates,
-        premium: premiumTemplates,
-        mostUsed: mostUsedTemplates,
+      visualPresets: {
+        catalogSize: VISUAL_PRESETS.length,
+        totalApplied: totalAppsWithPreset,
+        mostUsed: mostUsedPresets,
       },
       apkBuilds: {
         totalExports: totalApkExports,

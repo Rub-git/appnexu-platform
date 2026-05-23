@@ -13,17 +13,17 @@ import type { Plan } from '@prisma/client';
 
 export const PLAN_FEATURES = {
   FREE: {
-    premiumTemplates: false,
+    premiumVisualPresets: false,
     aiAnalysisQuota: 5,      // per calendar month
     apkExport: false,
   },
   PRO: {
-    premiumTemplates: true,
+    premiumVisualPresets: true,
     aiAnalysisQuota: Infinity,
     apkExport: true,
   },
   AGENCY: {
-    premiumTemplates: true,
+    premiumVisualPresets: true,
     aiAnalysisQuota: Infinity,
     apkExport: true,
   },
@@ -40,9 +40,9 @@ export async function getUserPlan(userId: string): Promise<Plan> {
   return user?.plan ?? 'FREE';
 }
 
-/** Can the user use a premium template? */
-export function canUsePremiumTemplate(plan: Plan): boolean {
-  return PLAN_FEATURES[plan].premiumTemplates;
+/** Can the user use a premium visual preset? */
+export function canUsePremiumVisualPreset(plan: Plan): boolean {
+  return PLAN_FEATURES[plan].premiumVisualPresets;
 }
 
 /** Can the user export APK? */

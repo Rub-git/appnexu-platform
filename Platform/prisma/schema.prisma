@@ -226,8 +226,8 @@ model AppProject {
   apkErrorMessage  String?        @map("apk_error_message")
   apkGithubRunId   String?        @map("apk_github_run_id")
 
-  // Template reference
-  templateId String? @map("template_id")
+  // Lightweight visual preset reference
+  visualPresetSlug String? @map("visual_preset_slug")
 
   // Analytics counters (denormalized for fast reads)
   totalVisits      Int       @default(0) @map("total_visits")
@@ -261,7 +261,7 @@ model AppProject {
   @@index([userId, appName, id])
   @@index([aiAnalysisStatus])
   @@index([apkBuildStatus])
-  @@index([templateId])
+  @@index([visualPresetSlug])
 }
 
 // Individual analytics events (raw event log)

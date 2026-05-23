@@ -4,9 +4,9 @@ import { generateSchema, formatZodErrors } from '@/lib/validations';
 import { apiError, apiSuccess } from '@/lib/api-utils';
 import { logger } from '@/lib/logger';
 import { checkRateLimit } from '@/lib/rate-limit';
-import { getUserPlan, canUsePremiumTemplate } from '@/lib/plan-gates';
 import { trackBillingUsage } from '@/lib/billing-usage';
 import { invalidateAppProjectCaches } from '@/lib/app-project-cache';
+import { getVisualPresetBySlug } from '@/lib/visual-presets';
 
 export async function POST(request: Request) {
   try {
@@ -43,50 +43,17 @@ export async function POST(request: Request) {
       return apiError('Plan limit reached. Please upgrade your plan to create more apps.', 403, 'PLAN_LIMIT_REACHED');
     }
 
-    // ── Template application (server-side validation) ──────────────
-    let templateConfig: Record<string, unknown> | null = null;
-    let templateId: string | null = null;
-
-    if (data.templateSlug) {
-      const template = await withRetry(() =>
-        prisma.appTemplate.findUnique({
-          where: { slug: data.templateSlug! },
-        })
-      );
-
-      if (!template) {
-        return apiError('Template not found', 404, 'TEMPLATE_NOT_FOUND');
-      }
-
-      // SERVER-SIDE premium gate
-      if (template.isPremium) {
-        const plan = await getUserPlan(session.user.id);
-        if (!canUsePremiumTemplate(plan)) {
-          return apiError(
-            'Premium templates require a PRO or AGENCY plan. Please upgrade.',
-            403,
-            'PREMIUM_TEMPLATE_RESTRICTED',
-          );
-        }
-      }
-
-      templateConfig = template.configJson as Record<string, unknown>;
-      templateId = template.id;
-
-      // Increment usage counter (fire-and-forget)
-      prisma.appTemplate.update({
-        where: { id: template.id },
-        data: { usageCount: { increment: 1 } },
-      }).catch(() => { /* non-critical */ });
-    }
+    // ── Visual preset application (lightweight styling only) ───────
+    const requestedPresetSlug = data.visualPresetSlug || null;
+    const visualPreset = getVisualPresetBySlug(requestedPresetSlug);
 
     // Extract short name from title, max 12 chars
     const shortName = data.title
       ? (data.title.split(' ')[0] || data.title).substring(0, 12)
       : 'App';
 
-    // Merge template colors if present
-    const colorScheme = templateConfig?.colorScheme as { primary?: string; secondary?: string } | undefined;
+    // Merge visual preset colors if present
+    const colorScheme = visualPreset?.colors;
 
     // Create app project with retry for transient DB errors
     const appProject = await withRetry(() =>
@@ -96,10 +63,10 @@ export async function POST(request: Request) {
           appName: data.title || 'My App',
           shortName,
           themeColor: data.themeColor || colorScheme?.primary || '#178BFF',
-          backgroundColor: data.backgroundColor || colorScheme?.secondary || '#ffffff',
+          backgroundColor: data.backgroundColor || colorScheme?.background || '#ffffff',
           iconUrls: data.iconUrls || '',
           userId: session.user!.id,
-          templateId: templateId,
+          visualPresetSlug: visualPreset?.slug || null,
         },
       })
     );
@@ -108,7 +75,7 @@ export async function POST(request: Request) {
       userId: session.user.id,
       appId: appProject.id,
       slug: appProject.slug,
-      templateSlug: data.templateSlug || null,
+      visualPresetSlug: visualPreset?.slug || null,
     });
 
     await trackBillingUsage({
@@ -117,7 +84,7 @@ export async function POST(request: Request) {
       metricKey: 'apps_created',
       metadata: {
         slug: appProject.slug,
-        templateSlug: data.templateSlug || null,
+        visualPresetSlug: visualPreset?.slug || null,
       },
     });
 

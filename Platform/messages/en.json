@@ -270,7 +270,7 @@
   "landing": {
     "hero": {
       "title": "Turn your website into an app in minutes",
-      "subtitle": "Appnexu transforms your website into an installable mobile app with smart analysis, industry templates, and fast publishing.",
+      "subtitle": "Appnexu transforms your website into an installable mobile app with smart analysis, AI-assisted visual design, and fast publishing.",
       "cta": "Create your app",
       "demo": "See how it works"
     },
@@ -403,12 +403,12 @@
     }
   },
   "templates": {
-    "badge": "App Templates",
-    "title": "Start with a Template",
-    "subtitle": "Choose from our collection of professionally designed templates to jumpstart your app creation.",
+    "badge": "Visual Experience",
+    "title": "Choose Your App Style",
+    "subtitle": "Appnexu automatically adapts colors, splash, icons, and UI style with intelligent presets.",
     "preview": "Preview",
-    "useTemplate": "Use Template",
-    "noTemplates": "No templates found for this category.",
+    "useTemplate": "Apply Style",
+    "noTemplates": "No visual styles are available.",
     "categories": {
       "ALL": "All",
       "BUSINESS": "Business",
@@ -426,7 +426,7 @@
       "secondary": "Secondary"
     },
     "premiumBadge": "Pro",
-    "premiumOnly": "This template is available for Pro and Agency plans."
+    "premiumOnly": "This visual experience is available for Pro and Agency plans."
   },
   "aiAnalyzer": {
     "title": "AI Website Analyzer",
@@ -459,10 +459,10 @@
   "createApp": {
     "title": "Create New App",
     "subtitle": "Enter the URL of the website you want to convert into an installable mobile app.",
-    "usingTemplate": "Using template",
-    "templateApplied": "Template colors and navigation will be applied to your app.",
-    "browseTemplates": "Start with a template",
-    "browseTemplatesDesc": "Choose from pre-built templates for restaurants, churches, clinics, and more.",
+    "usingTemplate": "App Style active",
+    "templateApplied": "Your Visual Experience and AI Branding will be applied automatically.",
+    "browseTemplates": "Choose Visual Experience",
+    "browseTemplatesDesc": "Select an intelligent App Style: Modern, Professional, Minimal, Vibrant, Dark, or Corporate.",
     "form": {
       "urlLabel": "Website URL",
       "urlPlaceholder": "https://example.com",
@@ -503,7 +503,7 @@
       "popular": "Most Popular",
       "features": {
         "apps": "5 apps",
-        "templates": "Premium templates",
+        "templates": "Premium visual experiences",
         "ai": "AI website analysis",
         "apk": "APK export",
         "analytics": "Advanced analytics",
@@ -516,7 +516,7 @@
       "description": "For agencies and large teams",
       "features": {
         "apps": "Unlimited apps",
-        "templates": "All premium templates",
+        "templates": "All premium visual experiences",
         "ai": "Unlimited AI analysis",
         "apk": "Unlimited APK exports",
         "whiteLabel": "White-label branding",

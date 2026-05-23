@@ -68,7 +68,7 @@ export const brand = {
   seo: {
     defaultTitle: 'Appnexu - From website to app. Instantly.',
     defaultDescription:
-      'Appnexu transforms your website into an installable mobile app with smart analysis, industry templates, and fast publishing.',
+      'Appnexu transforms your website into an installable mobile app with smart analysis, AI-assisted visual experience, and fast publishing.',
     keywords: [
       'website to app',
       'PWA generator',
