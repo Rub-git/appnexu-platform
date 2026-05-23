@@ -8,6 +8,15 @@ import { trackBillingUsage } from '@/lib/billing-usage';
 import { invalidateAppProjectCaches } from '@/lib/app-project-cache';
 import { getVisualPresetBySlug } from '@/lib/visual-presets';
 
+function buildDefaultIconUrls(targetUrl: string): string {
+  try {
+    const origin = new URL(targetUrl).origin;
+    return `${origin}/favicon.ico`;
+  } catch {
+    return '';
+  }
+}
+
 export async function POST(request: Request) {
   try {
     const session = await auth();
@@ -35,6 +44,8 @@ export async function POST(request: Request) {
     }
 
     const data = parsed.data;
+    const providedIconUrls = data.iconUrls?.trim() || '';
+    const initialIconUrls = providedIconUrls || buildDefaultIconUrls(data.url);
 
     // Check plan limits (with retry for transient DB errors)
     const limitCheck = await withRetry(() => canCreateApp(session.user!.id));
@@ -64,7 +75,7 @@ export async function POST(request: Request) {
           shortName,
           themeColor: data.themeColor || colorScheme?.primary || '#178BFF',
           backgroundColor: data.backgroundColor || colorScheme?.background || '#ffffff',
-          iconUrls: data.iconUrls || '',
+          iconUrls: initialIconUrls,
           userId: session.user!.id,
           visualPresetSlug: visualPreset?.slug || null,
         },

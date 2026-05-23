@@ -12,6 +12,25 @@ import { invalidateAppProjectCaches } from '@/lib/app-project-cache';
 export const dynamic = "force-dynamic";
 export const maxDuration = 30; // Allow up to 30s for generation
 
+function shouldReplaceDefaultIconUrls(iconUrls: string | null, targetUrl: string): boolean {
+  if (!iconUrls || iconUrls.trim().length === 0) return true;
+
+  const normalized = iconUrls
+    .split(',')
+    .map((item) => item.trim())
+    .filter(Boolean);
+
+  if (normalized.length === 0) return true;
+
+  try {
+    const origin = new URL(targetUrl).origin;
+    const defaultFavicon = `${origin}/favicon.ico`;
+    return normalized.length === 1 && normalized[0] === defaultFavicon;
+  } catch {
+    return false;
+  }
+}
+
 /**
  * POST /api/jobs/generate
  *
@@ -146,10 +165,7 @@ export async function POST(request: Request) {
       updateData.pwaAuditedAt = new Date();
 
       // Only update iconUrls if current ones are defaults and we found real ones
-      if (
-        analysisResult.icons.length > 0 &&
-        (!app.iconUrls || app.iconUrls.trim().length === 0)
-      ) {
+      if (analysisResult.icons.length > 0 && shouldReplaceDefaultIconUrls(app.iconUrls, app.targetUrl)) {
         updateData.iconUrls = analysisResult.icons.join(",");
       }
 
