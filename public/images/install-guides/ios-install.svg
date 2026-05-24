@@ -1,0 +1,17 @@
+<svg width="640" height="360" viewBox="0 0 640 360" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect x="8" y="8" width="624" height="344" rx="18" fill="#F8FAFC" stroke="#CBD5E1" stroke-width="2"/>
+  <rect x="454" y="56" width="144" height="248" rx="28" fill="#0F172A"/>
+  <rect x="466" y="76" width="120" height="204" rx="18" fill="#FFFFFF"/>
+  <rect x="504" y="94" width="44" height="20" rx="10" fill="#E2E8F0"/>
+  <rect x="478" y="118" width="96" height="22" rx="8" fill="#059669"/>
+  <text x="526" y="133" font-family="Arial, sans-serif" font-size="10" text-anchor="middle" fill="#FFFFFF">Add to Home</text>
+  <path d="M526 154V174" stroke="#0F172A" stroke-width="3"/>
+  <path d="M518 164L526 154L534 164" stroke="#0F172A" stroke-width="3"/>
+  <rect x="516" y="174" width="20" height="16" rx="4" stroke="#0F172A" stroke-width="3"/>
+  <text x="42" y="92" font-family="Arial, sans-serif" font-size="21" font-weight="700" fill="#0F172A">iPhone install</text>
+  <text x="42" y="124" font-family="Arial, sans-serif" font-size="16" fill="#334155">1. Tap Share in Safari</text>
+  <text x="42" y="152" font-family="Arial, sans-serif" font-size="16" fill="#334155">2. Tap Add to Home Screen</text>
+  <text x="42" y="180" font-family="Arial, sans-serif" font-size="16" fill="#334155">3. Tap Add</text>
+  <path d="M400 170L448 170" stroke="#059669" stroke-width="3"/>
+  <path d="M442 164L450 170L442 176" stroke="#059669" stroke-width="3"/>
+</svg>

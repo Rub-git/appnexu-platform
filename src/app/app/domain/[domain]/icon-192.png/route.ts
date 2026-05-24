@@ -1,0 +1,35 @@
+import { NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
+import { getCustomDomainCandidates, normalizeCustomDomain } from '@/lib/custom-domain';
+import { getAppAssetVersion } from '@/lib/pwa-assets';
+
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+export const fetchCache = 'force-no-store';
+
+export async function GET(
+  request: Request,
+  { params }: { params: Promise<{ domain: string }> },
+) {
+  const { domain } = await params;
+  const normalizedDomain = normalizeCustomDomain(domain);
+  const domainCandidates = getCustomDomainCandidates(normalizedDomain);
+
+  const app = await prisma.appProject.findFirst({
+    where: { customDomain: { in: domainCandidates } },
+    select: { id: true, status: true, updatedAt: true, lastGeneratedAt: true, iconUrls: true },
+  });
+
+  if (!app || app.status !== 'PUBLISHED') {
+    return new NextResponse('App not found', { status: 404 });
+  }
+
+  const requestUrl = new URL(request.url);
+  const version = requestUrl.searchParams.get('v') || getAppAssetVersion(app);
+  const target = new URL(
+    `/api/icon-proxy/${app.id}?size=192&variant=any&format=png&v=${encodeURIComponent(version)}`,
+    requestUrl.origin,
+  );
+
+  return NextResponse.redirect(target, 307);
+}

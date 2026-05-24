@@ -1,0 +1,83 @@
+type AppAssetVersionSource = {
+  updatedAt?: Date | string | null;
+  lastGeneratedAt?: Date | string | null;
+  iconUrls?: string | null;
+};
+
+function toTimestamp(value?: Date | string | null): number {
+  if (!value) return 0;
+  if (value instanceof Date) return value.getTime();
+
+  const parsed = Date.parse(value);
+  return Number.isNaN(parsed) ? 0 : parsed;
+}
+
+export function getAppAssetVersion(app: AppAssetVersionSource): string {
+  const timestamp = Math.max(
+    toTimestamp(app.lastGeneratedAt),
+    toTimestamp(app.updatedAt),
+  );
+
+  // Keep icon URLs deterministic and short while ensuring a changed uploaded logo
+  // invalidates icon/manifest asset URLs even when timestamps are close.
+  const iconSource = app.iconUrls || '';
+  let iconFingerprint = 0;
+  for (let i = 0; i < iconSource.length; i += 1) {
+    iconFingerprint = (iconFingerprint * 31 + iconSource.charCodeAt(i)) % 1000000007;
+  }
+
+  return `${String(timestamp || Date.now())}-${iconFingerprint}`;
+}
+
+export function getAppManifestUrl(appId: string, version: string): string {
+  return `/pwa/${appId}/manifest.json?v=${encodeURIComponent(version)}`;
+}
+
+type ManifestInstallMode = 'slug' | 'domain' | 'pwa';
+
+export function getAppManifestUrlForMode(
+  appId: string,
+  version: string,
+  mode: ManifestInstallMode,
+  value: string,
+): string {
+  const params = new URLSearchParams({
+    v: version,
+    mode,
+    value,
+  });
+
+  return `/pwa/${appId}/manifest.json?${params.toString()}`;
+}
+
+export function getAppIconUrl(appId: string, size: number, version: string): string {
+  return `/api/icon-proxy/${appId}?size=${size}&v=${encodeURIComponent(version)}`;
+}
+
+export type AppNamedIconFile =
+  | 'favicon.ico'
+  | 'icon-192.png'
+  | 'icon-512.png'
+  | 'apple-touch-icon.png'
+  | 'maskable-icon.png';
+
+export function getAppNamedIconUrl(appId: string, file: AppNamedIconFile, version: string): string {
+  return `/pwa/${appId}/${file}?v=${encodeURIComponent(version)}`;
+}
+
+export function getAppServiceWorkerUrl(appId: string, version: string, scope: string): string {
+  const params = new URLSearchParams({
+    v: version,
+    scope,
+  });
+
+  return `/pwa/${appId}/sw.js?${params.toString()}`;
+}
+
+export function getAppCachePrefix(appId: string): string {
+  return `appnexu-pwa-v2-${appId}`;
+}
+
+export function getAppCacheName(appId: string, version: string): string {
+  return `${getAppCachePrefix(appId)}-v${version}`;
+}

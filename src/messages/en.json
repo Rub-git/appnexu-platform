@@ -1,0 +1,52 @@
+{
+  "app": {
+    "title": "Appnexu Platform"
+  },
+  "dashboard": {
+    "welcome": "Welcome to your dashboard!"
+  },
+  "templates": {
+    "select": "Select a visual preset",
+    "badge": "Template Badge",
+    "title": "Template Title",
+    "subtitle": "Template Subtitle"
+  },
+  "button": {
+    "back": "Back",
+    "next": "Next"
+  },
+  "auth": {
+    "signUp": {
+      "title": "Create your account",
+      "subtitle": "Sign up to get started",
+      "button": "Sign up",
+      "hasAccount": "Already have an account?",
+      "signInLink": "Sign in"
+    },
+    "signIn": {
+      "title": "Sign in to your account",
+      "subtitle": "Enter your credentials to access your account",
+      "forgotPassword": "Forgot your password?",
+      "button": "Sign in",
+      "noAccount": "Don't have an account?",
+      "createAccount": "Create account"
+    },
+    "fields": {
+      "name": "Name",
+      "email": "Email",
+      "password": "Password",
+      "confirmPassword": "Confirm password"
+    }
+  },
+  "common": {
+    "tagline": "Build your app fast!"
+  },
+  "footer": {
+    "links": {
+      "privacy": "Privacy Policy",
+      "terms": "Terms of Service",
+      "support": "Support"
+    },
+    "copyright": "Copyright © 2026 Appnexu. All rights reserved."
+  }
+}
