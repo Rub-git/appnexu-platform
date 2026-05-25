@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useState as useReactState } from 'react';
 import { useTranslations } from 'next-intl';
 import { useRouter } from '@/i18n/routing';
 import { Loader2, ArrowRight, X, Eye, Sparkles, LayoutTemplate } from 'lucide-react';
@@ -41,12 +42,20 @@ interface VisualPreset {
   };
 }
 
-export default function TemplatesPage() {
+
   const t = useTranslations();
   const router = useRouter();
   const [presets, setPresets] = useState<VisualPreset[]>([]);
   const [loading, setLoading] = useState(true);
   const [previewPreset, setPreviewPreset] = useState<VisualPreset | null>(null);
+  // Estado para forzar visibilidad del botón en PWA/standalone
+  const [forceShowBack, setForceShowBack] = useReactState(false);
+
+  useEffect(() => {
+    // Detectar si estamos en modo standalone/PWA
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+    if (isStandalone) setForceShowBack(true);
+  }, []);
 
   useEffect(() => {
     fetch('/api/visual-presets')
@@ -65,8 +74,8 @@ export default function TemplatesPage() {
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-black">
-      {/* Botón fijo de regreso al dashboard, visible siempre */}
-      <BackToDashboardButton />
+      {/* Botón fijo de regreso al dashboard, visible siempre, y forzado en PWA/standalone */}
+      {(forceShowBack || typeof window === 'undefined') && <BackToDashboardButton />}
       <div className="bg-gradient-to-br from-[#178BFF] via-[#5B2CCF] to-[#F54291] px-6 py-16 text-center text-white">
         <div className="mx-auto max-w-4xl">
           <div className="mb-4 inline-flex items-center rounded-full bg-white/20 px-4 py-1.5 text-sm font-medium backdrop-blur-sm">
@@ -154,9 +163,9 @@ export default function TemplatesPage() {
               onClick={(e) => e.stopPropagation()}
               style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 1rem)' }}
             >
-              {/* Botón de regreso permanente al dashboard */}
+              {/* Botón de regreso permanente al dashboard, forzado en PWA/standalone */}
               <div className="absolute left-4 top-4 z-30">
-                <BackToDashboardButton />
+                {(forceShowBack || typeof window === 'undefined') && <BackToDashboardButton />}
               </div>
               {/* Botón de cerrar (X) arriba a la derecha */}
               <button
