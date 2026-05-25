@@ -2,7 +2,7 @@
   "name": "Appnexu",
   "short_name": "Appnexu",
   "description": "Appnexu transforms your website into an installable mobile app with smart analysis, industry templates, and fast publishing.",
-  "start_url": "/",
+  "start_url": "/en/dashboard",
   "scope": "/",
   "display": "standalone",
   "display_override": ["window-controls-overlay", "standalone"],
