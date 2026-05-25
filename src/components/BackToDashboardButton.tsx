@@ -5,15 +5,26 @@ import { useRouter } from "next/navigation";
 export function BackToDashboardButton() {
   const router = useRouter();
 
+  // Detect locale from path
+  let locale = "";
+  if (typeof window !== "undefined") {
+    const path = window.location.pathname;
+    if (path.startsWith("/es")) locale = "es";
+    else if (path.startsWith("/en")) locale = "en";
+  }
+
   const goBack = () => {
     if (typeof window !== "undefined" && window.history.length > 1) {
       router.back();
     } else {
-      // Detect locale from path for fallback
-      const locale = typeof window !== "undefined" ? window.location.pathname.split("/")[1] : "es";
-      router.push(`/${locale}/dashboard`);
+      const dashboardHref = locale ? `/${locale}/dashboard` : "/dashboard";
+      router.push(dashboardHref);
     }
   };
+
+  let label = null;
+  if (locale === "es") label = "Atrás";
+  else if (locale === "en") label = "Back";
 
   return (
     <button
@@ -25,11 +36,11 @@ export function BackToDashboardButton() {
         maxWidth: '90vw',
         pointerEvents: 'auto',
       }}
-      aria-label="Volver al dashboard"
+      aria-label={label ? label : "Back"}
       tabIndex={0}
     >
-      <span style={{fontSize: 22, lineHeight: 1, marginRight: 4}}>←</span>
-      <span className="hidden sm:inline">Dashboard</span>
+      <span style={{fontSize: 22, lineHeight: 1, marginRight: label ? 4 : 0}}>←</span>
+      {label && <span>{label}</span>}
     </button>
   );
 }

@@ -154,25 +154,10 @@ export default function TemplatesPage() {
               onClick={(e) => e.stopPropagation()}
               style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 1rem)' }}
             >
-              {/* Botón de regreso arriba a la izquierda */}
-              <button
-                onClick={() => {
-                  if (window.history.length > 1) {
-                    router.back();
-                  } else {
-                    router.push('/dashboard');
-                  }
-                  setPreviewPreset(null);
-                }}
-                className="absolute left-4 top-4 z-20 flex items-center gap-1 rounded-full bg-white/80 px-3 py-1 text-sm font-medium text-blue-700 shadow hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-blue-400 dark:bg-gray-800/80 dark:text-blue-200 dark:hover:bg-gray-700"
-                style={{
-                  paddingTop: 'env(safe-area-inset-top, 0px)'
-                }}
-                aria-label="Volver"
-              >
-                <svg viewBox="0 0 20 20" fill="currentColor" className="h-5 w-5"><path fillRule="evenodd" d="M12.293 15.707a1 1 0 010-1.414L15.586 11H4a1 1 0 110-2h11.586l-3.293-3.293a1 1 0 111.414-1.414l5 5a1 1 0 010 1.414l-5 5a1 1 0 01-1.414 0z" clipRule="evenodd" /></svg>
-                Volver
-              </button>
+              {/* Botón de regreso permanente al dashboard */}
+              <div className="absolute left-4 top-4 z-30">
+                <BackToDashboardButton />
+              </div>
               {/* Botón de cerrar (X) arriba a la derecha */}
               <button
                 onClick={() => setPreviewPreset(null)}
