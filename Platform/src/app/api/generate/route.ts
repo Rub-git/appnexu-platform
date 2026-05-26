@@ -44,6 +44,22 @@ export async function POST(request: Request) {
     }
 
     const data = parsed.data;
+
+    // Block self-referencing URLs (second guard after /api/analyze)
+    try {
+      const parsedUrl = new URL(data.url);
+      const blockedHosts = ['appnexu.com', 'www.appnexu.com'];
+      if (blockedHosts.includes(parsedUrl.hostname.toLowerCase()) || parsedUrl.hostname.endsWith('.vercel.app')) {
+        return apiError(
+          'No puedes crear una app desde el propio dominio de Appnexu. Ingresa la URL de tu sitio web externo.',
+          400,
+          'SELF_REFERENCING_URL',
+        );
+      }
+    } catch {
+      // URL parsing already handled by schema validation
+    }
+
     const providedIconUrls = data.iconUrls?.trim() || '';
     const initialIconUrls = providedIconUrls || buildDefaultIconUrls(data.url);
 

@@ -162,6 +162,7 @@ export default async function PublicAppPage({
               assetVersion={assetVersion}
               manifestHref={manifestHref}
               finalInstallUrl={finalInstallUrl}
+              allowInstall
             />
           </div>
 
