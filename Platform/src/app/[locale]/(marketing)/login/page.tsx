@@ -22,27 +22,53 @@ export default function LoginPage() {
     setError('');
 
     try {
+      console.log("[Login] Attempting signIn for:", email.trim().toLowerCase());
+      
       const result = await signIn("credentials", {
-        email,
+        email: email.trim().toLowerCase(),
         password,
         redirect: false,
       });
 
-      if (result?.status === 503) {
-        setError(t('auth.errors.serverUnavailable'));
+      console.log("[Login] signIn result:", { ok: result?.ok, error: result?.error, status: result?.status });
+
+      if (result?.error) {
+        // NextAuth returns error string for failed credentials
+        if (result.error === 'CredentialsSignin' || result.error === 'CallbackRouteError') {
+          setError(t('auth.errors.invalidCredentials'));
+        } else if (result.status === 503) {
+          setError(t('auth.errors.serverUnavailable'));
+        } else {
+          console.error("[Login] Unexpected error type:", result.error);
+          setError(t('auth.errors.invalidCredentials'));
+        }
         setIsLoading(false);
         return;
       }
 
-      if (result?.error || !result?.ok) {
+      if (!result?.ok) {
         setError(t('auth.errors.invalidCredentials'));
         setIsLoading(false);
         return;
       }
 
+      console.log("[Login] ✅ Success, redirecting to dashboard");
       window.location.href = `/${locale}/dashboard`;
     } catch (error) {
-      console.error("Login error:", error);
+      // Filter out browser extension errors that don't affect functionality
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      const isExtensionError = errorMessage.includes('message channel closed') || 
+                                errorMessage.includes('asynchronous response');
+      
+      if (isExtensionError) {
+        console.warn("[Login] Browser extension error (can be ignored):", errorMessage);
+        // The signIn might have actually succeeded despite the extension error
+        // Try checking if we got a session by navigating to dashboard
+        window.location.href = `/${locale}/dashboard`;
+        return;
+      }
+
+      console.error("[Login] Login error:", error);
       setError(t('auth.errors.serverUnavailable'));
       setIsLoading(false);
     }
