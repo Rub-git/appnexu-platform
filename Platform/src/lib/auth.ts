@@ -1,5 +1,5 @@
 import "server-only";
-import NextAuth, { CredentialsSignin } from 'next-auth';
+import NextAuth from 'next-auth';
 import Credentials from 'next-auth/providers/credentials';
 import { prisma } from './prisma';
 import bcrypt from 'bcryptjs';
@@ -58,17 +58,13 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       },
       async authorize(credentials) {
         try {
-          const dbUrl = process.env.DATABASE_URL || '';
-          const hasWhitespace = dbUrl !== dbUrl.trim();
           console.log("[AUTH] authorize called");
           console.log("[AUTH] AUTH_SECRET exists:", !!process.env.AUTH_SECRET);
-          console.log("[AUTH] DATABASE_URL exists:", !!process.env.DATABASE_URL, "length:", dbUrl.length);
-          if (hasWhitespace) {
-            console.error("[AUTH] ⚠️ DATABASE_URL has leading/trailing whitespace! This WILL cause connection failures.");
-          }
+          console.log("[AUTH] DATABASE_URL exists:", !!process.env.DATABASE_URL);
 
           if (!credentials?.email || !credentials?.password) {
-            throw new CredentialsSignin("Missing credentials");
+            console.log("[AUTH] Missing credentials");
+            return null; // Return null instead of throw for cleaner error handling
           }
 
           const email = (credentials.email as string).trim().toLowerCase();
@@ -84,25 +80,33 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             });
           } catch (dbError) {
             console.error("[AUTH] Database query FAILED:", dbError instanceof Error ? dbError.message : dbError);
-            throw new CredentialsSignin("Database connection error");
+            // Return null for DB errors - will show as CredentialsSignin on client
+            return null;
           }
 
           console.log("[AUTH] User found:", user?.email ? "yes" : "no");
 
           if (!user || !user.password) {
             console.log("[AUTH] User not found or no password set");
-            throw new CredentialsSignin("Invalid credentials");
+            return null;
           }
 
           // 2. Validar password con bcrypt
           console.log("[AUTH] Comparing password, hash prefix:", user.password.substring(0, 7), "hash length:", user.password.length);
-          const passwordMatch = await bcrypt.compare(password, user.password);
+          
+          let passwordMatch: boolean;
+          try {
+            passwordMatch = await bcrypt.compare(password, user.password);
+          } catch (bcryptError) {
+            console.error("[AUTH] bcrypt.compare FAILED:", bcryptError instanceof Error ? bcryptError.message : bcryptError);
+            return null;
+          }
 
           console.log("[AUTH] Password valid:", passwordMatch);
 
           if (!passwordMatch) {
             console.log("[AUTH] Incorrect password for", email);
-            throw new CredentialsSignin("Invalid credentials");
+            return null;
           }
 
           console.log("[AUTH] ✅ Login successful for", email);
@@ -114,14 +118,9 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             role: user.role,
           };
         } catch (error) {
-          // Re-throw CredentialsSignin errors (these are expected auth failures)
-          if (error instanceof CredentialsSignin) {
-            throw error;
-          }
-          // Log unexpected errors (DB connection, etc.) that would otherwise
-          // be swallowed and returned as generic "Configuration" error
+          // Log unexpected errors
           console.error("[AUTH] Unexpected error in authorize:", error);
-          throw new CredentialsSignin("Server error during authentication");
+          return null;
         }
       },
     }),
