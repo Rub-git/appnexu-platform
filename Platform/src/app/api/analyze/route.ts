@@ -59,6 +59,22 @@ export async function POST(request: Request) {
     }
 
     const { url } = parsed.data;
+
+    // Block self-referencing URLs that would create a PWA of Appnexu itself
+    try {
+      const parsedUrl = new URL(url);
+      const blockedHosts = ['appnexu.com', 'www.appnexu.com'];
+      if (blockedHosts.includes(parsedUrl.hostname.toLowerCase()) || parsedUrl.hostname.endsWith('.vercel.app')) {
+        return apiError(
+          'No puedes crear una app desde el propio dominio de Appnexu. Ingresa la URL de tu sitio web externo.',
+          400,
+          'SELF_REFERENCING_URL',
+        );
+      }
+    } catch {
+      // URL parsing failed – validation schema already covers this
+    }
+
     let effectiveUrl = url;
 
     // AbortController for timeout (10 seconds)

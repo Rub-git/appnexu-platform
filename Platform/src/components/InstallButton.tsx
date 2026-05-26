@@ -15,6 +15,8 @@ interface InstallButtonProps {
   assetVersion?: string;
   manifestHref?: string;
   finalInstallUrl?: string;
+  /** When true, enable install mode even on the platform host (e.g. /es/app/[slug] pages). */
+  allowInstall?: boolean;
 }
 
 function isStandaloneMode(): boolean {
@@ -41,7 +43,7 @@ function isPlatformHost(hostname: string): boolean {
   return false;
 }
 
-export default function InstallButton({ appId, assetVersion = '1', manifestHref, finalInstallUrl }: InstallButtonProps) {
+export default function InstallButton({ appId, assetVersion = '1', manifestHref, finalInstallUrl, allowInstall = false }: InstallButtonProps) {
   const [isInstalled, setIsInstalled] = useState(() => isStandaloneMode());
   const [isLoading, setIsLoading] = useState(() => !isStandaloneMode());
   const [showHelp, setShowHelp] = useState(false);
@@ -58,7 +60,10 @@ export default function InstallButton({ appId, assetVersion = '1', manifestHref,
   const isAndroid = deviceType === 'android';
   const isMobileDevice = isIOS || isAndroid;
   const isDesktop = !isMobileDevice;
+  // When allowInstall is true (e.g. public /es/app/[slug] page), treat as
+  // installable even on the platform host so manifest + SW are set up.
   const [isCustomHost] = useState<boolean>(() => {
+    if (allowInstall) return true;
     if (typeof window === 'undefined') return false;
     return !isPlatformHost(window.location.hostname);
   });
@@ -171,11 +176,16 @@ export default function InstallButton({ appId, assetVersion = '1', manifestHref,
       });
     };
 
-    // Register SW only on custom/final host root. Never register app SW on preview host.
+    // Register SW when on a custom/final host, or when allowInstall forces
+    // install mode on the platform host (public app pages).
     if (customHost && 'serviceWorker' in navigator) {
-      const scope = '/';
-      const swUrl = '/sw.js';
-      const expectedScriptPath = '/sw.js';
+      // On custom domains the app SW lives at /sw.js with root scope.
+      // On platform host with allowInstall, use the app-specific SW path
+      // so it doesn't conflict with the platform's own /sw.js.
+      const isPlatform = typeof window !== 'undefined' && isPlatformHost(window.location.hostname);
+      const scope = isPlatform ? `/pwa/${appId}/` : '/';
+      const swUrl = isPlatform ? `/pwa/${appId}/sw.js` : '/sw.js';
+      const expectedScriptPath = isPlatform ? `/pwa/${appId}/sw.js` : '/sw.js';
       unregisterHostServiceWorkers(expectedScriptPath)
         .then(() => navigator.serviceWorker.register(swUrl, { scope }))
         .then((registration) => {
@@ -305,22 +315,22 @@ export default function InstallButton({ appId, assetVersion = '1', manifestHref,
         {!isCustomHost
           ? 'Abrir dominio final para instalar'
           : isDesktop
-            ? 'Install App on Desktop'
+            ? 'Instalar App'
             : isMobileDevice
-              ? 'Install App'
-              : 'Install'}
+              ? 'Instalar App'
+              : 'Instalar'}
       </button>
 
       {showHelp && (
         <div className="mt-3 rounded-xl border border-gray-200 bg-white p-4 text-left shadow-sm dark:border-gray-700 dark:bg-gray-900">
           <p className="text-sm font-semibold text-gray-900 dark:text-white">
-            Install steps
+            Pasos para instalar
           </p>
 
           <div className="mt-3 overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700">
             <Image
               src={guideImageSrc}
-              alt="Install guide"
+              alt="Guía de instalación"
               width={640}
               height={360}
               className="h-auto w-full"
@@ -329,21 +339,21 @@ export default function InstallButton({ appId, assetVersion = '1', manifestHref,
 
           {isIOS ? (
             <ol className="mt-2 list-decimal space-y-1 pl-5 text-sm text-gray-600 dark:text-gray-300">
-              <li>Tap the Share button in Safari.</li>
-              <li>Select Add to Home Screen.</li>
-              <li>Tap Add.</li>
+              <li>Toca el botón Compartir en Safari.</li>
+              <li>Selecciona Agregar a la pantalla de inicio.</li>
+              <li>Toca Agregar.</li>
             </ol>
           ) : isAndroid ? (
             <ol className="mt-2 list-decimal space-y-1 pl-5 text-sm text-gray-600 dark:text-gray-300">
-              <li>Open browser menu (three dots).</li>
-              <li>Select Install app or Add to Home screen.</li>
-              <li>Confirm installation.</li>
+              <li>Abre el menú del navegador (tres puntos).</li>
+              <li>Selecciona Instalar app o Agregar a pantalla de inicio.</li>
+              <li>Confirma la instalación.</li>
             </ol>
           ) : (
             <ol className="mt-2 list-decimal space-y-1 pl-5 text-sm text-gray-600 dark:text-gray-300">
-              <li>Click browser menu (three dots) at top-right.</li>
-              <li>Select Install App.</li>
-              <li>If available, you can also click the install icon in the address bar.</li>
+              <li>Haz clic en el menú del navegador (tres puntos) arriba a la derecha.</li>
+              <li>Selecciona Instalar App.</li>
+              <li>Si está disponible, también puedes hacer clic en el icono de instalación en la barra de direcciones.</li>
             </ol>
           )}
 
@@ -353,14 +363,14 @@ export default function InstallButton({ appId, assetVersion = '1', manifestHref,
               className="inline-flex items-center rounded-md border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-800"
             >
               <ExternalLink className="mr-1.5 h-3.5 w-3.5" />
-              Open in New Tab
+              Abrir en nueva pestaña
             </button>
             <button
               onClick={handleCopyLink}
               className="inline-flex items-center rounded-md border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-800"
             >
               <Copy className="mr-1.5 h-3.5 w-3.5" />
-              {copied ? 'Link Copied' : 'Copy Link'}
+              {copied ? 'Enlace copiado' : 'Copiar enlace'}
             </button>
           </div>
         </div>
