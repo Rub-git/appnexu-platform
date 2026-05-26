@@ -3,7 +3,8 @@
 import { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { useRouter } from '@/i18n/routing';
-import { Loader2, ArrowRight, X, Eye, Sparkles, LayoutTemplate } from 'lucide-react';
+import { Loader2, ArrowRight, ArrowLeft, X, Eye, Sparkles, LayoutTemplate } from 'lucide-react';
+import { Link } from '@/i18n/routing';
 
 interface VisualPreset {
   slug: string;
@@ -64,16 +65,25 @@ export default function TemplatesPage() {
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-black">
-      <div className="bg-gradient-to-br from-[#178BFF] via-[#5B2CCF] to-[#F54291] px-6 py-16 text-center text-white">
+      <div className="bg-gradient-to-br from-[#178BFF] via-[#5B2CCF] to-[#F54291] px-6 py-16 text-white">
         <div className="mx-auto max-w-4xl">
-          <div className="mb-4 inline-flex items-center rounded-full bg-white/20 px-4 py-1.5 text-sm font-medium backdrop-blur-sm">
-            <LayoutTemplate className="mr-2 h-4 w-4" />
-            {t('templates.badge')}
+          <Link
+            href="/dashboard"
+            className="mb-6 inline-flex items-center rounded-full bg-white/15 px-3 py-1.5 text-sm font-medium text-white/90 backdrop-blur-sm transition-colors hover:bg-white/25 hover:text-white"
+          >
+            <ArrowLeft className="mr-1.5 h-4 w-4" />
+            {t('preview.backToApps')}
+          </Link>
+          <div className="text-center">
+            <div className="mb-4 inline-flex items-center rounded-full bg-white/20 px-4 py-1.5 text-sm font-medium backdrop-blur-sm">
+              <LayoutTemplate className="mr-2 h-4 w-4" />
+              {t('templates.badge')}
+            </div>
+            <h1 className="text-4xl font-bold tracking-tight sm:text-5xl" style={{ fontFamily: "'Sora', sans-serif" }}>
+              {t('templates.title')}
+            </h1>
+            <p className="mt-4 text-lg text-white/80">{t('templates.subtitle')}</p>
           </div>
-          <h1 className="text-4xl font-bold tracking-tight sm:text-5xl" style={{ fontFamily: "'Sora', sans-serif" }}>
-            {t('templates.title')}
-          </h1>
-          <p className="mt-4 text-lg text-white/80">{t('templates.subtitle')}</p>
         </div>
       </div>
 
