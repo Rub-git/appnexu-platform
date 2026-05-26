@@ -32,7 +32,7 @@
       "name": "Create New App",
       "short_name": "Create",
       "description": "Create a new app from a website",
-      "url": "/dashboard/create",
+      "url": "/en/dashboard/create",
       "icons": [
         {
           "src": "/icons/icon-192.png",
@@ -44,7 +44,7 @@
       "name": "Dashboard",
       "short_name": "Dashboard",
       "description": "View your apps",
-      "url": "/dashboard",
+      "url": "/en/dashboard",
       "icons": [
         {
           "src": "/icons/icon-192.png",
