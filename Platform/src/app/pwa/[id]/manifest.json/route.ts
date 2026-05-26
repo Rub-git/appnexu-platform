@@ -10,18 +10,19 @@ interface ManifestIcon {
 }
 
 function getInstallDataFromRequestUrl(requestUrl: string, appId: string) {
+    const pwaScope = `/pwa/${appId}/`;
     try {
         const origin = new URL(requestUrl).origin;
         const installId = `${origin}/pwa/${appId}`;
         return {
             startUrl: `${origin}/pwa/${appId}/launch`,
-            scope: '/',
+            scope: pwaScope,
             id: installId,
         };
     } catch {
         return {
             startUrl: `/pwa/${appId}/launch`,
-            scope: '/',
+            scope: pwaScope,
             id: `/pwa/${appId}`,
         };
     }
@@ -107,7 +108,8 @@ export async function GET(
 
         const installData = getInstallDataFromRequestUrl(request.url, app.id);
         const configuredStartPath = resolveConfiguredPath(app.importedStartUrl, `/pwa/${app.id}/launch`);
-        const configuredScope = (app.importedScope || '/').trim() || '/';
+        const defaultScope = `/pwa/${app.id}/`;
+        const configuredScope = (app.importedScope || '').trim() || defaultScope;
         const origin = new URL(request.url).origin;
         const resolvedStartUrl = `${origin}${configuredStartPath}`;
         const manifestName = normalizeManifestName(app.appName, app.targetUrl);

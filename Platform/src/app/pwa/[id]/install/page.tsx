@@ -49,8 +49,34 @@ export default async function PwaInstallPage({
     },
   });
 
-  if (!app || app.status !== 'PUBLISHED') {
+  if (!app) {
     notFound();
+  }
+
+  // If the app exists but is not published yet, redirect to the target URL
+  // so installed PWAs still work. Only block if there's no target at all.
+  if (app.status !== 'PUBLISHED') {
+    if (app.targetUrl) {
+      redirect(app.targetUrl);
+    }
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-gray-50 px-4 dark:bg-black">
+        <div className="mx-auto max-w-sm text-center">
+          <h1 className="text-xl font-bold text-gray-900 dark:text-white">
+            {app.appName || 'App'} aún no está publicada
+          </h1>
+          <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+            Esta aplicación está en proceso de configuración. Vuelve más tarde.
+          </p>
+          <a
+            href="https://appnexu.com"
+            className="mt-6 inline-flex items-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+          >
+            Ir a Appnexu
+          </a>
+        </div>
+      </main>
+    );
   }
 
   const assetVersion = getAppAssetVersion(app);

@@ -32,6 +32,12 @@ function isPlatformHost(hostname: string): boolean {
   if (cleanHost === 'localhost' || cleanHost === '127.0.0.1') return true;
   if (configuredHost && (cleanHost === configuredHost || cleanHost.endsWith(`.${configuredHost}`))) return true;
   if (cleanHost.endsWith('.vercel.app')) return true;
+
+  // Hardcoded platform domains so isPlatformHost works even when
+  // NEXT_PUBLIC_APP_DOMAIN is not set in the environment.
+  const platformDomains = ['appnexu.com', 'www.appnexu.com'];
+  if (platformDomains.includes(cleanHost)) return true;
+
   return false;
 }
 
