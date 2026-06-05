@@ -1,5 +1,6 @@
 import "server-only";
 import NextAuth from 'next-auth';
+import type { User as PrismaUser } from '@prisma/client';
 import Credentials from 'next-auth/providers/credentials';
 import { prisma } from './prisma';
 import bcrypt from 'bcryptjs';
@@ -37,14 +38,16 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id;
-        token.role = user.role;
+        token.role = (user as PrismaUser).role;
       }
       return token;
     },
     async session({ session, token }) {
       if (session.user && token.id) {
-        session.user.id = token.id as string;
-        session.user.role = token.role as Role;
+        if (!session.user) throw new Error('No user in session');
+        const sessionUser = session.user as typeof session.user & { id: string; role?: Role };
+        sessionUser.id = token.id as string;
+        sessionUser.role = token.role as Role;
       }
       return session;
     },
@@ -70,6 +73,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           const email = (credentials.email as string).trim().toLowerCase();
           const password = credentials.password as string;
 
+          console.log("[AUTH] Email received:", email);
           console.log("[AUTH] Looking up user:", email);
 
           // 1. Buscar usuario en la base de datos
@@ -90,6 +94,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             console.log("[AUTH] User not found or no password set");
             return null;
           }
+
+          console.log("[AUTH] User role/plan:", user.role, user.plan);
 
           // 2. Validar password con bcrypt
           console.log("[AUTH] Comparing password, hash prefix:", user.password.substring(0, 7), "hash length:", user.password.length);
@@ -133,6 +139,7 @@ export async function getCurrentUser() {
   const session = await auth();
   if (!session?.user?.id) return null;
 
+  if (!session?.user?.id) throw new Error('No user in session');
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
     select: {
@@ -160,6 +167,7 @@ export async function requireAdmin() {
   const session = await auth();
   if (!session?.user?.id) return null;
 
+  if (!session?.user?.id) throw new Error('No user in session');
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
     select: { id: true, email: true, name: true, role: true },
