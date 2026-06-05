@@ -22,10 +22,11 @@ export const brand = {
   // ─── Logo Assets ───────────────────────────────────────────────────────────
   logo: {
     full: '/images/appnexu-logo.jpg',     // Full wordmark + icon
-    favicon: '/favicon.ico?v=20260523',
+    favicon: '/favicon.ico?v=20260523b',
     icon192: '/icons/icon-192.png',
     icon512: '/icons/icon-512.png',
-    appleTouchIcon: '/icons/apple-touch-icon.png',
+    iconPng: '/icon.png',
+    appleTouchIcon: '/apple-touch-icon.png',
   },
 
   // ─── Color System ──────────────────────────────────────────────────────────
