@@ -43,6 +43,7 @@ interface VisualPreset {
 }
 
 
+export default function TemplatesPage() {
   const t = useTranslations();
   const router = useRouter();
   const [presets, setPresets] = useState<VisualPreset[]>([]);
@@ -53,7 +54,9 @@ interface VisualPreset {
 
   useEffect(() => {
     // Detectar si estamos en modo standalone/PWA
-    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+    const isStandalone =
+      window.matchMedia('(display-mode: standalone)').matches ||
+      (window.navigator as Navigator & { standalone?: boolean }).standalone === true;
     if (isStandalone) setForceShowBack(true);
   }, []);
 
